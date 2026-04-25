@@ -350,6 +350,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          read_at: string | null
+          reference_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          read_at?: string | null
+          reference_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          read_at?: string | null
+          reference_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           agent_l1_id: string | null
@@ -728,6 +764,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
       purchase_product: { Args: { _product_id: string }; Returns: string }
       submit_withdraw: {
         Args: { _account_info: string; _amount: number; _channel: string }
