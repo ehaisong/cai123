@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { reportRpcError, reportRpcSuccess } from "@/lib/error-logger";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminHome,
@@ -46,7 +47,17 @@ function AdminHome() {
 
 function ApplicationsTab() {
   const [list, setList] = useState<any[]>([]);
-  const load = () => supabase.from("merchant_applications").select("*").order("created_at", { ascending: false }).then(({ data }) => setList(data ?? []));
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("merchant_applications")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      reportRpcError(error, { op: "merchant_applications.select", scope: "AdminHome/ApplicationsTab" });
+      return;
+    }
+    setList(data ?? []);
+  };
   useEffect(() => { load(); }, []);
   const review = async (app: any, approve: boolean, reason?: string) => {
     if (approve) {
@@ -61,15 +72,43 @@ function ApplicationsTab() {
         shop_description: app.description,
         status: "approved",
       }, { onConflict: "user_id" });
-      if (me) { toast.error(me.message); return; }
-      await supabase.from("user_roles").insert({ user_id: app.user_id, role: "merchant" }).select();
+      if (me) {
+        reportRpcError(me, {
+          op: "merchants.upsert",
+          scope: "AdminHome/ApplicationsTab.review",
+          payload: { user_id: app.user_id, application_id: app.id },
+        });
+        return;
+      }
+      const { error: re } = await supabase
+        .from("user_roles")
+        .insert({ user_id: app.user_id, role: "merchant" })
+        .select();
+      if (re && re.code !== "23505") {
+        // 23505 重复角色可忽略
+        reportRpcError(re, {
+          op: "user_roles.insert(merchant)",
+          scope: "AdminHome/ApplicationsTab.review",
+          payload: { user_id: app.user_id },
+        });
+      }
     }
     const { error } = await supabase.from("merchant_applications").update({
       status: approve ? "approved" : "rejected",
       reject_reason: reason ?? null,
       reviewed_at: new Date().toISOString(),
     }).eq("id", app.id);
-    if (error) toast.error(error.message); else { toast.success(approve ? "已通过" : "已驳回"); load(); }
+    if (error) {
+      reportRpcError(error, {
+        op: "merchant_applications.update",
+        scope: "AdminHome/ApplicationsTab.review",
+        payload: { id: app.id, approve, reason },
+      });
+    } else {
+      reportRpcSuccess("merchant_applications.update", { id: app.id, approve });
+      toast.success(approve ? "已通过" : "已驳回");
+      load();
+    }
   };
   return (
     <div className="space-y-2">
@@ -98,11 +137,34 @@ function ApplicationsTab() {
 
 function WithdrawTab() {
   const [list, setList] = useState<any[]>([]);
-  const load = () => supabase.from("withdrawals").select("*, profiles!inner(nickname, user_code)").order("created_at", { ascending: false }).then(({ data }) => setList(data ?? []));
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("withdrawals")
+      .select("*, profiles!inner(nickname, user_code)")
+      .order("created_at", { ascending: false });
+    if (error) {
+      reportRpcError(error, { op: "withdrawals.select", scope: "AdminHome/WithdrawTab" });
+      return;
+    }
+    setList(data ?? []);
+  };
   useEffect(() => { load(); }, []);
   const review = async (w: any, status: "approved" | "rejected" | "paid", reason?: string) => {
-    const { error } = await supabase.from("withdrawals").update({ status, reject_reason: reason ?? null, reviewed_at: new Date().toISOString() }).eq("id", w.id);
-    if (error) toast.error(error.message); else { toast.success("已更新"); load(); }
+    const { error } = await supabase
+      .from("withdrawals")
+      .update({ status, reject_reason: reason ?? null, reviewed_at: new Date().toISOString() })
+      .eq("id", w.id);
+    if (error) {
+      reportRpcError(error, {
+        op: "withdrawals.update",
+        scope: "AdminHome/WithdrawTab.review",
+        payload: { id: w.id, status, reason },
+      });
+    } else {
+      reportRpcSuccess("withdrawals.update", { id: w.id, status });
+      toast.success("已更新");
+      load();
+    }
   };
   return (
     <div className="space-y-2">
@@ -132,10 +194,38 @@ function RechargeTab() {
   const [amount, setAmount] = useState(100);
   const [note, setNote] = useState("");
   const submit = async () => {
-    const { data: p } = await supabase.from("profiles").select("user_id").eq("user_code", code).maybeSingle();
+    if (!code.trim()) { toast.error("请输入用户编号"); return; }
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error("金额必须大于 0"); return; }
+    const { data: p, error: pe } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_code", code.trim())
+      .maybeSingle();
+    if (pe) {
+      reportRpcError(pe, {
+        op: "profiles.lookup",
+        scope: "AdminHome/RechargeTab.submit",
+        payload: { user_code: code },
+      });
+      return;
+    }
     if (!p) { toast.error("用户不存在"); return; }
-    const { error } = await supabase.rpc("admin_recharge_user", { _user_id: p.user_id, _amount: amount, _note: note || undefined });
-    if (error) toast.error(error.message); else { toast.success("充值成功"); setCode(""); setAmount(100); setNote(""); }
+    const { data, error } = await supabase.rpc("admin_recharge_user", {
+      _user_id: p.user_id,
+      _amount: amount,
+      _note: note || undefined,
+    });
+    if (error) {
+      reportRpcError(error, {
+        op: "rpc:admin_recharge_user",
+        scope: "AdminHome/RechargeTab.submit",
+        payload: { user_id: p.user_id, amount, note: note || null },
+      });
+      return;
+    }
+    reportRpcSuccess("rpc:admin_recharge_user", { tx_id: data });
+    toast.success("充值成功");
+    setCode(""); setAmount(100); setNote("");
   };
   return (
     <div className="bg-card rounded-md p-4 space-y-3">
@@ -149,11 +239,42 @@ function RechargeTab() {
 
 function ConfigTab() {
   const [cfg, setCfg] = useState<any>(null);
-  useEffect(() => { supabase.from("commission_config").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle().then(({ data }) => setCfg(data)); }, []);
+  useEffect(() => {
+    supabase
+      .from("commission_config")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          reportRpcError(error, { op: "commission_config.select", scope: "AdminHome/ConfigTab" });
+          return;
+        }
+        setCfg(data);
+      });
+  }, []);
   if (!cfg) return <p>加载中…</p>;
   const save = async () => {
-    const { error } = await supabase.from("commission_config").update({ l1_rate: cfg.l1_rate, l2_rate: cfg.l2_rate, platform_rate: cfg.platform_rate, updated_at: new Date().toISOString() }).eq("id", cfg.id);
-    if (error) toast.error(error.message); else toast.success("已保存");
+    const l1 = Number(cfg.l1_rate), l2 = Number(cfg.l2_rate), plat = Number(cfg.platform_rate);
+    if (![l1, l2, plat].every((n) => Number.isFinite(n) && n >= 0 && n <= 1)) {
+      toast.error("分成比例必须在 0-1 之间"); return;
+    }
+    if (l1 + l2 + plat > 1) { toast.error("L1 + L2 + 平台 不能超过 1"); return; }
+    const { error } = await supabase
+      .from("commission_config")
+      .update({ l1_rate: l1, l2_rate: l2, platform_rate: plat, updated_at: new Date().toISOString() })
+      .eq("id", cfg.id);
+    if (error) {
+      reportRpcError(error, {
+        op: "commission_config.update",
+        scope: "AdminHome/ConfigTab.save",
+        payload: { id: cfg.id, l1_rate: l1, l2_rate: l2, platform_rate: plat },
+      });
+    } else {
+      reportRpcSuccess("commission_config.update");
+      toast.success("已保存");
+    }
   };
   return (
     <div className="bg-card rounded-md p-4 space-y-3">
