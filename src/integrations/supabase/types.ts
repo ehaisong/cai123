@@ -673,12 +673,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_recharge_user: {
+        Args: { _amount: number; _note?: string; _user_id: string }
+        Returns: string
+      }
+      become_agent: { Args: never; Returns: string }
+      bind_referrer: { Args: { _agent_code: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      purchase_product: { Args: { _product_id: string }; Returns: string }
+      submit_withdraw: {
+        Args: { _account_info: string; _amount: number; _channel: string }
+        Returns: string
       }
     }
     Enums: {
