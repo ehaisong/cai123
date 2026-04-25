@@ -11,11 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as MerchantsRouteImport } from './routes/merchants'
+import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WalletTransactionsRouteImport } from './routes/wallet.transactions'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
@@ -37,6 +42,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -52,6 +62,21 @@ const MerchantsRoute = MerchantsRouteImport.update({
   path: '/merchants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -60,6 +85,11 @@ const IndexRoute = IndexRouteImport.update({
 const MerchantIndexRoute = MerchantIndexRouteImport.update({
   id: '/merchant/',
   path: '/merchant/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WalletTransactionsRoute = WalletTransactionsRouteImport.update({
@@ -115,9 +145,13 @@ const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agent': typeof AgentRoute
+  '/contact': typeof ContactRoute
+  '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
@@ -129,14 +163,19 @@ export interface FileRoutesByFullPath {
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
+  '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agent': typeof AgentRoute
+  '/contact': typeof ContactRoute
+  '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
@@ -148,15 +187,20 @@ export interface FileRoutesByTo {
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
+  '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agent': typeof AgentRoute
+  '/contact': typeof ContactRoute
+  '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
@@ -168,6 +212,7 @@ export interface FileRoutesById {
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
+  '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
 }
@@ -175,9 +220,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agent'
+    | '/contact'
+    | '/feedback'
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/privacy'
     | '/profile'
     | '/wallet'
     | '/auth/login'
@@ -189,14 +238,19 @@ export interface FileRouteTypes {
     | '/product/$productId'
     | '/shop/$merchantId'
     | '/wallet/transactions'
+    | '/admin/'
     | '/merchant/'
     | '/merchant/products/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agent'
+    | '/contact'
+    | '/feedback'
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/privacy'
     | '/profile'
     | '/wallet'
     | '/auth/login'
@@ -208,14 +262,19 @@ export interface FileRouteTypes {
     | '/product/$productId'
     | '/shop/$merchantId'
     | '/wallet/transactions'
+    | '/admin'
     | '/merchant'
     | '/merchant/products/new'
   id:
     | '__root__'
     | '/'
+    | '/agent'
+    | '/contact'
+    | '/feedback'
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/privacy'
     | '/profile'
     | '/wallet'
     | '/auth/login'
@@ -227,15 +286,20 @@ export interface FileRouteTypes {
     | '/product/$productId'
     | '/shop/$merchantId'
     | '/wallet/transactions'
+    | '/admin/'
     | '/merchant/'
     | '/merchant/products/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgentRoute: typeof AgentRoute
+  ContactRoute: typeof ContactRoute
+  FeedbackRoute: typeof FeedbackRoute
   MerchantsRoute: typeof MerchantsRoute
   MessagesRoute: typeof MessagesRoute
   OrdersRoute: typeof OrdersRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   WalletRoute: typeof WalletRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
@@ -246,6 +310,7 @@ export interface RootRouteChildren {
   MerchantWalletRoute: typeof MerchantWalletRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
 }
 
@@ -263,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -286,6 +358,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -298,6 +391,13 @@ declare module '@tanstack/react-router' {
       path: '/merchant'
       fullPath: '/merchant/'
       preLoaderRoute: typeof MerchantIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wallet/transactions': {
@@ -397,9 +497,13 @@ const MerchantProductsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgentRoute: AgentRoute,
+  ContactRoute: ContactRoute,
+  FeedbackRoute: FeedbackRoute,
   MerchantsRoute: MerchantsRoute,
   MessagesRoute: MessagesRoute,
   OrdersRoute: OrdersRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   WalletRoute: WalletRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
@@ -410,6 +514,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantWalletRoute: MerchantWalletRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
 }
 export const routeTree = rootRouteImport
