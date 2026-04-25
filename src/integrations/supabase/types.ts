@@ -14,16 +14,687 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_relations: {
+        Row: {
+          agent_code: string | null
+          bound_merchant_id: string | null
+          created_at: string
+          id: string
+          is_agent: boolean
+          upline_id: string | null
+          upline_l2_id: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_code?: string | null
+          bound_merchant_id?: string | null
+          created_at?: string
+          id?: string
+          is_agent?: boolean
+          upline_id?: string | null
+          upline_l2_id?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_code?: string | null
+          bound_merchant_id?: string | null
+          created_at?: string
+          id?: string
+          is_agent?: boolean
+          upline_id?: string | null
+          upline_l2_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_relations_bound_merchant_id_fkey"
+            columns: ["bound_merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_relations_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_relations_upline_l2_id_fkey"
+            columns: ["upline_l2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      commission_config: {
+        Row: {
+          id: string
+          l1_rate: number
+          l2_rate: number
+          platform_rate: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          l1_rate?: number
+          l2_rate?: number
+          platform_rate?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          l1_rate?: number
+          l2_rate?: number
+          platform_rate?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      commission_records: {
+        Row: {
+          amount: number
+          beneficiary_id: string
+          created_at: string
+          id: string
+          level: number
+          order_id: string
+          rate: number
+        }
+        Insert: {
+          amount: number
+          beneficiary_id: string
+          created_at?: string
+          id?: string
+          level: number
+          order_id: string
+          rate: number
+        }
+        Update: {
+          amount?: number
+          beneficiary_id?: string
+          created_at?: string
+          id?: string
+          level?: number
+          order_id?: string
+          rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_records_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback: {
+        Row: {
+          contact: string | null
+          content: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          contact?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          contact?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      lottery_categories: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      merchant_applications: {
+        Row: {
+          created_at: string
+          description: string | null
+          fans_count: number | null
+          id: string
+          phone: string
+          public_account: string | null
+          real_name: string
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["merchant_status"]
+          updated_at: string
+          user_id: string
+          wechat_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fans_count?: number | null
+          id?: string
+          phone: string
+          public_account?: string | null
+          real_name: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["merchant_status"]
+          updated_at?: string
+          user_id: string
+          wechat_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fans_count?: number | null
+          id?: string
+          phone?: string
+          public_account?: string | null
+          real_name?: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["merchant_status"]
+          updated_at?: string
+          user_id?: string
+          wechat_id?: string | null
+        }
+        Relationships: []
+      }
+      merchants: {
+        Row: {
+          created_at: string
+          fans_count: number | null
+          id: string
+          public_account: string | null
+          real_name: string | null
+          shop_avatar_url: string | null
+          shop_description: string | null
+          shop_name: string
+          status: Database["public"]["Enums"]["merchant_status"]
+          total_sales: number
+          updated_at: string
+          user_id: string
+          wechat_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fans_count?: number | null
+          id?: string
+          public_account?: string | null
+          real_name?: string | null
+          shop_avatar_url?: string | null
+          shop_description?: string | null
+          shop_name: string
+          status?: Database["public"]["Enums"]["merchant_status"]
+          total_sales?: number
+          updated_at?: string
+          user_id: string
+          wechat_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fans_count?: number | null
+          id?: string
+          public_account?: string | null
+          real_name?: string | null
+          shop_avatar_url?: string | null
+          shop_description?: string | null
+          shop_name?: string
+          status?: Database["public"]["Enums"]["merchant_status"]
+          total_sales?: number
+          updated_at?: string
+          user_id?: string
+          wechat_id?: string | null
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          agent_l1_id: string | null
+          agent_l2_id: string | null
+          amount: number
+          buyer_id: string
+          created_at: string
+          id: string
+          merchant_id: string
+          paid_at: string | null
+          product_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
+        }
+        Insert: {
+          agent_l1_id?: string | null
+          agent_l2_id?: string | null
+          amount: number
+          buyer_id: string
+          created_at?: string
+          id?: string
+          merchant_id: string
+          paid_at?: string | null
+          product_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Update: {
+          agent_l1_id?: string | null
+          agent_l2_id?: string | null
+          amount?: number
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          paid_at?: string | null
+          product_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_agent_l1_id_fkey"
+            columns: ["agent_l1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_agent_l2_id_fkey"
+            columns: ["agent_l2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_history: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          issue_no: string
+          product_id: string
+          publish_at: string
+          result: Database["public"]["Enums"]["product_result"]
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          issue_no: string
+          product_id: string
+          publish_at?: string
+          result?: Database["public"]["Enums"]["product_result"]
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          issue_no?: string
+          product_id?: string
+          publish_at?: string
+          result?: Database["public"]["Enums"]["product_result"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category_id: string
+          created_at: string
+          disclaimer: string | null
+          id: string
+          is_recommended: boolean
+          issue_no: string
+          merchant_id: string
+          paid_content: string | null
+          price: number
+          publish_at: string
+          result: Database["public"]["Enums"]["product_result"]
+          result_note: string | null
+          reveal_at: string | null
+          sales_count: number
+          status: Database["public"]["Enums"]["product_status"]
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          disclaimer?: string | null
+          id?: string
+          is_recommended?: boolean
+          issue_no: string
+          merchant_id: string
+          paid_content?: string | null
+          price?: number
+          publish_at?: string
+          result?: Database["public"]["Enums"]["product_result"]
+          result_note?: string | null
+          reveal_at?: string | null
+          sales_count?: number
+          status?: Database["public"]["Enums"]["product_status"]
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          disclaimer?: string | null
+          id?: string
+          is_recommended?: boolean
+          issue_no?: string
+          merchant_id?: string
+          paid_content?: string | null
+          price?: number
+          publish_at?: string
+          result?: Database["public"]["Enums"]["product_result"]
+          result_note?: string | null
+          reveal_at?: string | null
+          sales_count?: number
+          status?: Database["public"]["Enums"]["product_status"]
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "lottery_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          nickname: string | null
+          phone: string | null
+          referred_merchant_id: string | null
+          referrer_id: string | null
+          updated_at: string
+          user_code: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          phone?: string | null
+          referred_merchant_id?: string | null
+          referrer_id?: string | null
+          updated_at?: string
+          user_code: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          phone?: string | null
+          referred_merchant_id?: string | null
+          referrer_id?: string | null
+          updated_at?: string
+          user_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: Database["public"]["Enums"]["tx_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          total_commission: number
+          total_recharge: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_commission?: number
+          total_recharge?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_commission?: number
+          total_recharge?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          account_info: string | null
+          amount: number
+          channel: string | null
+          created_at: string
+          id: string
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["withdraw_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_info?: string | null
+          amount: number
+          channel?: string | null
+          created_at?: string
+          id?: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["withdraw_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_info?: string | null
+          amount?: number
+          channel?: string | null
+          created_at?: string
+          id?: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["withdraw_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "buyer" | "agent" | "merchant" | "admin"
+      merchant_status: "pending" | "approved" | "rejected" | "suspended"
+      order_status: "pending" | "paid" | "refunded" | "cancelled"
+      product_result: "pending" | "won" | "lost"
+      product_status: "draft" | "published" | "unpublished"
+      tx_type:
+        | "recharge"
+        | "purchase"
+        | "commission"
+        | "withdraw"
+        | "refund"
+        | "admin_adjust"
+      withdraw_status: "pending" | "approved" | "rejected" | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +821,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["buyer", "agent", "merchant", "admin"],
+      merchant_status: ["pending", "approved", "rejected", "suspended"],
+      order_status: ["pending", "paid", "refunded", "cancelled"],
+      product_result: ["pending", "won", "lost"],
+      product_status: ["draft", "published", "unpublished"],
+      tx_type: [
+        "recharge",
+        "purchase",
+        "commission",
+        "withdraw",
+        "refund",
+        "admin_adjust",
+      ],
+      withdraw_status: ["pending", "approved", "rejected", "paid"],
+    },
   },
 } as const
