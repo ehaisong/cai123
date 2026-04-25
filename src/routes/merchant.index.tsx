@@ -1,0 +1,74 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { PageHeader } from "@/components/h5/page-header";
+import { Button } from "@/components/ui/button";
+import { fmtMoney } from "@/lib/format";
+import { Plus, Package, Wallet, QrCode, Users } from "lucide-react";
+
+export const Route = createFileRoute("/merchant/")({
+  component: MerchantHome,
+});
+
+function MerchantHome() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [merchant, setMerchant] = useState<any>(null);
+  const [stats, setStats] = useState({ products: 0, orders: 0, balance: 0, monthSales: 0 });
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: m } = await supabase.from("merchants").select("*").eq("user_id", user.id).maybeSingle();
+      setMerchant(m);
+      if (!m) return;
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+      const [{ count: pc }, { count: oc }, { data: w }, { data: monthOrders }] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("merchant_id", m.id),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("merchant_id", m.id).eq("status", "paid"),
+        supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+        supabase.from("orders").select("amount").eq("merchant_id", m.id).eq("status", "paid").gte("paid_at", monthStart.toISOString()),
+      ]);
+      const monthSales = (monthOrders ?? []).reduce((s, r: any) => s + Number(r.amount), 0);
+      setStats({ products: pc ?? 0, orders: oc ?? 0, balance: Number(w?.balance ?? 0), monthSales });
+    })();
+  }, [user?.id]);
+
+  if (!user) return <div className="h5-shell"><PageHeader title="商家后台" /><div className="p-6 text-center"><Button onClick={() => navigate({ to: "/auth/login" })}>请先登录</Button></div></div>;
+  if (!merchant) return <div className="h5-shell"><PageHeader title="商家后台" /><div className="p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div></div>;
+
+  return (
+    <div className="h5-shell flex min-h-screen flex-col">
+      <PageHeader title="商家后台" />
+
+      <div className="m-3 rounded-2xl p-5 text-white" style={{ background: "var(--gradient-orange)" }}>
+        <div className="text-sm opacity-90">{merchant.shop_name}</div>
+        <div className="mt-2 text-xs opacity-80">本月销售额（元）</div>
+        <div className="text-3xl font-bold mt-1">{stats.monthSales.toFixed(2)}</div>
+        <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+          <div><div className="text-xs opacity-80">商品</div><div className="text-lg font-bold">{stats.products}</div></div>
+          <div><div className="text-xs opacity-80">订单</div><div className="text-lg font-bold">{stats.orders}</div></div>
+          <div><div className="text-xs opacity-80">余额</div><div className="text-lg font-bold">{stats.balance.toFixed(2)}</div></div>
+        </div>
+      </div>
+
+      <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
+        <Cell icon={<Plus className="w-6 h-6 text-success" />} label="发布商品" to="/merchant/products/new" />
+        <Cell icon={<Package className="w-6 h-6 text-info" />} label="商品管理" to="/merchant/products" />
+        <Cell icon={<Wallet className="w-6 h-6 text-warning" />} label="收益提现" to="/merchant/wallet" />
+        <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
+        <Cell icon={<Users className="w-6 h-6 text-info" />} label="代理管理" to="/merchant/agents" />
+      </div>
+    </div>
+  );
+}
+
+function Cell({ icon, label, to }: { icon: React.ReactNode; label: string; to: string }) {
+  return (
+    <Link to={to} className="flex flex-col items-center gap-2">
+      <div className="w-12 h-12 rounded-full bg-accent/40 flex items-center justify-center">{icon}</div>
+      <span className="text-xs">{label}</span>
+    </Link>
+  );
+}

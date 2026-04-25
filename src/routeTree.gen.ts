@@ -9,15 +9,51 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WalletTransactionsRouteImport } from './routes/wallet.transactions'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantsRoute = MerchantsRouteImport.update({
+  id: '/merchants',
+  path: '/merchants',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WalletTransactionsRoute = WalletTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => WalletRoute,
 } as any)
 const ShopMerchantIdRoute = ShopMerchantIdRouteImport.update({
   id: '/shop/$merchantId',
@@ -37,38 +73,87 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/merchants': typeof MerchantsRoute
+  '/messages': typeof MessagesRoute
+  '/orders': typeof OrdersRoute
+  '/profile': typeof ProfileRoute
+  '/wallet': typeof WalletRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
+  '/wallet/transactions': typeof WalletTransactionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/merchants': typeof MerchantsRoute
+  '/messages': typeof MessagesRoute
+  '/orders': typeof OrdersRoute
+  '/profile': typeof ProfileRoute
+  '/wallet': typeof WalletRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
+  '/wallet/transactions': typeof WalletTransactionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/merchants': typeof MerchantsRoute
+  '/messages': typeof MessagesRoute
+  '/orders': typeof OrdersRoute
+  '/profile': typeof ProfileRoute
+  '/wallet': typeof WalletRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
+  '/wallet/transactions': typeof WalletTransactionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/login' | '/product/$productId' | '/shop/$merchantId'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/login' | '/product/$productId' | '/shop/$merchantId'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/merchants'
+    | '/messages'
+    | '/orders'
+    | '/profile'
+    | '/wallet'
     | '/auth/login'
     | '/product/$productId'
     | '/shop/$merchantId'
+    | '/wallet/transactions'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/merchants'
+    | '/messages'
+    | '/orders'
+    | '/profile'
+    | '/wallet'
+    | '/auth/login'
+    | '/product/$productId'
+    | '/shop/$merchantId'
+    | '/wallet/transactions'
+  id:
+    | '__root__'
+    | '/'
+    | '/merchants'
+    | '/messages'
+    | '/orders'
+    | '/profile'
+    | '/wallet'
+    | '/auth/login'
+    | '/product/$productId'
+    | '/shop/$merchantId'
+    | '/wallet/transactions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MerchantsRoute: typeof MerchantsRoute
+  MessagesRoute: typeof MessagesRoute
+  OrdersRoute: typeof OrdersRoute
+  ProfileRoute: typeof ProfileRoute
+  WalletRoute: typeof WalletRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
@@ -76,12 +161,54 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchants': {
+      id: '/merchants'
+      path: '/merchants'
+      fullPath: '/merchants'
+      preLoaderRoute: typeof MerchantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/wallet/transactions': {
+      id: '/wallet/transactions'
+      path: '/transactions'
+      fullPath: '/wallet/transactions'
+      preLoaderRoute: typeof WalletTransactionsRouteImport
+      parentRoute: typeof WalletRoute
     }
     '/shop/$merchantId': {
       id: '/shop/$merchantId'
@@ -107,8 +234,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface WalletRouteChildren {
+  WalletTransactionsRoute: typeof WalletTransactionsRoute
+}
+
+const WalletRouteChildren: WalletRouteChildren = {
+  WalletTransactionsRoute: WalletTransactionsRoute,
+}
+
+const WalletRouteWithChildren =
+  WalletRoute._addFileChildren(WalletRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MerchantsRoute: MerchantsRoute,
+  MessagesRoute: MessagesRoute,
+  OrdersRoute: OrdersRoute,
+  ProfileRoute: ProfileRoute,
+  WalletRoute: WalletRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
