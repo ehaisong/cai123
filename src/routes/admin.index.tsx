@@ -134,7 +134,7 @@ function RechargeTab() {
   const submit = async () => {
     const { data: p } = await supabase.from("profiles").select("user_id").eq("user_code", code).maybeSingle();
     if (!p) { toast.error("用户不存在"); return; }
-    const { error } = await supabase.rpc("admin_recharge_user", { _user_id: p.user_id, _amount: amount, _note: note || null });
+    const { error } = await supabase.rpc("admin_recharge_user", { _user_id: p.user_id, _amount: amount, _note: note || undefined });
     if (error) toast.error(error.message); else { toast.success("充值成功"); setCode(""); setAmount(100); setNote(""); }
   };
   return (
