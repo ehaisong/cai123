@@ -47,7 +47,17 @@ function AdminHome() {
 
 function ApplicationsTab() {
   const [list, setList] = useState<any[]>([]);
-  const load = () => supabase.from("merchant_applications").select("*").order("created_at", { ascending: false }).then(({ data }) => setList(data ?? []));
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("merchant_applications")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      reportRpcError(error, { op: "merchant_applications.select", scope: "AdminHome/ApplicationsTab" });
+      return;
+    }
+    setList(data ?? []);
+  };
   useEffect(() => { load(); }, []);
   const review = async (app: any, approve: boolean, reason?: string) => {
     if (approve) {
@@ -62,15 +72,43 @@ function ApplicationsTab() {
         shop_description: app.description,
         status: "approved",
       }, { onConflict: "user_id" });
-      if (me) { toast.error(me.message); return; }
-      await supabase.from("user_roles").insert({ user_id: app.user_id, role: "merchant" }).select();
+      if (me) {
+        reportRpcError(me, {
+          op: "merchants.upsert",
+          scope: "AdminHome/ApplicationsTab.review",
+          payload: { user_id: app.user_id, application_id: app.id },
+        });
+        return;
+      }
+      const { error: re } = await supabase
+        .from("user_roles")
+        .insert({ user_id: app.user_id, role: "merchant" })
+        .select();
+      if (re && re.code !== "23505") {
+        // 23505 重复角色可忽略
+        reportRpcError(re, {
+          op: "user_roles.insert(merchant)",
+          scope: "AdminHome/ApplicationsTab.review",
+          payload: { user_id: app.user_id },
+        });
+      }
     }
     const { error } = await supabase.from("merchant_applications").update({
       status: approve ? "approved" : "rejected",
       reject_reason: reason ?? null,
       reviewed_at: new Date().toISOString(),
     }).eq("id", app.id);
-    if (error) toast.error(error.message); else { toast.success(approve ? "已通过" : "已驳回"); load(); }
+    if (error) {
+      reportRpcError(error, {
+        op: "merchant_applications.update",
+        scope: "AdminHome/ApplicationsTab.review",
+        payload: { id: app.id, approve, reason },
+      });
+    } else {
+      reportRpcSuccess("merchant_applications.update", { id: app.id, approve });
+      toast.success(approve ? "已通过" : "已驳回");
+      load();
+    }
   };
   return (
     <div className="space-y-2">
