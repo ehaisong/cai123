@@ -137,11 +137,34 @@ function ApplicationsTab() {
 
 function WithdrawTab() {
   const [list, setList] = useState<any[]>([]);
-  const load = () => supabase.from("withdrawals").select("*, profiles!inner(nickname, user_code)").order("created_at", { ascending: false }).then(({ data }) => setList(data ?? []));
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("withdrawals")
+      .select("*, profiles!inner(nickname, user_code)")
+      .order("created_at", { ascending: false });
+    if (error) {
+      reportRpcError(error, { op: "withdrawals.select", scope: "AdminHome/WithdrawTab" });
+      return;
+    }
+    setList(data ?? []);
+  };
   useEffect(() => { load(); }, []);
   const review = async (w: any, status: "approved" | "rejected" | "paid", reason?: string) => {
-    const { error } = await supabase.from("withdrawals").update({ status, reject_reason: reason ?? null, reviewed_at: new Date().toISOString() }).eq("id", w.id);
-    if (error) toast.error(error.message); else { toast.success("已更新"); load(); }
+    const { error } = await supabase
+      .from("withdrawals")
+      .update({ status, reject_reason: reason ?? null, reviewed_at: new Date().toISOString() })
+      .eq("id", w.id);
+    if (error) {
+      reportRpcError(error, {
+        op: "withdrawals.update",
+        scope: "AdminHome/WithdrawTab.review",
+        payload: { id: w.id, status, reason },
+      });
+    } else {
+      reportRpcSuccess("withdrawals.update", { id: w.id, status });
+      toast.success("已更新");
+      load();
+    }
   };
   return (
     <div className="space-y-2">
@@ -171,10 +194,38 @@ function RechargeTab() {
   const [amount, setAmount] = useState(100);
   const [note, setNote] = useState("");
   const submit = async () => {
-    const { data: p } = await supabase.from("profiles").select("user_id").eq("user_code", code).maybeSingle();
+    if (!code.trim()) { toast.error("请输入用户编号"); return; }
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error("金额必须大于 0"); return; }
+    const { data: p, error: pe } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_code", code.trim())
+      .maybeSingle();
+    if (pe) {
+      reportRpcError(pe, {
+        op: "profiles.lookup",
+        scope: "AdminHome/RechargeTab.submit",
+        payload: { user_code: code },
+      });
+      return;
+    }
     if (!p) { toast.error("用户不存在"); return; }
-    const { error } = await supabase.rpc("admin_recharge_user", { _user_id: p.user_id, _amount: amount, _note: note || undefined });
-    if (error) toast.error(error.message); else { toast.success("充值成功"); setCode(""); setAmount(100); setNote(""); }
+    const { data, error } = await supabase.rpc("admin_recharge_user", {
+      _user_id: p.user_id,
+      _amount: amount,
+      _note: note || undefined,
+    });
+    if (error) {
+      reportRpcError(error, {
+        op: "rpc:admin_recharge_user",
+        scope: "AdminHome/RechargeTab.submit",
+        payload: { user_id: p.user_id, amount, note: note || null },
+      });
+      return;
+    }
+    reportRpcSuccess("rpc:admin_recharge_user", { tx_id: data });
+    toast.success("充值成功");
+    setCode(""); setAmount(100); setNote("");
   };
   return (
     <div className="bg-card rounded-md p-4 space-y-3">
