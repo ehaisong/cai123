@@ -239,11 +239,42 @@ function RechargeTab() {
 
 function ConfigTab() {
   const [cfg, setCfg] = useState<any>(null);
-  useEffect(() => { supabase.from("commission_config").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle().then(({ data }) => setCfg(data)); }, []);
+  useEffect(() => {
+    supabase
+      .from("commission_config")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          reportRpcError(error, { op: "commission_config.select", scope: "AdminHome/ConfigTab" });
+          return;
+        }
+        setCfg(data);
+      });
+  }, []);
   if (!cfg) return <p>加载中…</p>;
   const save = async () => {
-    const { error } = await supabase.from("commission_config").update({ l1_rate: cfg.l1_rate, l2_rate: cfg.l2_rate, platform_rate: cfg.platform_rate, updated_at: new Date().toISOString() }).eq("id", cfg.id);
-    if (error) toast.error(error.message); else toast.success("已保存");
+    const l1 = Number(cfg.l1_rate), l2 = Number(cfg.l2_rate), plat = Number(cfg.platform_rate);
+    if (![l1, l2, plat].every((n) => Number.isFinite(n) && n >= 0 && n <= 1)) {
+      toast.error("分成比例必须在 0-1 之间"); return;
+    }
+    if (l1 + l2 + plat > 1) { toast.error("L1 + L2 + 平台 不能超过 1"); return; }
+    const { error } = await supabase
+      .from("commission_config")
+      .update({ l1_rate: l1, l2_rate: l2, platform_rate: plat, updated_at: new Date().toISOString() })
+      .eq("id", cfg.id);
+    if (error) {
+      reportRpcError(error, {
+        op: "commission_config.update",
+        scope: "AdminHome/ConfigTab.save",
+        payload: { id: cfg.id, l1_rate: l1, l2_rate: l2, platform_rate: plat },
+      });
+    } else {
+      reportRpcSuccess("commission_config.update");
+      toast.success("已保存");
+    }
   };
   return (
     <div className="bg-card rounded-md p-4 space-y-3">
