@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { reportRpcError, reportRpcSuccess } from "@/lib/error-logger";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminHome,
