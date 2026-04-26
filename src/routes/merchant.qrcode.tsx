@@ -4,12 +4,21 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/qrcode")({
   component: MerchantQR,
 });
 
 function MerchantQR() {
+  return (
+    <RouteGuard title="推广二维码" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <MerchantQRInner />
+    </RouteGuard>
+  );
+}
+
+function MerchantQRInner() {
   const { user } = useAuth();
   const [merchant, setMerchant] = useState<any>(null);
   const [origin, setOrigin] = useState("");
