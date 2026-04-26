@@ -186,6 +186,20 @@ function MerchantShopPageInner() {
                 className="border-0 shadow-none focus-visible:ring-0 px-0"
               />
             </Row>
+            <Row label="收款通道">
+              <select
+                value={form.payment_channel_id}
+                onChange={(e) => setForm({ ...form, payment_channel_id: e.target.value })}
+                className="w-full bg-transparent text-sm py-1 outline-none"
+              >
+                <option value="">未选择（暂不支持在线付款）</option>
+                {channels.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}（{c.provider === "wechat" ? "微信" : c.provider === "alipay" ? "支付宝" : "自定义"}）
+                  </option>
+                ))}
+              </select>
+            </Row>
           </div>
 
           <div className="px-3 pt-4 pb-2 text-sm text-muted-foreground">店铺简介</div>
