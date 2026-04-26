@@ -1,6 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/h5/page-header";
 import { RouteGuard } from "@/components/route-guard";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 import {
   Store,
   Users,
@@ -14,6 +17,7 @@ import {
   ShieldCheck,
   PlusCircle,
   ClipboardList,
+  LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -73,9 +77,36 @@ const groups: Array<{ label: string; items: Card[] }> = [
 ];
 
 function AdminHomeInner() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("已退出登录");
+      navigate({ to: "/auth/login" });
+    } catch (e) {
+      toast.error("退出失败，请重试");
+    }
+  };
+
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-muted/20">
-      <PageHeader title="管理后台" showBack={false} />
+      <PageHeader
+        title="管理后台"
+        showBack={false}
+        right={
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex items-center gap-0.5 text-info"
+            aria-label="退出登录"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="text-sm">退出</span>
+          </button>
+        }
+      />
       <main className="flex-1 px-3 py-3 space-y-4 pb-6">
         {groups.map((g) => (
           <section key={g.label}>
@@ -99,6 +130,12 @@ function AdminHomeInner() {
             </div>
           </section>
         ))}
+        <div className="pt-2">
+          <Button variant="outline" className="w-full" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            退出登录
+          </Button>
+        </div>
       </main>
     </div>
   );
