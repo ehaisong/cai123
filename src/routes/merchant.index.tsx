@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, Wallet, QrCode, Users } from "lucide-react";
+import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/")({
   component: MerchantHome,

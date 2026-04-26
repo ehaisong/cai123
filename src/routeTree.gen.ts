@@ -25,6 +25,7 @@ import { Route as WalletTransactionsRouteImport } from './routes/wallet.transact
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
+import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantProductsRouteImport } from './routes/merchant.products'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
@@ -112,6 +113,11 @@ const MerchantWalletRoute = MerchantWalletRouteImport.update({
   path: '/merchant/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantShopRoute = MerchantShopRouteImport.update({
+  id: '/merchant/shop',
+  path: '/merchant/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantQrcodeRoute = MerchantQrcodeRouteImport.update({
   id: '/merchant/qrcode',
   path: '/merchant/qrcode',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/products': typeof MerchantProductsRouteWithChildren
   '/merchant/qrcode': typeof MerchantQrcodeRoute
+  '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/products': typeof MerchantProductsRouteWithChildren
   '/merchant/qrcode': typeof MerchantQrcodeRoute
+  '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/products': typeof MerchantProductsRouteWithChildren
   '/merchant/qrcode': typeof MerchantQrcodeRoute
+  '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/merchant/apply'
     | '/merchant/products'
     | '/merchant/qrcode'
+    | '/merchant/shop'
     | '/merchant/wallet'
     | '/product/$productId'
     | '/shop/$merchantId'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/merchant/apply'
     | '/merchant/products'
     | '/merchant/qrcode'
+    | '/merchant/shop'
     | '/merchant/wallet'
     | '/product/$productId'
     | '/shop/$merchantId'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/merchant/apply'
     | '/merchant/products'
     | '/merchant/qrcode'
+    | '/merchant/shop'
     | '/merchant/wallet'
     | '/product/$productId'
     | '/shop/$merchantId'
@@ -307,6 +319,7 @@ export interface RootRouteChildren {
   MerchantApplyRoute: typeof MerchantApplyRoute
   MerchantProductsRoute: typeof MerchantProductsRouteWithChildren
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
+  MerchantShopRoute: typeof MerchantShopRoute
   MerchantWalletRoute: typeof MerchantWalletRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
@@ -428,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/shop': {
+      id: '/merchant/shop'
+      path: '/merchant/shop'
+      fullPath: '/merchant/shop'
+      preLoaderRoute: typeof MerchantShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/qrcode': {
       id: '/merchant/qrcode'
       path: '/merchant/qrcode'
@@ -511,6 +531,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantApplyRoute: MerchantApplyRoute,
   MerchantProductsRoute: MerchantProductsRouteWithChildren,
   MerchantQrcodeRoute: MerchantQrcodeRoute,
+  MerchantShopRoute: MerchantShopRoute,
   MerchantWalletRoute: MerchantWalletRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
