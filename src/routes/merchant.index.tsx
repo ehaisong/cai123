@@ -3,15 +3,23 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
-import { Button } from "@/components/ui/button";
 import { fmtMoney } from "@/lib/format";
 import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2 } from "lucide-react";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/")({
   component: MerchantHome,
 });
 
 function MerchantHome() {
+  return (
+    <RouteGuard title="商家后台" roles={["merchant"]} forbiddenText="此页面仅限商家访问，请先申请入驻">
+      <MerchantHomeInner />
+    </RouteGuard>
+  );
+}
+
+function MerchantHomeInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [merchant, setMerchant] = useState<any>(null);
@@ -35,7 +43,6 @@ function MerchantHome() {
     })();
   }, [user?.id]);
 
-  if (!user) return <div className="h5-shell"><PageHeader title="商家后台" /><div className="p-6 text-center"><Button onClick={() => navigate({ to: "/auth/login" })}>请先登录</Button></div></div>;
   if (!merchant) return <div className="h5-shell"><PageHeader title="商家后台" /><div className="p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div></div>;
 
   return (
