@@ -26,7 +26,7 @@ function AgentPageGuarded() {
 type Tab = "all" | "1" | "2";
 
 function AgentPage() {
-  const { user, refreshRoles, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
