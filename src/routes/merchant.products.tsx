@@ -6,12 +6,21 @@ import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/products")({
   component: ProductsList,
 });
 
 function ProductsList() {
+  return (
+    <RouteGuard title="我的商品" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <ProductsListInner />
+    </RouteGuard>
+  );
+}
+
+function ProductsListInner() {
   const { user } = useAuth();
   const [list, setList] = useState<any[]>([]);
   const [merchantId, setMerchantId] = useState<string | null>(null);

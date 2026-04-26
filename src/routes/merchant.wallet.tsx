@@ -8,12 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/wallet")({
   component: MerchantWallet,
 });
 
 function MerchantWallet() {
+  return (
+    <RouteGuard title="商家钱包" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <MerchantWalletInner />
+    </RouteGuard>
+  );
+}
+
+function MerchantWalletInner() {
   const { user } = useAuth();
   const [balance, setBalance] = useState(0);
   const [amount, setAmount] = useState(100);

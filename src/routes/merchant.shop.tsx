@@ -8,12 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Clock, XCircle, Store, Plus, Package, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/shop")({
   component: MerchantShopPage,
 });
 
 function MerchantShopPage() {
+  return (
+    <RouteGuard title="店铺管理" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <MerchantShopPageInner />
+    </RouteGuard>
+  );
+}
+
+function MerchantShopPageInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [merchant, setMerchant] = useState<any>(null);

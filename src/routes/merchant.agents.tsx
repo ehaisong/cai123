@@ -4,12 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtDate, fmtMoney } from "@/lib/format";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/agents")({
   component: AgentsPage,
 });
 
 function AgentsPage() {
+  return (
+    <RouteGuard title="代理订单" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <AgentsPageInner />
+    </RouteGuard>
+  );
+}
+
+function AgentsPageInner() {
   const { user } = useAuth();
   const [list, setList] = useState<any[]>([]);
 
