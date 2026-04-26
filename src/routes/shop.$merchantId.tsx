@@ -43,14 +43,29 @@ function ShopPage() {
   const [isShopOwner, setIsShopOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const [boundMerchantName, setBoundMerchantName] = useState<string | null>(null);
+  const [switchOpen, setSwitchOpen] = useState(false);
+
   const loadAgent = async () => {
-    if (!user) { setAgentInfo(null); setIsShopOwner(false); return; }
+    if (!user) {
+      setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null);
+      return;
+    }
     const { data: ar } = await supabase
       .from("agent_relations")
       .select("is_agent, bound_merchant_id")
       .eq("user_id", user.id)
       .maybeSingle();
     setAgentInfo(ar ?? { is_agent: false, bound_merchant_id: null });
+
+    if (ar?.is_agent && ar.bound_merchant_id && ar.bound_merchant_id !== merchantId) {
+      const { data: bm } = await supabase
+        .from("merchants").select("shop_name").eq("id", ar.bound_merchant_id).maybeSingle();
+      setBoundMerchantName(bm?.shop_name ?? "未知商家");
+    } else {
+      setBoundMerchantName(null);
+    }
+
     const { data: m } = await supabase
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
     setIsShopOwner(!!m);
