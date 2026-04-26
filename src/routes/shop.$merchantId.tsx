@@ -32,6 +32,7 @@ interface Announcement { id: string; title: string; content: string | null; crea
 
 function ShopPage() {
   const { merchantId } = useParams({ from: "/shop/$merchantId" });
+  const router = useRouter();
   const { user, refreshRoles, hasRole } = useAuth();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
