@@ -179,22 +179,6 @@ function AgentPage() {
   }
 
   const code = info.agent_code ?? profile?.user_code ?? "";
-  const url = `${origin}/?ref=${code}`;
-
-  const copy = async (text: string) => {
-    try { await navigator.clipboard.writeText(text); toast.success("已复制"); }
-    catch { toast.error("复制失败"); }
-  };
-
-  const share = async () => {
-    const shareData = { title: "邀请你加入", text: "扫码或点击链接加入，享受专属预测内容", url };
-    // @ts-expect-error - navigator.share is not in all TS libs
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try { await (navigator as any).share(shareData); } catch { /* user cancel */ }
-    } else {
-      copy(url);
-    }
-  };
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
   const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
