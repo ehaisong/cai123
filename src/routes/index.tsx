@@ -1,10 +1,11 @@
-import { createFileRoute, Navigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
-import { Store } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Store } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   validateSearch: z.object({ ref: z.string().optional() }),
@@ -15,6 +16,7 @@ type State =
   | { kind: "loading" }
   | { kind: "shop"; merchantId: string }
   | { kind: "redirect-login" }
+  | { kind: "invalid-ref"; defaultShopId: string | null }
   | { kind: "no-default" };
 
 function HomeRouter() {
@@ -34,8 +36,10 @@ function HomeRouter() {
 
       // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
       let target: string | null = null;
+      let refResolved = true; // 没有 ref 时视为"无需解析"，不算失败
 
       if (search.ref) {
+        refResolved = false;
         if (user) {
           await supabase.rpc("bind_referrer", { _agent_code: search.ref });
         }
@@ -56,6 +60,31 @@ function HomeRouter() {
             target = ar?.bound_merchant_id ?? null;
           }
         }
+
+        // 校验 ref 解析出的商家有效（存在且已审核）
+        if (target) {
+          const { data: m } = await supabase
+            .from("merchants")
+            .select("id")
+            .eq("id", target)
+            .eq("status", "approved")
+            .maybeSingle();
+          if (m?.id) {
+            setState({ kind: "shop", merchantId: m.id });
+            return;
+          }
+        }
+
+        // ref 无法解析为有效商家 → 显示兜底页（带默认店铺入口）
+        const { data: s } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "default_shop_id")
+          .maybeSingle();
+        const v = s?.value;
+        const defaultShopId = typeof v === "string" && v.length > 0 ? v : null;
+        setState({ kind: "invalid-ref", defaultShopId });
+        return;
       }
 
       // 2) 已登录买家若有绑定商家，优先使用
@@ -94,6 +123,7 @@ function HomeRouter() {
       }
 
       setState({ kind: "no-default" });
+      void refResolved;
     })();
   }, [authLoading, user?.id, search.ref]);
 
@@ -112,6 +142,33 @@ function HomeRouter() {
 
   if (state.kind === "shop") {
     return <Navigate to="/shop/$merchantId" params={{ merchantId: state.merchantId }} replace />;
+  }
+
+  // 二维码 ref 解析失败或对应店铺不可用
+  if (state.kind === "invalid-ref") {
+    return (
+      <div className="h5-shell flex min-h-screen flex-col">
+        <PageHeader title="无效链接" />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-warning/15 flex items-center justify-center mb-4">
+            <AlertTriangle className="w-7 h-7 text-warning" />
+          </div>
+          <p className="text-base font-semibold">该二维码无效或店铺不可用</p>
+          <p className="mt-1 mb-6 text-xs text-muted-foreground max-w-[280px]">
+            请确认二维码或推广链接来源是否正确。您也可以前往默认店铺继续浏览。
+          </p>
+          {state.defaultShopId ? (
+            <Button asChild size="sm" className="min-w-[180px]">
+              <Link to="/shop/$merchantId" params={{ merchantId: state.defaultShopId }} replace>
+                返回默认店铺
+              </Link>
+            </Button>
+          ) : (
+            <p className="text-xs text-muted-foreground">管理员尚未配置默认店铺</p>
+          )}
+        </div>
+      </div>
+    );
   }
 
   // 已登录但无默认店铺
