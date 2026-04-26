@@ -9,10 +9,19 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
 import { Copy, Users, TrendingUp, Share2 } from "lucide-react";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/agent")({
-  component: AgentPage,
+  component: AgentPageGuarded,
 });
+
+function AgentPageGuarded() {
+  return (
+    <RouteGuard title="代理推广">
+      <AgentPage />
+    </RouteGuard>
+  );
+}
 
 type Tab = "all" | "1" | "2";
 
