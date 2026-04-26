@@ -25,6 +25,29 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoRole, setDemoRole] = useState<DemoRole | null>(null);
+
+  const roleIcon = (r: DemoRole) => {
+    if (r === "admin") return <Shield className="w-4 h-4 text-primary" />;
+    if (r === "merchant") return <Store className="w-4 h-4 text-info" />;
+    if (r === "agent") return <Handshake className="w-4 h-4 text-success" />;
+    return <User className="w-4 h-4 text-warning" />;
+  };
+
+  const handleDemo = async (role: DemoRole) => {
+    setDemoRole(role);
+    setLoading(true);
+    try {
+      await signInAsDemo(role);
+      toast.success("已登录 Demo 账号");
+      navigate({ to: search.redirect ?? "/" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Demo 登录失败");
+    } finally {
+      setLoading(false);
+      setDemoRole(null);
+    }
+  };
 
   const submit = async () => {
     if (!email || !password) {
