@@ -155,6 +155,14 @@ function HomeRouter() {
     return <Navigate to="/auth/login" search={{ redirect: "/" }} replace />;
   }
 
+  if (state.kind === "redirect-admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (state.kind === "redirect-merchant") {
+    return <Navigate to="/merchant" replace />;
+  }
+
   if (state.kind === "shop") {
     return <Navigate to="/shop/$merchantId" params={{ merchantId: state.merchantId }} replace />;
   }
