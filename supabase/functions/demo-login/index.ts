@@ -73,8 +73,9 @@ Deno.serve(async (req) => {
 });
 
 // ---------- helpers ----------
+// 使用 any 规避 supabase-js 在 Deno 下的复杂泛型推断
 
-async function ensureAllDemoUsers(admin: ReturnType<typeof createClient>) {
+async function ensureAllDemoUsers(admin: any) {
   const { data: usersData, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (usersError) throw usersError;
 
