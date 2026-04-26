@@ -1,6 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/h5/page-header";
 import { RouteGuard } from "@/components/route-guard";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 import {
   Store,
   Users,
@@ -14,6 +17,7 @@ import {
   ShieldCheck,
   PlusCircle,
   ClipboardList,
+  LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
