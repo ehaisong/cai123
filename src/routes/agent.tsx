@@ -92,14 +92,6 @@ function AgentPage() {
     );
   }
 
-  const become = async () => {
-    const { error } = await supabase.rpc("become_agent");
-    if (error) { reportRpcError(error, { op: "rpc:become_agent", scope: "AgentPage" }); return; }
-    toast.success("已开通代理");
-    await refreshRoles();
-    load();
-  };
-
   if (!info?.is_agent) {
     const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
     const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
@@ -109,7 +101,10 @@ function AgentPage() {
         <div className="bg-card m-3 p-6 rounded-2xl text-center">
           <div className="text-4xl mb-3">🤝</div>
           <h2 className="text-lg font-bold mb-2">成为推广代理</h2>
-          <p className="text-sm text-muted-foreground mb-4">分享专属二维码，好友购买即可获得分成奖励</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            请先进入您要代理的商家店铺，在店铺页点击「申请成为本店代理」。<br />
+            一个代理只能归属一家商家。
+          </p>
           <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
             <div className="bg-muted rounded-lg p-3">
               <div className="text-muted-foreground">一级分成</div>
@@ -120,7 +115,7 @@ function AgentPage() {
               <div className="text-primary text-lg font-bold mt-1">{l2Pct}%</div>
             </div>
           </div>
-          <Button className="w-full" onClick={become}>立即成为代理</Button>
+          <Button className="w-full" onClick={() => navigate({ to: "/" })}>前往店铺</Button>
         </div>
       </div>
     );
