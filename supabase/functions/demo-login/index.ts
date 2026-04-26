@@ -212,21 +212,29 @@ async function ensureAgentChain(
   admin: ReturnType<typeof createClient>,
   ids: Record<DemoRole, string>,
 ) {
-  // agent 设置为 is_agent + agent_code
+  // agent 设置为 is_agent + agent_code，并绑定到 demo 演示店铺
   const { data: agentProfile } = await admin
     .from("profiles").select("id, user_code").eq("user_id", ids.agent).maybeSingle();
   if (!agentProfile) return;
-
-  await admin.from("agent_relations").update({
-    is_agent: true,
-    agent_code: agentProfile.user_code,
-  }).eq("user_id", ids.agent);
 
   // 拿到商家 id
   const { data: merchantRow } = await admin
     .from("merchants").select("id").eq("user_id", ids.merchant).maybeSingle();
 
+  await admin.from("agent_relations").update({
+    is_agent: true,
+    agent_code: agentProfile.user_code,
+    bound_merchant_id: merchantRow?.id ?? null,
+  }).eq("user_id", ids.agent);
+
   // buyer 的 upline 设置为 agent profile id；bound_merchant_id = merchant.id
+  // 同时强制 buyer.is_agent = false，防止"普通用户"被误标记为代理
+  await admin.from("agent_relations").update({
+    is_agent: false,
+    agent_code: null,
+  }).eq("user_id", ids.buyer);
+  await admin.from("user_roles").delete().eq("user_id", ids.buyer).eq("role", "agent");
+
   const { data: buyerRel } = await admin
     .from("agent_relations").select("upline_id").eq("user_id", ids.buyer).maybeSingle();
   if (buyerRel && !buyerRel.upline_id) {
