@@ -7,6 +7,7 @@ import { RouteGuard } from "@/components/route-guard";
 import { reportRpcError } from "@/lib/error-logger";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import { Search } from "lucide-react";
+import { AdminUserDetailExtras, OrdersLink } from "@/components/admin/user-detail-extras";
 
 export const Route = createFileRoute("/admin/agents")({
   component: () => (
@@ -20,6 +21,7 @@ function Inner() {
   const [rows, setRows] = useState<any[]>([]);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<any | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -34,14 +36,14 @@ function Inner() {
     const merchantIds = Array.from(new Set((ar ?? []).map((a: any) => a.bound_merchant_id).filter(Boolean)));
     let pmap: Record<string, any> = {};
     let mmap: Record<string, any> = {};
-    let wmap: Record<string, number> = {};
+    let wmap: Record<string, { commission: number; balance: number }> = {};
     if (userIds.length > 0) {
       const [{ data: ps }, { data: ws }] = await Promise.all([
         supabase.from("profiles").select("user_id, nickname, user_code, phone").in("user_id", userIds),
         supabase.from("wallets").select("user_id, total_commission, balance").in("user_id", userIds),
       ]);
       pmap = Object.fromEntries((ps ?? []).map((p: any) => [p.user_id, p]));
-      (ws ?? []).forEach((w: any) => { wmap[w.user_id] = Number(w.total_commission); });
+      (ws ?? []).forEach((w: any) => { wmap[w.user_id] = { commission: Number(w.total_commission), balance: Number(w.balance) }; });
     }
     if (merchantIds.length > 0) {
       const { data: ms } = await supabase.from("merchants").select("id, shop_name").in("id", merchantIds as string[]);
@@ -51,7 +53,8 @@ function Inner() {
       ...a,
       profile: pmap[a.user_id],
       merchant: a.bound_merchant_id ? mmap[a.bound_merchant_id] : null,
-      total_commission: wmap[a.user_id] ?? 0,
+      total_commission: wmap[a.user_id]?.commission ?? 0,
+      balance: wmap[a.user_id]?.balance ?? 0,
     })));
     setLoading(false);
   };
@@ -75,7 +78,7 @@ function Inner() {
         {loading && <p className="text-center py-4 text-sm text-muted-foreground">加载中…</p>}
         {!loading && filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无代理</p>}
         {filtered.map((r) => (
-          <div key={r.user_id} className="bg-card rounded-md p-3">
+          <button key={r.user_id} onClick={() => setSelected(r)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium truncate">{r.profile?.nickname ?? "未命名"}</div>
               <span className="text-xs text-success">{fmtMoney(r.total_commission)} 累计佣金</span>
@@ -83,9 +86,32 @@ function Inner() {
             <div className="text-xs text-muted-foreground mt-1">代理码 {r.agent_code ?? "-"} · {r.profile?.phone ?? "-"}</div>
             <div className="text-xs text-muted-foreground mt-0.5">归属店铺：{r.merchant?.shop_name ?? "未绑定"}</div>
             <div className="text-xs text-muted-foreground mt-0.5">成为代理：{fmtDate(r.created_at)}</div>
-          </div>
+          </button>
         ))}
       </main>
+
+      {selected && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end" onClick={() => setSelected(null)}>
+          <div className="w-full bg-card rounded-t-2xl p-4 space-y-3 max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between sticky top-0 bg-card pb-2 -mx-4 px-4 border-b border-border">
+              <h3 className="text-base font-medium">{selected.profile?.nickname ?? "未命名"}</h3>
+              <button onClick={() => setSelected(null)} className="text-sm text-muted-foreground">关闭</button>
+            </div>
+            <div className="text-sm space-y-1">
+              <div>代理码：{selected.agent_code ?? "-"}</div>
+              <div>用户编号：{selected.profile?.user_code ?? "-"}</div>
+              <div>手机号：{selected.profile?.phone ?? "-"}</div>
+              <div>归属店铺：{selected.merchant?.shop_name ?? "未绑定"}</div>
+              <div>成为代理：{fmtDate(selected.created_at)}</div>
+            </div>
+            <AdminUserDetailExtras
+              userId={selected.user_id}
+              asAgent
+              ordersLink={<OrdersLink to="/admin/orders" search={{ agent_id: selected.user_id }} label="查看该代理的分成订单" />}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
