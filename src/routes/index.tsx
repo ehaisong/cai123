@@ -1,130 +1,131 @@
-import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { BottomNav } from "@/components/h5/bottom-nav";
 import { useAuth } from "@/lib/auth-context";
+import { PageHeader } from "@/components/h5/page-header";
+import { Button } from "@/components/ui/button";
+import { Store } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   validateSearch: z.object({ ref: z.string().optional() }),
-  component: HomePage,
+  component: HomeRouter,
 });
 
-interface MerchantRow {
-  id: string;
-  shop_name: string;
-  shop_avatar_url: string | null;
-  shop_description: string | null;
-  total_sales: number;
-}
-interface AnnouncementRow { id: string; title: string; content: string | null; created_at: string; }
+type State =
+  | { kind: "loading" }
+  | { kind: "shop"; merchantId: string }
+  | { kind: "no-default" };
 
-function HomePage() {
-  const { user } = useAuth();
+function HomeRouter() {
+  const { user, loading: authLoading } = useAuth();
   const search = useSearch({ from: "/" });
-  const [merchants, setMerchants] = useState<MerchantRow[]>([]);
-  const [ann, setAnn] = useState<AnnouncementRow | null>(null);
-  const [keyword, setKeyword] = useState("");
+  const navigate = useNavigate();
+  const [state, setState] = useState<State>({ kind: "loading" });
 
   useEffect(() => {
-    supabase
-      .from("merchants")
-      .select("id, shop_name, shop_avatar_url, shop_description, total_sales")
-      .eq("status", "approved")
-      .order("total_sales", { ascending: false })
-      .limit(50)
-      .then(({ data }) => setMerchants(data ?? []));
-    supabase
-      .from("announcements")
-      .select("id, title, content, created_at")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .then(({ data }) => setAnn(data?.[0] ?? null));
-  }, []);
+    if (authLoading) return;
 
-  // 自动绑定推荐码
-  useEffect(() => {
-    if (user && search.ref) {
-      supabase.rpc("bind_referrer", { _agent_code: search.ref });
-    }
-  }, [user, search.ref]);
+    (async () => {
+      // 1) 若带 ref：先尝试绑定，再解析目标商家
+      let target: string | null = null;
 
-  const filtered = keyword
-    ? merchants.filter((m) => m.shop_name.includes(keyword))
-    : merchants;
+      if (search.ref) {
+        // 已登录用户：调用 RPC 写入归属商家/上线
+        if (user) {
+          await supabase.rpc("bind_referrer", { _agent_code: search.ref });
+        }
+        // 解析 ref → 商家 ID
+        if (search.ref.startsWith("M_")) {
+          target = search.ref.substring(2);
+        } else {
+          // 代理码：查上线代理所属商家
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("user_code", search.ref)
+            .maybeSingle();
+          if (p?.user_id) {
+            const { data: ar } = await supabase
+              .from("agent_relations")
+              .select("bound_merchant_id")
+              .eq("user_id", p.user_id)
+              .maybeSingle();
+            target = ar?.bound_merchant_id ?? null;
+          }
+        }
+      }
 
+      // 2) 已登录买家若有绑定商家，优先使用
+      if (!target && user) {
+        const { data: ar } = await supabase
+          .from("agent_relations")
+          .select("bound_merchant_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        target = ar?.bound_merchant_id ?? null;
+      }
+
+      // 3) 回退到管理员配置的默认店铺
+      if (!target) {
+        const { data: s } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "default_shop_id")
+          .maybeSingle();
+        const v = s?.value;
+        if (typeof v === "string" && v.length > 0) target = v;
+      }
+
+      // 4) 校验商家存在且已通过审核
+      if (target) {
+        const { data: m } = await supabase
+          .from("merchants")
+          .select("id")
+          .eq("id", target)
+          .eq("status", "approved")
+          .maybeSingle();
+        if (m?.id) {
+          setState({ kind: "shop", merchantId: m.id });
+          return;
+        }
+      }
+
+      setState({ kind: "no-default" });
+    })();
+  }, [authLoading, user?.id, search.ref]);
+
+  if (state.kind === "loading") {
+    return (
+      <div className="h5-shell">
+        <PageHeader title="加载中" />
+        <p className="text-center py-12 text-sm text-muted-foreground">正在为您准备店铺…</p>
+      </div>
+    );
+  }
+
+  if (state.kind === "shop") {
+    return <Navigate to="/shop/$merchantId" params={{ merchantId: state.merchantId }} replace />;
+  }
+
+  // 无默认店铺
   return (
     <div className="h5-shell flex min-h-screen flex-col">
-      <header className="sticky top-0 z-20 bg-card border-b border-border px-4 py-3">
-        <h1 className="text-base font-semibold">数据科学入门指南</h1>
-      </header>
-
-      {/* 公告卡片 */}
-      {ann && (
-        <div className="mx-3 mt-3 rounded-xl p-4 text-white shadow-sm" style={{ background: "var(--gradient-orange)" }}>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded">小吴说菜</span>
-            <span className="text-xs opacity-90">{ann.title}</span>
-          </div>
-          <p className="text-sm leading-snug opacity-95">{ann.content}</p>
+      <PageHeader title="欢迎" />
+      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-accent/40 flex items-center justify-center mb-4">
+          <Store className="w-7 h-7 text-muted-foreground" />
         </div>
-      )}
-
-      {/* 搜索框 */}
-      <div className="px-3 pt-3">
-        <input
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="搜索商家名称可关注 TA"
-          className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-      </div>
-
-      {/* 栏目区块 */}
-      <div className="px-3 pt-3">
-        <div className="bg-card rounded-md p-3 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">栏目</span>
-          <Link to="/merchants" className="text-info text-xs">查看全部 ›</Link>
-        </div>
-      </div>
-
-      {/* 商家列表 */}
-      <main className="flex-1 px-3 py-3 space-y-3">
-        {filtered.length === 0 && (
-          <div className="text-center py-10 text-muted-foreground text-sm">暂无商家</div>
+        <p className="text-base font-semibold">暂无可用店铺</p>
+        <p className="mt-1 mb-6 text-xs text-muted-foreground max-w-[260px]">
+          管理员尚未配置默认店铺，请通过商家或代理分享的链接进入店铺。
+        </p>
+        {!user && (
+          <Button className="w-full max-w-[240px]" onClick={() => navigate({ to: "/auth/login" })}>
+            登录
+          </Button>
         )}
-        {filtered.map((m) => (
-          <Link
-            key={m.id}
-            to="/shop/$merchantId"
-            params={{ merchantId: m.id }}
-            className="block bg-card rounded-xl p-3 shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-xl">
-                {m.shop_avatar_url ? (
-                  <img src={m.shop_avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  <span>🍱</span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{m.shop_name}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {m.shop_description ?? "暂无简介"}
-                </div>
-              </div>
-              <div className="text-xs text-info border border-info/30 rounded px-2 py-1">进店</div>
-            </div>
-          </Link>
-        ))}
-        {filtered.length > 0 && (
-          <p className="text-center text-xs text-muted-foreground py-4">没有更多了</p>
-        )}
-      </main>
-
-      <BottomNav />
+      </div>
     </div>
   );
 }

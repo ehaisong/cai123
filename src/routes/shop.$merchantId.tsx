@@ -1,8 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
+import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
+import { reportRpcError } from "@/lib/error-logger";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/$merchantId")({
   component: ShopPage,
@@ -24,19 +28,67 @@ interface Announcement { id: string; title: string; content: string | null; crea
 
 function ShopPage() {
   const { merchantId } = useParams({ from: "/shop/$merchantId" });
+  const { user, refreshRoles, hasRole } = useAuth();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [keyword, setKeyword] = useState("");
   const [ann, setAnn] = useState<Announcement | null>(null);
+  const [agentInfo, setAgentInfo] = useState<{ is_agent: boolean; bound_merchant_id: string | null } | null>(null);
+  const [isShopOwner, setIsShopOwner] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const loadAgent = async () => {
+    if (!user) { setAgentInfo(null); setIsShopOwner(false); return; }
+    const { data: ar } = await supabase
+      .from("agent_relations")
+      .select("is_agent, bound_merchant_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    setAgentInfo(ar ?? { is_agent: false, bound_merchant_id: null });
+    const { data: m } = await supabase
+      .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
+    setIsShopOwner(!!m);
+  };
 
   useEffect(() => {
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
     supabase.from("products").select("id, title, is_recommended, price, publish_at, category_id").eq("merchant_id", merchantId).eq("status", "published").order("is_recommended", { ascending: false }).order("publish_at", { ascending: false }).then(({ data }) => setProducts(data ?? []));
     supabase.from("announcements").select("id, title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(1).then(({ data }) => setAnn(data?.[0] ?? null));
-  }, [merchantId]);
+    loadAgent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantId, user?.id]);
+
+  const becomeAgentHere = async () => {
+    setBusy(true);
+    const { error } = await supabase.rpc("become_agent_for_merchant", { _merchant_id: merchantId });
+    setBusy(false);
+    if (error) {
+      reportRpcError(error, { op: "rpc:become_agent_for_merchant", scope: "ShopPage", payload: { merchantId } });
+      toast.error(error.message ?? "申请失败");
+      return;
+    }
+    toast.success("已成为本店代理");
+    await refreshRoles();
+    loadAgent();
+  };
+
+  const switchAgentHere = async () => {
+    if (!confirm("切换归属后，原商家代理身份将失效，确认切换？")) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("switch_agent_merchant", { _merchant_id: merchantId });
+    setBusy(false);
+    if (error) {
+      reportRpcError(error, { op: "rpc:switch_agent_merchant", scope: "ShopPage", payload: { merchantId } });
+      toast.error(error.message ?? "切换失败");
+      return;
+    }
+    toast.success("已切换为本店代理");
+    loadAgent();
+  };
+
 
   const filtered = products
     .filter((p) => activeCat === "all" || p.category_id === activeCat)
@@ -51,6 +103,17 @@ function ShopPage() {
         <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-sm">🍱</div>
         <span className="text-sm font-medium">{merchant?.shop_name ?? "—"}</span>
       </div>
+
+      {/* 代理身份 CTA */}
+      {user && !isShopOwner && !hasRole("admin") && agentInfo && (
+        <AgentCTA
+          isAgent={agentInfo.is_agent}
+          isBoundHere={agentInfo.bound_merchant_id === merchantId}
+          busy={busy}
+          onBecome={becomeAgentHere}
+          onSwitch={switchAgentHere}
+        />
+      )}
 
       {/* 公告广告位 */}
       {ann && (
@@ -132,6 +195,42 @@ function ShopPage() {
           </Link>
         ))}
       </main>
+    </div>
+  );
+}
+
+function AgentCTA({
+  isAgent, isBoundHere, busy, onBecome, onSwitch,
+}: {
+  isAgent: boolean;
+  isBoundHere: boolean;
+  busy: boolean;
+  onBecome: () => void;
+  onSwitch: () => void;
+}) {
+  if (isAgent && isBoundHere) {
+    return (
+      <div className="mx-3 mt-3 rounded-xl bg-success/10 text-success px-3 py-2 text-xs flex items-center justify-between">
+        <span>✓ 您已是本店代理，可前往代理中心查看推广二维码</span>
+      </div>
+    );
+  }
+  if (isAgent && !isBoundHere) {
+    return (
+      <div className="mx-3 mt-3 rounded-xl bg-warning/10 px-3 py-3 text-xs">
+        <p className="text-warning mb-2">您当前是其他商家的代理</p>
+        <Button size="sm" variant="outline" disabled={busy} onClick={onSwitch} className="w-full">
+          切换为本店代理
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="mx-3 mt-3 rounded-xl bg-primary/5 px-3 py-3 text-xs">
+      <p className="text-foreground/80 mb-2">想分享本店商品赚取佣金？</p>
+      <Button size="sm" disabled={busy} onClick={onBecome} className="w-full">
+        申请成为本店代理
+      </Button>
     </div>
   );
 }
