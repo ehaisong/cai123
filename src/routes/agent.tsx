@@ -8,7 +8,18 @@ import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
-import { Copy, Users, TrendingUp, Share2 } from "lucide-react";
+import { Copy, Users, TrendingUp, Share2, Wallet, CalendarDays } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/agent")({
