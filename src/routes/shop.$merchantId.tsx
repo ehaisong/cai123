@@ -130,9 +130,43 @@ function ShopPage() {
           isBoundHere={agentInfo.bound_merchant_id === merchantId}
           busy={busy}
           onBecome={becomeAgentHere}
-          onSwitch={switchAgentHere}
+          onSwitch={() => setSwitchOpen(true)}
         />
       )}
+
+      {/* 切换归属确认弹窗 */}
+      <AlertDialog open={switchOpen} onOpenChange={setSwitchOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>切换代理归属</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>您即将把代理归属切换到 <span className="font-medium text-foreground">{merchant?.shop_name ?? "本店"}</span>。</p>
+                <div className="rounded-md bg-muted px-3 py-2 text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">当前归属</span>
+                    <span className="font-medium text-foreground">{boundMerchantName ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">切换为</span>
+                    <span className="font-medium text-primary">{merchant?.shop_name ?? "—"}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-warning">
+                  切换后您将立即失去原商家的代理身份，原有上线关系也会被清除，已结算的历史佣金不受影响。
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>取消</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); performSwitch(); }}>
+              {busy ? "切换中…" : "确认切换"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* 公告广告位 */}
       {ann && (
