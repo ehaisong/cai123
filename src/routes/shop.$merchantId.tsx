@@ -1,8 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
+import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
+import { reportRpcError } from "@/lib/error-logger";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/$merchantId")({
   component: ShopPage,
