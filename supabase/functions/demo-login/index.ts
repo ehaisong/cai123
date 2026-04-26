@@ -197,7 +197,8 @@ async function ensureProfileSetup(
       status: "approved",
       real_name: merchantAcc.nickname,
       shop_avatar_url: merchantAcc.avatarUrl,
-      phone: merchantAcc.phone,
+      wechat_id: "demo_merchant_wx",
+      fans_count: 8888,
     });
   } else {
     await admin.from("merchants").update({
