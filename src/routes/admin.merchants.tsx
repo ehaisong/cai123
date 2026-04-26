@@ -101,8 +101,8 @@ function Inner() {
 
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end" onClick={() => setSelected(null)}>
-          <div className="w-full bg-card rounded-t-2xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
+          <div className="w-full bg-card rounded-t-2xl p-4 space-y-3 max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between sticky top-0 bg-card pb-2 -mx-4 px-4 border-b border-border">
               <h3 className="text-base font-medium">{selected.shop_name}</h3>
               <button onClick={() => setSelected(null)} className="text-sm text-muted-foreground">关闭</button>
             </div>
@@ -114,6 +114,12 @@ function Inner() {
               <div>状态：{selected.is_disabled ? "已禁用" : selected.status}</div>
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
             </div>
+            <DisableHistory isDisabled={selected.is_disabled} reason={selected.disabled_reason} at={selected.disabled_at} />
+            <AdminUserDetailExtras
+              userId={selected.user_id}
+              asMerchantUser
+              ordersLink={<OrdersLink to="/admin/orders" search={{ merchant_id: selected.id }} label="查看该店铺的订单" />}
+            />
             <Button
               variant={selected.is_disabled ? "default" : "destructive"}
               className="w-full"
