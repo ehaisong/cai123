@@ -221,8 +221,26 @@ function AgentPage() {
         </div>
       </div>
 
-      {/* 邀请统计 */}
+      {/* 业绩看板：4 个 KPI */}
       <div className="mx-3 grid grid-cols-2 gap-3">
+        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">累计返佣</div>
+            <div className="text-lg font-bold">¥{totals.all.toFixed(2)}</div>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <CalendarDays className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">今日收益</div>
+            <div className="text-lg font-bold">¥{todayEarnings.toFixed(2)}</div>
+          </div>
+        </div>
         <div className="bg-card rounded-xl p-3 flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
             <Users className="h-5 w-5" />
@@ -242,6 +260,59 @@ function AgentPage() {
           </div>
         </div>
       </div>
+
+      {/* 业绩走势图：14 天每日返佣 */}
+      <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-medium">近 14 天返佣走势</div>
+          <div className="text-xs text-muted-foreground">单位：元</div>
+        </div>
+        <div className="h-44 -ml-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={dailyEarnings} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="agentEarn" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={32} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [`¥${Number(v).toFixed(2)}`, "返佣"]}
+                labelFormatter={(l) => `日期：${l}`}
+              />
+              <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#agentEarn)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 引流走势图：14 天每日新增引流 */}
+      <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-medium">近 14 天每日引流</div>
+          <div className="text-xs text-muted-foreground">单位：人</div>
+        </div>
+        <div className="h-40 -ml-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={inviteesChart} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [`${v} 人`, "新增引流"]}
+                labelFormatter={(l) => `日期：${l}`}
+              />
+              <Bar dataKey="count" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
 
       {/* 二维码 */}
       <div className="bg-card m-3 p-5 rounded-2xl flex flex-col items-center">
