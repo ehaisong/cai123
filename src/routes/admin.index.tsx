@@ -65,7 +65,7 @@ const groups: Array<{ label: string; items: Card[] }> = [
     label: "商城设置",
     items: [
       { to: "/admin/settings", title: "通用设置", desc: "默认店铺/钱包购买", icon: Settings, color: "bg-slate-500/10 text-slate-600" },
-      { to: "/admin/payment", title: "支付参数", desc: "微信/支付宝商户配置", icon: CreditCard, color: "bg-rose-500/10 text-rose-600" },
+      { to: "/admin/payment", title: "支付通道", desc: "多通道录入与启停管理", icon: CreditCard, color: "bg-rose-500/10 text-rose-600" },
       { to: "/admin/wechat", title: "微信登录", desc: "开放平台 AppID/Secret", icon: KeyRound, color: "bg-teal-500/10 text-teal-600" },
       { to: "/admin/announcements", title: "公告管理", desc: "发布全站公告", icon: Megaphone, color: "bg-yellow-500/10 text-yellow-600" },
     ],
