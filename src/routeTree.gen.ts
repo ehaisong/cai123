@@ -33,13 +33,16 @@ import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
+import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminRechargeRouteImport } from './routes/admin.recharge'
+import { Route as AdminPaymentRouteImport } from './routes/admin.payment'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 
@@ -163,6 +166,11 @@ const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   path: '/admin/withdrawals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWechatRoute = AdminWechatRouteImport.update({
+  id: '/admin/wechat',
+  path: '/admin/wechat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -176,6 +184,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminRechargeRoute = AdminRechargeRouteImport.update({
   id: '/admin/recharge',
   path: '/admin/recharge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPaymentRoute = AdminPaymentRouteImport.update({
+  id: '/admin/payment',
+  path: '/admin/payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -196,6 +209,11 @@ const AdminCommissionRoute = AdminCommissionRouteImport.update({
 const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
   id: '/admin/applications',
   path: '/admin/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/admin/announcements',
+  path: '/admin/announcements',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAgentsRoute = AdminAgentsRouteImport.update({
@@ -221,13 +239,16 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/payment': typeof AdminPaymentRoute
   '/admin/recharge': typeof AdminRechargeRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
@@ -256,13 +277,16 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/payment': typeof AdminPaymentRoute
   '/admin/recharge': typeof AdminRechargeRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
@@ -292,13 +316,16 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/payment': typeof AdminPaymentRoute
   '/admin/recharge': typeof AdminRechargeRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
@@ -329,13 +356,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/admin/agents'
+    | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
     | '/admin/merchants'
     | '/admin/orders'
+    | '/admin/payment'
     | '/admin/recharge'
     | '/admin/settings'
     | '/admin/users'
+    | '/admin/wechat'
     | '/admin/withdrawals'
     | '/auth/login'
     | '/merchant/agents'
@@ -364,13 +394,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/admin/agents'
+    | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
     | '/admin/merchants'
     | '/admin/orders'
+    | '/admin/payment'
     | '/admin/recharge'
     | '/admin/settings'
     | '/admin/users'
+    | '/admin/wechat'
     | '/admin/withdrawals'
     | '/auth/login'
     | '/merchant/agents'
@@ -399,13 +432,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/admin/agents'
+    | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
     | '/admin/merchants'
     | '/admin/orders'
+    | '/admin/payment'
     | '/admin/recharge'
     | '/admin/settings'
     | '/admin/users'
+    | '/admin/wechat'
     | '/admin/withdrawals'
     | '/auth/login'
     | '/merchant/agents'
@@ -435,13 +471,16 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   WalletRoute: typeof WalletRouteWithChildren
   AdminAgentsRoute: typeof AdminAgentsRoute
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminCommissionRoute: typeof AdminCommissionRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminPaymentRoute: typeof AdminPaymentRoute
   AdminRechargeRoute: typeof AdminRechargeRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWechatRoute: typeof AdminWechatRoute
   AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
   AuthLoginRoute: typeof AuthLoginRoute
   MerchantAgentsRoute: typeof MerchantAgentsRoute
@@ -627,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWithdrawalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/wechat': {
+      id: '/admin/wechat'
+      path: '/admin/wechat'
+      fullPath: '/admin/wechat'
+      preLoaderRoute: typeof AdminWechatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -646,6 +692,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/recharge'
       fullPath: '/admin/recharge'
       preLoaderRoute: typeof AdminRechargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/payment': {
+      id: '/admin/payment'
+      path: '/admin/payment'
+      fullPath: '/admin/payment'
+      preLoaderRoute: typeof AdminPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/orders': {
@@ -674,6 +727,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/applications'
       fullPath: '/admin/applications'
       preLoaderRoute: typeof AdminApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/admin/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/agents': {
@@ -727,13 +787,16 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   WalletRoute: WalletRouteWithChildren,
   AdminAgentsRoute: AdminAgentsRoute,
+  AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
   AdminCommissionRoute: AdminCommissionRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminPaymentRoute: AdminPaymentRoute,
   AdminRechargeRoute: AdminRechargeRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWechatRoute: AdminWechatRoute,
   AdminWithdrawalsRoute: AdminWithdrawalsRoute,
   AuthLoginRoute: AuthLoginRoute,
   MerchantAgentsRoute: MerchantAgentsRoute,
