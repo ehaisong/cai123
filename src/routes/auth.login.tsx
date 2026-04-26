@@ -99,7 +99,7 @@ function LoginPage() {
         if (error) throw error;
         toast.success("登录成功");
       }
-      navigate({ to: search.redirect ?? "/" });
+      goAfterAuth("/");
     } catch (e: any) {
       toast.error(e.message ?? "操作失败");
     } finally {
