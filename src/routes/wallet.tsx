@@ -23,8 +23,9 @@ interface Withdrawal {
 }
 
 function WalletPage() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const navigate = useNavigate();
+  const canWithdraw = roles.includes("agent") || roles.includes("merchant");
   const [balance, setBalance] = useState(0);
   const [totalCommission, setTotalCommission] = useState(0);
   const [amount, setAmount] = useState<number>(0);
