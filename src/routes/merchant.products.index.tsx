@@ -8,7 +8,7 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
 
-export const Route = createFileRoute("/merchant/products")({
+export const Route = createFileRoute("/merchant/products/")({
   component: ProductsList,
 });
 

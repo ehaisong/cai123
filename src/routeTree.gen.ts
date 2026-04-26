@@ -28,7 +28,6 @@ import { Route as ProductProductIdRouteImport } from './routes/product.$productI
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
-import { Route as MerchantProductsRouteImport } from './routes/merchant.products'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
@@ -44,6 +43,7 @@ import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
+import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 
 const WalletRoute = WalletRouteImport.update({
@@ -141,11 +141,6 @@ const MerchantQrcodeRoute = MerchantQrcodeRouteImport.update({
   path: '/merchant/qrcode',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MerchantProductsRoute = MerchantProductsRouteImport.update({
-  id: '/merchant/products',
-  path: '/merchant/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MerchantApplyRoute = MerchantApplyRouteImport.update({
   id: '/merchant/apply',
   path: '/merchant/apply',
@@ -221,6 +216,11 @@ const AdminAgentsRoute = AdminAgentsRouteImport.update({
   path: '/admin/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantProductsIndexRoute = MerchantProductsIndexRouteImport.update({
+  id: '/merchant/products/',
+  path: '/merchant/products/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -253,7 +253,6 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
-  '/merchant/products': typeof MerchantProductsRouteWithChildren
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
@@ -264,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
+  '/merchant/products/': typeof MerchantProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -291,7 +291,6 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
-  '/merchant/products': typeof MerchantProductsRouteWithChildren
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
@@ -302,6 +301,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
+  '/merchant/products': typeof MerchantProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -330,7 +330,6 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
-  '/merchant/products': typeof MerchantProductsRouteWithChildren
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
@@ -341,6 +340,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
+  '/merchant/products/': typeof MerchantProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -370,7 +370,6 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
-    | '/merchant/products'
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
@@ -381,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/merchant/'
     | '/merchant/products/new'
+    | '/merchant/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -408,7 +408,6 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
-    | '/merchant/products'
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
@@ -419,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/merchant'
     | '/merchant/products/new'
+    | '/merchant/products'
   id:
     | '__root__'
     | '/'
@@ -446,7 +446,6 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
-    | '/merchant/products'
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
@@ -457,6 +456,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/merchant/'
     | '/merchant/products/new'
+    | '/merchant/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -485,7 +485,6 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   MerchantAgentsRoute: typeof MerchantAgentsRoute
   MerchantApplyRoute: typeof MerchantApplyRoute
-  MerchantProductsRoute: typeof MerchantProductsRouteWithChildren
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
   MerchantWalletRoute: typeof MerchantWalletRoute
@@ -494,6 +493,7 @@ export interface RootRouteChildren {
   ShopMeRoute: typeof ShopMeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
+  MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -631,13 +631,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantQrcodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/merchant/products': {
-      id: '/merchant/products'
-      path: '/merchant/products'
-      fullPath: '/merchant/products'
-      preLoaderRoute: typeof MerchantProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/merchant/apply': {
       id: '/merchant/apply'
       path: '/merchant/apply'
@@ -743,6 +736,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/products/': {
+      id: '/merchant/products/'
+      path: '/merchant/products'
+      fullPath: '/merchant/products/'
+      preLoaderRoute: typeof MerchantProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/products/new': {
       id: '/merchant/products/new'
       path: '/new'
@@ -763,17 +763,6 @@ const WalletRouteChildren: WalletRouteChildren = {
 
 const WalletRouteWithChildren =
   WalletRoute._addFileChildren(WalletRouteChildren)
-
-interface MerchantProductsRouteChildren {
-  MerchantProductsNewRoute: typeof MerchantProductsNewRoute
-}
-
-const MerchantProductsRouteChildren: MerchantProductsRouteChildren = {
-  MerchantProductsNewRoute: MerchantProductsNewRoute,
-}
-
-const MerchantProductsRouteWithChildren =
-  MerchantProductsRoute._addFileChildren(MerchantProductsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -801,7 +790,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   MerchantAgentsRoute: MerchantAgentsRoute,
   MerchantApplyRoute: MerchantApplyRoute,
-  MerchantProductsRoute: MerchantProductsRouteWithChildren,
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,
   MerchantWalletRoute: MerchantWalletRoute,
@@ -810,6 +798,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShopMeRoute: ShopMeRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
+  MerchantProductsIndexRoute: MerchantProductsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
