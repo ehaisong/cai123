@@ -9,12 +9,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/products/new")({
   component: NewProductPage,
 });
 
 function NewProductPage() {
+  return (
+    <RouteGuard title="新建商品" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <NewProductPageInner />
+    </RouteGuard>
+  );
+}
+
+function NewProductPageInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [merchantId, setMerchantId] = useState<string | null>(null);
