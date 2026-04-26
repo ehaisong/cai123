@@ -98,6 +98,37 @@ function LoginPage() {
           <Button className="w-full" onClick={submit} disabled={loading}>
             {loading ? "处理中…" : mode === "signin" ? "立即登录" : "注册并登录"}
           </Button>
+
+          <div className="relative my-1 text-center">
+            <span className="px-2 text-[11px] text-muted-foreground bg-card relative z-10">或</span>
+            <div className="absolute inset-x-0 top-1/2 h-px bg-border -z-0" />
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await signInAsDemo();
+                toast.success("已登录 Demo 账号");
+                navigate({ to: search.redirect ?? "/" });
+              } catch (e: any) {
+                toast.error(e?.message ?? "Demo 登录失败");
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            <Sparkles className="w-4 h-4 mr-2 text-warning" />
+            使用 Demo 账号一键登录
+          </Button>
+
+          <p className="text-center text-[11px] text-muted-foreground">
+            微信扫码登录即将上线
+          </p>
+
           <p className="text-center text-xs text-muted-foreground">
             <Link to="/" className="text-info">返回首页</Link>
           </p>
