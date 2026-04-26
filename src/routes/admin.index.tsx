@@ -277,12 +277,66 @@ function ConfigTab() {
     }
   };
   return (
-    <div className="bg-card rounded-md p-4 space-y-3">
-      <div><label className="text-xs">一级代理分成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.l1_rate} onChange={(e) => setCfg({ ...cfg, l1_rate: Number(e.target.value) })} /></div>
-      <div><label className="text-xs">二级代理分成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.l2_rate} onChange={(e) => setCfg({ ...cfg, l2_rate: Number(e.target.value) })} /></div>
-      <div><label className="text-xs">平台抽成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.platform_rate} onChange={(e) => setCfg({ ...cfg, platform_rate: Number(e.target.value) })} /></div>
-      <p className="text-xs text-muted-foreground">商家实得 = 1 - L1 - L2 - 平台</p>
-      <Button className="w-full" onClick={save}>保存配置</Button>
+    <div className="space-y-3">
+      <WalletPurchaseToggle />
+      <div className="bg-card rounded-md p-4 space-y-3">
+        <h3 className="text-sm font-medium">分成比例</h3>
+        <div><label className="text-xs">一级代理分成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.l1_rate} onChange={(e) => setCfg({ ...cfg, l1_rate: Number(e.target.value) })} /></div>
+        <div><label className="text-xs">二级代理分成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.l2_rate} onChange={(e) => setCfg({ ...cfg, l2_rate: Number(e.target.value) })} /></div>
+        <div><label className="text-xs">平台抽成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.platform_rate} onChange={(e) => setCfg({ ...cfg, platform_rate: Number(e.target.value) })} /></div>
+        <p className="text-xs text-muted-foreground">商家实得 = 1 - L1 - L2 - 平台</p>
+        <Button className="w-full" onClick={save}>保存配置</Button>
+      </div>
+    </div>
+  );
+}
+
+function WalletPurchaseToggle() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "wallet_purchase_enabled")
+      .maybeSingle()
+      .then(({ data }) => setEnabled(data?.value === true));
+  }, []);
+
+  const toggle = async (next: boolean) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert(
+        { key: "wallet_purchase_enabled", value: next as any, updated_at: new Date().toISOString() },
+        { onConflict: "key" },
+      );
+    setSaving(false);
+    if (error) {
+      reportRpcError(error, { op: "app_settings.upsert", scope: "AdminHome/WalletPurchaseToggle" });
+      return;
+    }
+    setEnabled(next);
+    toast.success(next ? "已开启钱包余额购买" : "已关闭钱包余额购买");
+  };
+
+  if (enabled === null) return <div className="bg-card rounded-md p-4 text-xs text-muted-foreground">加载购买配置中…</div>;
+
+  return (
+    <div className="bg-card rounded-md p-4 space-y-2">
+      <h3 className="text-sm font-medium">钱包余额购买</h3>
+      <p className="text-xs text-muted-foreground">
+        开启后，普通用户购买商品需先充值至钱包；关闭后，购买不扣余额（仅作演示/对接外部支付）。商家与代理的佣金入账始终生效。
+      </p>
+      <div className="flex items-center justify-between pt-1">
+        <span className={`text-sm ${enabled ? "text-success" : "text-muted-foreground"}`}>
+          当前：{enabled ? "已开启" : "已关闭"}
+        </span>
+        <Button size="sm" variant={enabled ? "outline" : "default"} disabled={saving} onClick={() => toggle(!enabled)}>
+          {enabled ? "关闭" : "开启"}
+        </Button>
+      </div>
     </div>
   );
 }
