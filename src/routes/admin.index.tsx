@@ -281,6 +281,7 @@ function ConfigTab() {
   return (
     <div className="space-y-3">
       <WalletPurchaseToggle />
+      <DefaultShopSelector />
       <div className="bg-card rounded-md p-4 space-y-3">
         <h3 className="text-sm font-medium">分成比例</h3>
         <div><label className="text-xs">一级代理分成比例 (0-1)</label><Input type="number" step={0.01} value={cfg.l1_rate} onChange={(e) => setCfg({ ...cfg, l1_rate: Number(e.target.value) })} /></div>
@@ -289,6 +290,67 @@ function ConfigTab() {
         <p className="text-xs text-muted-foreground">商家实得 = 1 - L1 - L2 - 平台</p>
         <Button className="w-full" onClick={save}>保存配置</Button>
       </div>
+    </div>
+  );
+}
+
+function DefaultShopSelector() {
+  const [shops, setShops] = useState<Array<{ id: string; shop_name: string }>>([]);
+  const [current, setCurrent] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("merchants")
+      .select("id, shop_name")
+      .eq("status", "approved")
+      .order("shop_name")
+      .then(({ data }) => setShops(data ?? []));
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "default_shop_id")
+      .maybeSingle()
+      .then(({ data }) => {
+        const v = data?.value;
+        setCurrent(typeof v === "string" ? v : "");
+      });
+  }, []);
+
+  const save = async (next: string) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert(
+        { key: "default_shop_id", value: (next || null) as any, updated_at: new Date().toISOString() },
+        { onConflict: "key" },
+      );
+    setSaving(false);
+    if (error) {
+      reportRpcError(error, { op: "app_settings.upsert(default_shop_id)", scope: "AdminHome/DefaultShopSelector" });
+      return;
+    }
+    setCurrent(next);
+    toast.success(next ? "已设置默认店铺" : "已清除默认店铺");
+  };
+
+  return (
+    <div className="bg-card rounded-md p-4 space-y-2">
+      <h3 className="text-sm font-medium">默认店铺</h3>
+      <p className="text-xs text-muted-foreground">
+        未通过推广链接进入网站的用户，将自动跳转到该默认店铺。
+      </p>
+      <select
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        value={current}
+        disabled={saving}
+        onChange={(e) => save(e.target.value)}
+      >
+        <option value="">— 未设置 —</option>
+        {shops.map((s) => (
+          <option key={s.id} value={s.id}>{s.shop_name}</option>
+        ))}
+      </select>
     </div>
   );
 }
