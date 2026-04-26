@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/h5/bottom-nav";
-import { Settings, Wallet, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut } from "lucide-react";
+import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut, UserCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fmtMoney } from "@/lib/format";
+import { signInAsDemo } from "@/lib/demo-login";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -19,6 +20,7 @@ function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [balance, setBalance] = useState(0);
   const [hideBalance, setHideBalance] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -26,11 +28,44 @@ function ProfilePage() {
     supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle().then(({ data }) => setBalance(Number(data?.balance ?? 0)));
   }, [user?.id]);
 
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    try {
+      await signInAsDemo();
+      toast.success("已登录 Demo 账号");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Demo 登录失败");
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   if (!user) {
     return (
-      <div className="h5-shell flex min-h-screen flex-col items-center justify-center">
-        <p className="mb-4 text-muted-foreground">请先登录</p>
-        <Button onClick={() => navigate({ to: "/auth/login" })}>去登录</Button>
+      <div className="h5-shell flex min-h-screen flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-accent/40 flex items-center justify-center mb-4">
+            <UserCircle2 className="w-12 h-12 text-muted-foreground" />
+          </div>
+          <p className="mb-1 text-base font-medium text-foreground">还未登录</p>
+          <p className="mb-6 text-xs text-muted-foreground">登录后查看余额、订单与代理收益</p>
+          <Button className="w-full max-w-[240px]" size="lg" onClick={() => navigate({ to: "/auth/login" })}>
+            去登录 / 注册
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full max-w-[240px] mt-3"
+            size="lg"
+            onClick={handleDemoLogin}
+            disabled={demoLoading}
+          >
+            <Sparkles className="w-4 h-4 mr-2 text-warning" />
+            {demoLoading ? "登录中…" : "使用 Demo 账号体验"}
+          </Button>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            微信扫码登录即将上线
+          </p>
+        </div>
         <BottomNav />
       </div>
     );
