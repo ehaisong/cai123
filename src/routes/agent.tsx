@@ -44,6 +44,7 @@ function AgentPage() {
   const [commissions, setCommissions] = useState<any[]>([]);
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
   const [counts, setCounts] = useState<{ l1: number; l2: number }>({ l1: 0, l2: 0 });
+  const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
   const [origin, setOrigin] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
@@ -53,10 +54,14 @@ function AgentPage() {
     setLoading(true);
     setOrigin(window.location.origin);
 
+    const since14 = new Date();
+    since14.setDate(since14.getDate() - 13);
+    since14.setHours(0, 0, 0, 0);
+
     const [arRes, pRes, cRes, cfgRes] = await Promise.all([
       supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
       supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
-      supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(50),
+      supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(500),
       supabase.from("commission_config").select("l1_rate, l2_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
 
@@ -69,13 +74,26 @@ function AgentPage() {
     setCommissions(cRes.data ?? []);
     setConfig(cfgRes.data ?? null);
 
-    // 邀请人数：直推（upline_id = 我的 profile.id），二级（upline_l2_id = 我的 profile.id）
+    // 邀请人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
     if (pRes.data?.id) {
-      const [l1, l2] = await Promise.all([
+      const [l1, l2, recentRel] = await Promise.all([
         supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_id", pRes.data.id),
         supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_l2_id", pRes.data.id),
+        supabase.from("agent_relations").select("created_at").or(`upline_id.eq.${pRes.data.id},upline_l2_id.eq.${pRes.data.id}`).gte("created_at", since14.toISOString()),
       ]);
       setCounts({ l1: l1.count ?? 0, l2: l2.count ?? 0 });
+
+      // 按日聚合
+      const buckets: Record<string, number> = {};
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(since14); d.setDate(since14.getDate() + i);
+        buckets[d.toISOString().slice(0, 10)] = 0;
+      }
+      (recentRel.data ?? []).forEach((r) => {
+        const k = new Date(r.created_at).toISOString().slice(0, 10);
+        if (k in buckets) buckets[k] += 1;
+      });
+      setRecentInvitees(Object.entries(buckets).map(([date, count]) => ({ date, count })));
     }
     setLoading(false);
   };
@@ -86,6 +104,36 @@ function AgentPage() {
     const l2 = commissions.filter((c) => c.level === 2).reduce((s, r) => s + Number(r.amount), 0);
     return { all: l1 + l2, l1, l2 };
   }, [commissions]);
+
+  const todayEarnings = useMemo(() => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    return commissions
+      .filter((c) => new Date(c.created_at) >= start)
+      .reduce((s, r) => s + Number(r.amount), 0);
+  }, [commissions]);
+
+  const dailyEarnings = useMemo(() => {
+    const since14 = new Date(); since14.setDate(since14.getDate() - 13); since14.setHours(0, 0, 0, 0);
+    const buckets: Record<string, number> = {};
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(since14); d.setDate(since14.getDate() + i);
+      buckets[d.toISOString().slice(0, 10)] = 0;
+    }
+    commissions.forEach((c) => {
+      const k = new Date(c.created_at).toISOString().slice(0, 10);
+      if (k in buckets) buckets[k] += Number(c.amount);
+    });
+    return Object.entries(buckets).map(([date, amount]) => ({
+      date,
+      label: date.slice(5),
+      amount: Number(amount.toFixed(2)),
+    }));
+  }, [commissions]);
+
+  const inviteesChart = useMemo(
+    () => recentInvitees.map((r) => ({ ...r, label: r.date.slice(5) })),
+    [recentInvitees],
+  );
 
   const filtered = useMemo(
     () => (tab === "all" ? commissions : commissions.filter((c) => String(c.level) === tab)),
