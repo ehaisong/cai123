@@ -104,6 +104,17 @@ function ShopPage() {
         <span className="text-sm font-medium">{merchant?.shop_name ?? "—"}</span>
       </div>
 
+      {/* 代理身份 CTA */}
+      {user && !isShopOwner && !hasRole("admin") && agentInfo && (
+        <AgentCTA
+          isAgent={agentInfo.is_agent}
+          isBoundHere={agentInfo.bound_merchant_id === merchantId}
+          busy={busy}
+          onBecome={becomeAgentHere}
+          onSwitch={switchAgentHere}
+        />
+      )}
+
       {/* 公告广告位 */}
       {ann && (
         <div className="mx-3 mt-3 rounded-xl p-3 text-white" style={{ background: "var(--gradient-orange)" }}>
