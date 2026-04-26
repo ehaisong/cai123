@@ -1,10 +1,9 @@
-import { createFileRoute, Navigate, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
-import { Button } from "@/components/ui/button";
 import { Store } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -15,31 +14,34 @@ export const Route = createFileRoute("/")({
 type State =
   | { kind: "loading" }
   | { kind: "shop"; merchantId: string }
+  | { kind: "redirect-login" }
   | { kind: "no-default" };
 
 function HomeRouter() {
   const { user, loading: authLoading } = useAuth();
   const search = useSearch({ from: "/" });
-  const navigate = useNavigate();
   const [state, setState] = useState<State>({ kind: "loading" });
 
   useEffect(() => {
     if (authLoading) return;
 
     (async () => {
-      // 1) 若带 ref：先尝试绑定，再解析目标商家
+      // A) 未带 ref 且未登录 → 跳转登录页（登录后回首页继续解析默认店铺）
+      if (!search.ref && !user) {
+        setState({ kind: "redirect-login" });
+        return;
+      }
+
+      // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
       let target: string | null = null;
 
       if (search.ref) {
-        // 已登录用户：调用 RPC 写入归属商家/上线
         if (user) {
           await supabase.rpc("bind_referrer", { _agent_code: search.ref });
         }
-        // 解析 ref → 商家 ID
         if (search.ref.startsWith("M_")) {
           target = search.ref.substring(2);
         } else {
-          // 代理码：查上线代理所属商家
           const { data: p } = await supabase
             .from("profiles")
             .select("user_id")
@@ -104,11 +106,15 @@ function HomeRouter() {
     );
   }
 
+  if (state.kind === "redirect-login") {
+    return <Navigate to="/auth/login" search={{ redirect: "/" }} replace />;
+  }
+
   if (state.kind === "shop") {
     return <Navigate to="/shop/$merchantId" params={{ merchantId: state.merchantId }} replace />;
   }
 
-  // 无默认店铺
+  // 已登录但无默认店铺
   return (
     <div className="h5-shell flex min-h-screen flex-col">
       <PageHeader title="欢迎" />
@@ -120,11 +126,6 @@ function HomeRouter() {
         <p className="mt-1 mb-6 text-xs text-muted-foreground max-w-[260px]">
           管理员尚未配置默认店铺，请通过商家或代理分享的链接进入店铺。
         </p>
-        {!user && (
-          <Button className="w-full max-w-[240px]" onClick={() => navigate({ to: "/auth/login" })}>
-            登录
-          </Button>
-        )}
       </div>
     </div>
   );
