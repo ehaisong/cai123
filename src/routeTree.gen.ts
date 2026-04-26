@@ -31,6 +31,7 @@ import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
+import { Route as AgentShareRouteImport } from './routes/agent.share'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
 import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -156,6 +157,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentShareRoute = AgentShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => AgentRoute,
+} as any)
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   id: '/admin/withdrawals',
   path: '/admin/withdrawals',
@@ -229,7 +235,7 @@ const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
+  '/agent': typeof AgentRouteWithChildren
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -267,7 +274,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
+  '/agent': typeof AgentRouteWithChildren
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -306,7 +314,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
+  '/agent': typeof AgentRouteWithChildren
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -367,6 +376,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/share'
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/share'
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -443,6 +454,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/share'
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -461,7 +473,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AgentRoute: typeof AgentRoute
+  AgentRoute: typeof AgentRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeedbackRoute: typeof FeedbackRoute
   MerchantsRoute: typeof MerchantsRoute
@@ -652,6 +664,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agent/share': {
+      id: '/agent/share'
+      path: '/share'
+      fullPath: '/agent/share'
+      preLoaderRoute: typeof AgentShareRouteImport
+      parentRoute: typeof AgentRoute
+    }
     '/admin/withdrawals': {
       id: '/admin/withdrawals'
       path: '/admin/withdrawals'
@@ -753,6 +772,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AgentRouteChildren {
+  AgentShareRoute: typeof AgentShareRoute
+}
+
+const AgentRouteChildren: AgentRouteChildren = {
+  AgentShareRoute: AgentShareRoute,
+}
+
+const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
+
 interface WalletRouteChildren {
   WalletTransactionsRoute: typeof WalletTransactionsRoute
 }
@@ -766,7 +795,7 @@ const WalletRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AgentRoute: AgentRoute,
+  AgentRoute: AgentRouteWithChildren,
   ContactRoute: ContactRoute,
   FeedbackRoute: FeedbackRoute,
   MerchantsRoute: MerchantsRoute,
