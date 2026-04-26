@@ -16,11 +16,13 @@ type State =
   | { kind: "loading" }
   | { kind: "shop"; merchantId: string }
   | { kind: "redirect-login" }
+  | { kind: "redirect-admin" }
+  | { kind: "redirect-merchant" }
   | { kind: "invalid-ref"; defaultShopId: string | null }
   | { kind: "no-default" };
 
 function HomeRouter() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasRole } = useAuth();
   const search = useSearch({ from: "/" });
   const [state, setState] = useState<State>({ kind: "loading" });
 
@@ -32,6 +34,19 @@ function HomeRouter() {
       if (!search.ref && !user) {
         setState({ kind: "redirect-login" });
         return;
+      }
+
+      // B) 已登录的管理员/商家：进入对应管理后台，而不是寻找店铺首页
+      //    （仅当未携带 ref 时生效；带 ref 通常意味着主动通过推广/二维码进入店铺）
+      if (!search.ref && user) {
+        if (hasRole("admin")) {
+          setState({ kind: "redirect-admin" });
+          return;
+        }
+        if (hasRole("merchant")) {
+          setState({ kind: "redirect-merchant" });
+          return;
+        }
       }
 
       // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
@@ -125,7 +140,7 @@ function HomeRouter() {
       setState({ kind: "no-default" });
       void refResolved;
     })();
-  }, [authLoading, user?.id, search.ref]);
+  }, [authLoading, user?.id, search.ref, hasRole]);
 
   if (state.kind === "loading") {
     return (
@@ -138,6 +153,14 @@ function HomeRouter() {
 
   if (state.kind === "redirect-login") {
     return <Navigate to="/auth/login" search={{ redirect: "/" }} replace />;
+  }
+
+  if (state.kind === "redirect-admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (state.kind === "redirect-merchant") {
+    return <Navigate to="/merchant" replace />;
   }
 
   if (state.kind === "shop") {
