@@ -4,7 +4,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
-import { Store } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Store } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   validateSearch: z.object({ ref: z.string().optional() }),
