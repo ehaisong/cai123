@@ -121,11 +121,6 @@ function ShopPage() {
     <div className="h5-shell flex min-h-screen flex-col">
       <PageHeader title={merchant?.shop_name ?? "店铺"} />
 
-      {/* 商家头像横条 */}
-      <div className="bg-card flex items-center justify-center gap-2 py-2 border-b border-border">
-        <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-sm">🍱</div>
-        <span className="text-sm font-medium">{merchant?.shop_name ?? "—"}</span>
-      </div>
 
       {/* 代理身份 CTA */}
       {user && !isShopOwner && !hasRole("admin") && agentInfo && (
