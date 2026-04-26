@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -32,6 +32,7 @@ interface Announcement { id: string; title: string; content: string | null; crea
 
 function ShopPage() {
   const { merchantId } = useParams({ from: "/shop/$merchantId" });
+  const router = useRouter();
   const { user, refreshRoles, hasRole } = useAuth();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -105,7 +106,9 @@ function ShopPage() {
       return;
     }
     toast.success("已切换为本店代理");
-    loadAgent();
+    await refreshRoles();
+    // 重新走归属店铺路由：回到首页，由 index 解析最新 bound_merchant_id
+    router.history.push("/");
   };
 
 
