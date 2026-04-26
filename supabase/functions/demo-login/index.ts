@@ -153,9 +153,20 @@ async function ensureProfileSetup(
 
     const { data: p } = await admin.from("profiles").select("id, user_code").eq("user_id", userId).maybeSingle();
     if (!p) {
-      await admin.from("profiles").insert({ user_id: userId, user_code: userCode, nickname: acc.nickname });
+      await admin.from("profiles").insert({
+        user_id: userId,
+        user_code: userCode,
+        nickname: acc.nickname,
+        avatar_url: acc.avatarUrl,
+        phone: acc.phone,
+      });
     } else {
-      await admin.from("profiles").update({ nickname: acc.nickname }).eq("user_id", userId);
+      // 每次登录都强制同步资料，保证 4 个 Demo 账号一眼可区分
+      await admin.from("profiles").update({
+        nickname: acc.nickname,
+        avatar_url: acc.avatarUrl,
+        phone: acc.phone,
+      }).eq("user_id", userId);
     }
 
     const { data: w } = await admin.from("wallets").select("id").eq("user_id", userId).maybeSingle();
@@ -176,6 +187,7 @@ async function ensureProfileSetup(
 
   // 商家专属
   const merchantId = ids.merchant;
+  const merchantAcc = DEMO_ACCOUNTS.merchant;
   const { data: existingMerchant } = await admin.from("merchants").select("id").eq("user_id", merchantId).maybeSingle();
   if (!existingMerchant) {
     await admin.from("merchants").insert({
@@ -183,10 +195,15 @@ async function ensureProfileSetup(
       shop_name: "Demo 演示店铺",
       shop_description: "用于 Demo 体验的官方演示店铺，含多款示例商品",
       status: "approved",
-      real_name: "Demo 商家",
+      real_name: merchantAcc.nickname,
+      shop_avatar_url: merchantAcc.avatarUrl,
+      phone: merchantAcc.phone,
     });
   } else {
-    await admin.from("merchants").update({ status: "approved" }).eq("user_id", merchantId);
+    await admin.from("merchants").update({
+      status: "approved",
+      shop_avatar_url: merchantAcc.avatarUrl,
+    }).eq("user_id", merchantId);
   }
 }
 
