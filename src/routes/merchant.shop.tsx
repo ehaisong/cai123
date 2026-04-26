@@ -28,22 +28,24 @@ function MerchantShopPageInner() {
   const [merchant, setMerchant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ shop_name: "", shop_description: "", shop_avatar_url: "" });
+  const [form, setForm] = useState({ shop_name: "", shop_description: "", shop_avatar_url: "", payment_channel_id: "" as string | "" });
+  const [channels, setChannels] = useState<{ id: string; name: string; provider: string }[]>([]);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     (async () => {
-      const { data } = await supabase
-        .from("merchants")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setMerchant(data);
-      if (data) {
+      const [{ data: m }, { data: ch }] = await Promise.all([
+        supabase.from("merchants").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("payment_channels").select("id,name,provider").eq("is_enabled", true).order("sort_order"),
+      ]);
+      setMerchant(m);
+      setChannels((ch ?? []) as any);
+      if (m) {
         setForm({
-          shop_name: data.shop_name ?? "",
-          shop_description: data.shop_description ?? "",
-          shop_avatar_url: data.shop_avatar_url ?? "",
+          shop_name: m.shop_name ?? "",
+          shop_description: m.shop_description ?? "",
+          shop_avatar_url: m.shop_avatar_url ?? "",
+          payment_channel_id: (m as any).payment_channel_id ?? "",
         });
       }
       setLoading(false);
@@ -60,6 +62,7 @@ function MerchantShopPageInner() {
         shop_name: form.shop_name,
         shop_description: form.shop_description,
         shop_avatar_url: form.shop_avatar_url,
+        payment_channel_id: form.payment_channel_id || null,
       })
       .eq("id", merchant.id);
     setSaving(false);
