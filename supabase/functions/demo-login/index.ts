@@ -10,11 +10,46 @@ type DemoRole = "admin" | "merchant" | "agent" | "buyer";
 
 const DEMO_PASSWORD = "demo-pass-2026!";
 
-const DEMO_ACCOUNTS: Record<DemoRole, { email: string; nickname: string; userCodePrefix: string }> = {
-  admin: { email: "demo.admin@hxxgo.test", nickname: "Demo 管理员", userCodePrefix: "admin" },
-  merchant: { email: "demo.merchant@hxxgo.test", nickname: "Demo 商家", userCodePrefix: "merch" },
-  agent: { email: "demo.agent@hxxgo.test", nickname: "Demo 代理", userCodePrefix: "agent" },
-  buyer: { email: "demo.buyer@hxxgo.test", nickname: "Demo 普通用户", userCodePrefix: "buyer" },
+// 为每个 Demo 角色配置完全不同的资料，便于测试区分（不同昵称 / 头像 / 手机号 / user_code）
+const DEMO_ACCOUNTS: Record<DemoRole, {
+  email: string;
+  nickname: string;
+  userCodePrefix: string;
+  phone: string;
+  avatarUrl: string;
+}> = {
+  admin: {
+    email: "demo.admin@hxxgo.test",
+    nickname: "🛡️ Demo 管理员",
+    userCodePrefix: "admin",
+    phone: "13800000001",
+    // DiceBear shapes —— 蓝色盾牌风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-admin&backgroundColor=2563eb",
+  },
+  merchant: {
+    email: "demo.merchant@hxxgo.test",
+    nickname: "🏪 Demo 商家",
+    userCodePrefix: "merch",
+    phone: "13800000002",
+    // 橙色 storefront 风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-merchant&backgroundColor=f97316",
+  },
+  agent: {
+    email: "demo.agent@hxxgo.test",
+    nickname: "🤝 Demo 代理",
+    userCodePrefix: "agent",
+    phone: "13800000003",
+    // 绿色推广风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-agent&backgroundColor=16a34a",
+  },
+  buyer: {
+    email: "demo.buyer@hxxgo.test",
+    nickname: "👤 Demo 普通用户",
+    userCodePrefix: "buyer",
+    phone: "13800000004",
+    // 紫色普通用户风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-buyer&backgroundColor=a855f7",
+  },
 };
 
 Deno.serve(async (req) => {
@@ -118,9 +153,20 @@ async function ensureProfileSetup(
 
     const { data: p } = await admin.from("profiles").select("id, user_code").eq("user_id", userId).maybeSingle();
     if (!p) {
-      await admin.from("profiles").insert({ user_id: userId, user_code: userCode, nickname: acc.nickname });
+      await admin.from("profiles").insert({
+        user_id: userId,
+        user_code: userCode,
+        nickname: acc.nickname,
+        avatar_url: acc.avatarUrl,
+        phone: acc.phone,
+      });
     } else {
-      await admin.from("profiles").update({ nickname: acc.nickname }).eq("user_id", userId);
+      // 每次登录都强制同步资料，保证 4 个 Demo 账号一眼可区分
+      await admin.from("profiles").update({
+        nickname: acc.nickname,
+        avatar_url: acc.avatarUrl,
+        phone: acc.phone,
+      }).eq("user_id", userId);
     }
 
     const { data: w } = await admin.from("wallets").select("id").eq("user_id", userId).maybeSingle();
@@ -141,6 +187,7 @@ async function ensureProfileSetup(
 
   // 商家专属
   const merchantId = ids.merchant;
+  const merchantAcc = DEMO_ACCOUNTS.merchant;
   const { data: existingMerchant } = await admin.from("merchants").select("id").eq("user_id", merchantId).maybeSingle();
   if (!existingMerchant) {
     await admin.from("merchants").insert({
@@ -148,10 +195,16 @@ async function ensureProfileSetup(
       shop_name: "Demo 演示店铺",
       shop_description: "用于 Demo 体验的官方演示店铺，含多款示例商品",
       status: "approved",
-      real_name: "Demo 商家",
+      real_name: merchantAcc.nickname,
+      shop_avatar_url: merchantAcc.avatarUrl,
+      wechat_id: "demo_merchant_wx",
+      fans_count: 8888,
     });
   } else {
-    await admin.from("merchants").update({ status: "approved" }).eq("user_id", merchantId);
+    await admin.from("merchants").update({
+      status: "approved",
+      shop_avatar_url: merchantAcc.avatarUrl,
+    }).eq("user_id", merchantId);
   }
 }
 
