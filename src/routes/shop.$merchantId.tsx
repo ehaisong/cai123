@@ -94,11 +94,11 @@ function ShopPage() {
     loadAgent();
   };
 
-  const switchAgentHere = async () => {
-    if (!confirm("切换归属后，原商家代理身份将失效，确认切换？")) return;
+  const performSwitch = async () => {
     setBusy(true);
     const { error } = await supabase.rpc("switch_agent_merchant", { _merchant_id: merchantId });
     setBusy(false);
+    setSwitchOpen(false);
     if (error) {
       reportRpcError(error, { op: "rpc:switch_agent_merchant", scope: "ShopPage", payload: { merchantId } });
       toast.error(error.message ?? "切换失败");
