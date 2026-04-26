@@ -18,25 +18,12 @@ function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [balance, setBalance] = useState(0);
   const [hideBalance, setHideBalance] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("user_code, nickname, avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => setProfile(data));
     supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle().then(({ data }) => setBalance(Number(data?.balance ?? 0)));
   }, [user?.id]);
-
-  const handleDemoLogin = async () => {
-    setDemoLoading(true);
-    try {
-      await signInAsDemo();
-      toast.success("已登录 Demo 账号");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Demo 登录失败");
-    } finally {
-      setDemoLoading(false);
-    }
-  };
 
   if (!user) {
     return (
@@ -54,14 +41,13 @@ function ProfilePage() {
             variant="outline"
             className="w-full max-w-[240px] mt-3"
             size="lg"
-            onClick={handleDemoLogin}
-            disabled={demoLoading}
+            onClick={() => navigate({ to: "/auth/login" })}
           >
             <Sparkles className="w-4 h-4 mr-2 text-warning" />
-            {demoLoading ? "登录中…" : "使用 Demo 账号体验"}
+            选择角色体验 Demo
           </Button>
-          <p className="mt-3 text-[11px] text-muted-foreground">
-            微信扫码登录即将上线
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            登录页提供：商城管理 / 商家 / 代理 / 普通用户
           </p>
         </div>
         <BottomNav />
