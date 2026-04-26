@@ -50,8 +50,8 @@
 :root {
   --radius: 0.625rem;
 
-  /* 浅灰背景，仿 H5 移动端 */
-  --background: oklch(0.97 0.005 250);
+  /* 暖米白背景，更精致的 H5 移动端底色 */
+  --background: oklch(0.985 0.006 70);
   --foreground: oklch(0.22 0.02 260);
 
   --card: oklch(1 0 0);
@@ -63,10 +63,10 @@
   --primary: oklch(0.62 0.21 30);
   --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.95 0.01 250);
+  --secondary: oklch(0.955 0.012 60);
   --secondary-foreground: oklch(0.3 0.02 260);
-  --muted: oklch(0.96 0.005 250);
-  --muted-foreground: oklch(0.55 0.02 260);
+  --muted: oklch(0.975 0.008 70);
+  --muted-foreground: oklch(0.5 0.02 260);
   --accent: oklch(0.95 0.02 30);
   --accent-foreground: oklch(0.45 0.18 30);
 
