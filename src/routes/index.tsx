@@ -1,10 +1,9 @@
-import { createFileRoute, Navigate, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
-import { Button } from "@/components/ui/button";
 import { Store } from "lucide-react";
 
 export const Route = createFileRoute("/")({
