@@ -93,23 +93,29 @@ function ProfilePage() {
           <Settings className="w-5 h-5 text-muted-foreground" />
         </div>
 
-        {/* 余额卡 */}
-        <div className="mt-4 rounded-xl p-4 text-white" style={{ background: "var(--gradient-orange)" }}>
-          <div className="flex items-center gap-2 text-sm opacity-90">
-            <span>我的余额</span>
-            <button onClick={() => setHideBalance((v) => !v)}><Eye className="w-4 h-4" /></button>
-          </div>
-          <div className="mt-1 text-3xl font-bold">{hideBalance ? "****" : balance.toFixed(2)}</div>
-        </div>
+        {/* 余额卡 - 仅代理/商家可见 */}
+        {(isAgent || isMerchant) && (
+          <>
+            <div className="mt-4 rounded-xl p-4 text-white" style={{ background: "var(--gradient-orange)" }}>
+              <div className="flex items-center gap-2 text-sm opacity-90">
+                <span>我的余额</span>
+                <button onClick={() => setHideBalance((v) => !v)}><Eye className="w-4 h-4" /></button>
+              </div>
+              <div className="mt-1 text-3xl font-bold">{hideBalance ? "****" : balance.toFixed(2)}</div>
+            </div>
 
-        <Button className="w-full mt-3 bg-success hover:bg-success/90 text-success-foreground" size="lg" onClick={() => navigate({ to: "/wallet" })}>
-          提 现
-        </Button>
+            <Button className="w-full mt-3 bg-success hover:bg-success/90 text-success-foreground" size="lg" onClick={() => navigate({ to: "/wallet" })}>
+              提 现
+            </Button>
+          </>
+        )}
       </div>
 
       {/* 功能格子 */}
       <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
-        <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="资金明细" to="/wallet/transactions" />
+        {(isAgent || isMerchant) && (
+          <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="资金明细" to="/wallet/transactions" />
+        )}
         <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
         <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="隐私协议" to="/privacy" />
         <MenuItem icon={<Handshake className="w-6 h-6 text-success" />} label="代理推广" to="/agent" />

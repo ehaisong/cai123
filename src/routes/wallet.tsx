@@ -23,8 +23,9 @@ interface Withdrawal {
 }
 
 function WalletPage() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const navigate = useNavigate();
+  const canWithdraw = roles.includes("agent") || roles.includes("merchant");
   const [balance, setBalance] = useState(0);
   const [totalCommission, setTotalCommission] = useState(0);
   const [amount, setAmount] = useState<number>(0);
@@ -61,6 +62,19 @@ function WalletPage() {
         <PageHeader title="我的钱包" />
         <div className="p-6 text-center">
           <Button onClick={() => navigate({ to: "/auth/login" })}>请先登录</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canWithdraw) {
+    return (
+      <div className="h5-shell">
+        <PageHeader title="我的钱包" />
+        <div className="p-8 text-center space-y-3">
+          <p className="text-sm text-muted-foreground">钱包仅对代理和商家开放</p>
+          <p className="text-xs text-muted-foreground">普通用户无需充值，购买后由平台直接结算</p>
+          <Button variant="outline" onClick={() => navigate({ to: "/profile" })}>返回个人中心</Button>
         </div>
       </div>
     );
