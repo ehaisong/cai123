@@ -198,3 +198,39 @@ function ShopPage() {
     </div>
   );
 }
+
+function AgentCTA({
+  isAgent, isBoundHere, busy, onBecome, onSwitch,
+}: {
+  isAgent: boolean;
+  isBoundHere: boolean;
+  busy: boolean;
+  onBecome: () => void;
+  onSwitch: () => void;
+}) {
+  if (isAgent && isBoundHere) {
+    return (
+      <div className="mx-3 mt-3 rounded-xl bg-success/10 text-success px-3 py-2 text-xs flex items-center justify-between">
+        <span>✓ 您已是本店代理，可前往代理中心查看推广二维码</span>
+      </div>
+    );
+  }
+  if (isAgent && !isBoundHere) {
+    return (
+      <div className="mx-3 mt-3 rounded-xl bg-warning/10 px-3 py-3 text-xs">
+        <p className="text-warning mb-2">您当前是其他商家的代理</p>
+        <Button size="sm" variant="outline" disabled={busy} onClick={onSwitch} className="w-full">
+          切换为本店代理
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="mx-3 mt-3 rounded-xl bg-primary/5 px-3 py-3 text-xs">
+      <p className="text-foreground/80 mb-2">想分享本店商品赚取佣金？</p>
+      <Button size="sm" disabled={busy} onClick={onBecome} className="w-full">
+        申请成为本店代理
+      </Button>
+    </div>
+  );
+}
