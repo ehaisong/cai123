@@ -8,7 +8,18 @@ import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
-import { Copy, Users, TrendingUp, Share2 } from "lucide-react";
+import { Copy, Users, TrendingUp, Share2, Wallet, CalendarDays } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/agent")({
@@ -33,6 +44,7 @@ function AgentPage() {
   const [commissions, setCommissions] = useState<any[]>([]);
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
   const [counts, setCounts] = useState<{ l1: number; l2: number }>({ l1: 0, l2: 0 });
+  const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
   const [origin, setOrigin] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
@@ -42,10 +54,14 @@ function AgentPage() {
     setLoading(true);
     setOrigin(window.location.origin);
 
+    const since14 = new Date();
+    since14.setDate(since14.getDate() - 13);
+    since14.setHours(0, 0, 0, 0);
+
     const [arRes, pRes, cRes, cfgRes] = await Promise.all([
       supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
       supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
-      supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(50),
+      supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(500),
       supabase.from("commission_config").select("l1_rate, l2_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
 
@@ -58,13 +74,26 @@ function AgentPage() {
     setCommissions(cRes.data ?? []);
     setConfig(cfgRes.data ?? null);
 
-    // 邀请人数：直推（upline_id = 我的 profile.id），二级（upline_l2_id = 我的 profile.id）
+    // 邀请人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
     if (pRes.data?.id) {
-      const [l1, l2] = await Promise.all([
+      const [l1, l2, recentRel] = await Promise.all([
         supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_id", pRes.data.id),
         supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_l2_id", pRes.data.id),
+        supabase.from("agent_relations").select("created_at").or(`upline_id.eq.${pRes.data.id},upline_l2_id.eq.${pRes.data.id}`).gte("created_at", since14.toISOString()),
       ]);
       setCounts({ l1: l1.count ?? 0, l2: l2.count ?? 0 });
+
+      // 按日聚合
+      const buckets: Record<string, number> = {};
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(since14); d.setDate(since14.getDate() + i);
+        buckets[d.toISOString().slice(0, 10)] = 0;
+      }
+      (recentRel.data ?? []).forEach((r) => {
+        const k = new Date(r.created_at).toISOString().slice(0, 10);
+        if (k in buckets) buckets[k] += 1;
+      });
+      setRecentInvitees(Object.entries(buckets).map(([date, count]) => ({ date, count })));
     }
     setLoading(false);
   };
@@ -75,6 +104,36 @@ function AgentPage() {
     const l2 = commissions.filter((c) => c.level === 2).reduce((s, r) => s + Number(r.amount), 0);
     return { all: l1 + l2, l1, l2 };
   }, [commissions]);
+
+  const todayEarnings = useMemo(() => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    return commissions
+      .filter((c) => new Date(c.created_at) >= start)
+      .reduce((s, r) => s + Number(r.amount), 0);
+  }, [commissions]);
+
+  const dailyEarnings = useMemo(() => {
+    const since14 = new Date(); since14.setDate(since14.getDate() - 13); since14.setHours(0, 0, 0, 0);
+    const buckets: Record<string, number> = {};
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(since14); d.setDate(since14.getDate() + i);
+      buckets[d.toISOString().slice(0, 10)] = 0;
+    }
+    commissions.forEach((c) => {
+      const k = new Date(c.created_at).toISOString().slice(0, 10);
+      if (k in buckets) buckets[k] += Number(c.amount);
+    });
+    return Object.entries(buckets).map(([date, amount]) => ({
+      date,
+      label: date.slice(5),
+      amount: Number(amount.toFixed(2)),
+    }));
+  }, [commissions]);
+
+  const inviteesChart = useMemo(
+    () => recentInvitees.map((r) => ({ ...r, label: r.date.slice(5) })),
+    [recentInvitees],
+  );
 
   const filtered = useMemo(
     () => (tab === "all" ? commissions : commissions.filter((c) => String(c.level) === tab)),
@@ -162,8 +221,26 @@ function AgentPage() {
         </div>
       </div>
 
-      {/* 邀请统计 */}
+      {/* 业绩看板：4 个 KPI */}
       <div className="mx-3 grid grid-cols-2 gap-3">
+        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">累计返佣</div>
+            <div className="text-lg font-bold">¥{totals.all.toFixed(2)}</div>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <CalendarDays className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">今日收益</div>
+            <div className="text-lg font-bold">¥{todayEarnings.toFixed(2)}</div>
+          </div>
+        </div>
         <div className="bg-card rounded-xl p-3 flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
             <Users className="h-5 w-5" />
@@ -183,6 +260,59 @@ function AgentPage() {
           </div>
         </div>
       </div>
+
+      {/* 业绩走势图：14 天每日返佣 */}
+      <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-medium">近 14 天返佣走势</div>
+          <div className="text-xs text-muted-foreground">单位：元</div>
+        </div>
+        <div className="h-44 -ml-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={dailyEarnings} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="agentEarn" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={32} />
+              <Tooltip
+                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [`¥${Number(v).toFixed(2)}`, "返佣"]}
+                labelFormatter={(l) => `日期：${l}`}
+              />
+              <Area type="monotone" dataKey="amount" stroke="var(--primary)" strokeWidth={2} fill="url(#agentEarn)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 引流走势图：14 天每日新增引流 */}
+      <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-medium">近 14 天每日引流</div>
+          <div className="text-xs text-muted-foreground">单位：人</div>
+        </div>
+        <div className="h-40 -ml-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={inviteesChart} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip
+                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [`${v} 人`, "新增引流"]}
+                labelFormatter={(l) => `日期：${l}`}
+              />
+              <Bar dataKey="count" fill="var(--success)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
 
       {/* 二维码 */}
       <div className="bg-card m-3 p-5 rounded-2xl flex flex-col items-center">
