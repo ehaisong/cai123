@@ -247,6 +247,7 @@ function ShopPage() {
           </Link>
         ))}
       </main>
+      <BottomNav />
     </div>
   );
 }
