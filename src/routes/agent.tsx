@@ -43,7 +43,7 @@ function AgentPage() {
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
   const [counts, setCounts] = useState<{ l1: number; l2: number }>({ l1: 0, l2: 0 });
   const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
-  const [origin, setOrigin] = useState("");
+  
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
 
