@@ -7,12 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/apply")({
   component: ApplyPage,
 });
 
 function ApplyPage() {
+  return (
+    <RouteGuard title="申请商家">
+      <ApplyPageInner />
+    </RouteGuard>
+  );
+}
+
+function ApplyPageInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
