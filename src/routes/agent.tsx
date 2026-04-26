@@ -296,40 +296,33 @@ function AgentPage() {
       </div>
 
 
-      {/* 二维码 */}
-      <div className="bg-card m-3 p-5 rounded-2xl flex flex-col items-center">
-        <p className="text-xs text-muted-foreground mb-3">扫码邀请好友注册</p>
-        <div className="bg-white p-3 rounded-xl border border-border">
-          <QRCodeSVG value={url} size={200} level="M" />
-        </div>
-        <div className="mt-3 text-[11px] text-muted-foreground break-all text-center px-2">{url}</div>
-        <div className="grid grid-cols-2 gap-2 w-full mt-4">
-          <Button variant="outline" onClick={() => copy(url)}>
-            <Copy className="h-4 w-4 mr-1" /> 复制链接
-          </Button>
-          <Button onClick={share}>
-            <Share2 className="h-4 w-4 mr-1" /> 立即分享
-          </Button>
-        </div>
-        <div className="mt-2 text-xs text-muted-foreground">推广码：<span className="font-mono">{code}</span></div>
+      {/* 操作入口：推广分享 / 申请提现 */}
+      <div className="mx-3 mt-3 grid grid-cols-2 gap-3">
+        <Link
+          to="/agent/share"
+          className="rounded-2xl p-4 text-white flex flex-col items-start justify-between min-h-[88px]"
+          style={{ background: "var(--gradient-orange)" }}
+        >
+          <Share2 className="h-5 w-5" />
+          <div>
+            <div className="text-base font-semibold">推广分享</div>
+            <div className="text-[11px] opacity-90">二维码 / 链接 / 话术</div>
+          </div>
+        </Link>
+        <Link
+          to="/wallet"
+          className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
+        >
+          <ArrowRightLeft className="h-5 w-5 text-primary" />
+          <div>
+            <div className="text-base font-semibold">申请提现</div>
+            <div className="text-[11px] text-muted-foreground">分成实时到账钱包</div>
+          </div>
+        </Link>
       </div>
 
-      {/* 分成规则 */}
-      <div className="bg-card mx-3 mb-3 p-4 rounded-2xl">
-        <div className="text-sm font-medium mb-3">分成规则</div>
-        <div className="space-y-2 text-xs text-muted-foreground">
-          <div className="flex items-center justify-between">
-            <span>· 一级代理（直接推广）</span>
-            <span className="text-primary font-semibold">{l1Pct}%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>· 二级代理（间接推广）</span>
-            <span className="text-primary font-semibold">{l2Pct}%</span>
-          </div>
-          <p className="pt-2 border-t border-border leading-relaxed">
-            好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。
-          </p>
-        </div>
+      <div className="px-3 pt-3 text-[11px] text-muted-foreground">
+        当前分成规则：一级 <span className="text-primary font-semibold">{l1Pct}%</span> · 二级 <span className="text-primary font-semibold">{l2Pct}%</span> · 推广码 <span className="font-mono">{code}</span>
       </div>
 
       {/* 分成记录 */}
