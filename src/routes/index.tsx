@@ -140,7 +140,7 @@ function HomeRouter() {
       setState({ kind: "no-default" });
       void refResolved;
     })();
-  }, [authLoading, user?.id, search.ref]);
+  }, [authLoading, user?.id, search.ref, hasRole]);
 
   if (state.kind === "loading") {
     return (
