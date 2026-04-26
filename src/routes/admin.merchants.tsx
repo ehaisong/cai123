@@ -9,6 +9,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { Search, Ban, CheckCircle2 } from "lucide-react";
+import { AdminUserDetailExtras, DisableHistory, OrdersLink } from "@/components/admin/user-detail-extras";
 
 export const Route = createFileRoute("/admin/merchants")({
   component: () => (
