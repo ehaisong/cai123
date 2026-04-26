@@ -2,40 +2,23 @@ import { supabase } from "@/integrations/supabase/client";
 
 // 临时 Demo 用户，方便设计期免登录跳过流程。
 // 后续接入微信扫码登录后可移除此文件。
-export const DEMO_EMAIL = "demo@hxxgo.com";
-export const DEMO_PASSWORD = "demo-pass-2026!";
 export const DEMO_NICKNAME = "Demo 体验账号";
 
 /**
- * 以 Demo 账号登录。如果账号不存在则先注册再登录。
+ * 以 Demo 账号登录。账号由后端安全创建并确认，避免设计期被邮箱校验/确认邮件阻断。
  * 返回登录后的 user，失败抛错。
  */
 export async function signInAsDemo() {
-  // 先尝试直接登录
-  const first = await supabase.auth.signInWithPassword({
-    email: DEMO_EMAIL,
-    password: DEMO_PASSWORD,
-  });
-  if (!first.error && first.data.user) return first.data.user;
-
-  // 登录失败 -> 尝试注册（首次使用的情况）
-  const signUp = await supabase.auth.signUp({
-    email: DEMO_EMAIL,
-    password: DEMO_PASSWORD,
-    options: {
-      data: { nickname: DEMO_NICKNAME },
-      emailRedirectTo: `${window.location.origin}/`,
-    },
-  });
-  if (signUp.error) {
-    // 已存在但密码错 / 其它错误，把原始登录错误抛出更直观
-    throw first.error ?? signUp.error;
+  const { data, error } = await supabase.functions.invoke("demo-login", { method: "POST" });
+  if (error) throw error;
+  if (!data?.session?.access_token || !data?.session?.refresh_token) {
+    throw new Error("Demo 登录服务未返回有效会话");
   }
-  // 部分项目开启了邮箱确认，这里再尝试一次登录以确保拿到 session
-  const second = await supabase.auth.signInWithPassword({
-    email: DEMO_EMAIL,
-    password: DEMO_PASSWORD,
+
+  const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
   });
-  if (second.error) throw second.error;
-  return second.data.user!;
+  if (sessionError) throw sessionError;
+  return sessionData.user!;
 }
