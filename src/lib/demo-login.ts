@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // 临时 Demo 用户，方便设计期免登录跳过流程。
 // 后续接入微信扫码登录后可移除此文件。
-export const DEMO_EMAIL = "demo@hxxgo.local";
+export const DEMO_EMAIL = "demo@hxxgo.com";
 export const DEMO_PASSWORD = "demo-pass-2026!";
 export const DEMO_NICKNAME = "Demo 体验账号";
 
