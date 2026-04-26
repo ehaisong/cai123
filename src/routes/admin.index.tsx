@@ -1,26 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { reportRpcError, reportRpcSuccess } from "@/lib/error-logger";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminHome,
 });
 
 function AdminHome() {
-  const { user, hasRole, loading } = useAuth();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<"apps" | "withdraw" | "recharge" | "config">("apps");
+  return (
+    <RouteGuard title="管理后台" roles={["admin"]} forbiddenText="此页面仅限管理员访问">
+      <AdminHomeInner />
+    </RouteGuard>
+  );
+}
 
-  if (loading) return <div className="h5-shell"><PageHeader title="管理后台" /><p className="text-center py-12 text-sm text-muted-foreground">加载中…</p></div>;
-  if (!user) return <div className="h5-shell"><PageHeader title="管理后台" /><div className="p-6 text-center"><Button onClick={() => navigate({ to: "/auth/login" })}>请先登录</Button></div></div>;
-  if (!hasRole("admin")) return <div className="h5-shell"><PageHeader title="管理后台" /><p className="text-center py-12 text-sm text-destructive">您不是管理员</p></div>;
+function AdminHomeInner() {
+  const [tab, setTab] = useState<"apps" | "withdraw" | "recharge" | "config">("apps");
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
