@@ -103,7 +103,7 @@ function ProfilePage() {
         </div>
 
         <Button className="w-full mt-3 bg-success hover:bg-success/90 text-success-foreground" size="lg" onClick={() => navigate({ to: "/wallet" })}>
-          充 值
+          提 现
         </Button>
       </div>
 
