@@ -106,7 +106,9 @@ function ShopPage() {
       return;
     }
     toast.success("已切换为本店代理");
-    loadAgent();
+    await refreshRoles();
+    // 重新走归属店铺路由：回到首页，由 index 解析最新 bound_merchant_id
+    router.history.push("/");
   };
 
 
