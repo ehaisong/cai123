@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { signInAsDemo } from "@/lib/demo-login";
-import { Sparkles } from "lucide-react";
+import { signInAsDemo, DEMO_ROLE_OPTIONS, type DemoRole } from "@/lib/demo-login";
+import { Sparkles, Shield, Store, Handshake, User } from "lucide-react";
 
 const searchSchema = z.object({ ref: z.string().optional(), redirect: z.string().optional() });
 
@@ -25,6 +25,29 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoRole, setDemoRole] = useState<DemoRole | null>(null);
+
+  const roleIcon = (r: DemoRole) => {
+    if (r === "admin") return <Shield className="w-4 h-4 text-primary" />;
+    if (r === "merchant") return <Store className="w-4 h-4 text-info" />;
+    if (r === "agent") return <Handshake className="w-4 h-4 text-success" />;
+    return <User className="w-4 h-4 text-warning" />;
+  };
+
+  const handleDemo = async (role: DemoRole) => {
+    setDemoRole(role);
+    setLoading(true);
+    try {
+      await signInAsDemo(role);
+      toast.success("已登录 Demo 账号");
+      navigate({ to: search.redirect ?? "/" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Demo 登录失败");
+    } finally {
+      setLoading(false);
+      setDemoRole(null);
+    }
+  };
 
   const submit = async () => {
     if (!email || !password) {
@@ -104,26 +127,32 @@ function LoginPage() {
             <div className="absolute inset-x-0 top-1/2 h-px bg-border -z-0" />
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={loading}
-            onClick={async () => {
-              setLoading(true);
-              try {
-                await signInAsDemo();
-                toast.success("已登录 Demo 账号");
-                navigate({ to: search.redirect ?? "/" });
-              } catch (e: any) {
-                toast.error(e?.message ?? "Demo 登录失败");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            <Sparkles className="w-4 h-4 mr-2 text-warning" />
-            使用 Demo 账号一键登录
-          </Button>
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Sparkles className="w-3.5 h-3.5 text-warning" />
+              <span>选择角色一键体验 Demo 账号</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {DEMO_ROLE_OPTIONS.map((opt) => (
+                <Button
+                  key={opt.role}
+                  variant="outline"
+                  size="sm"
+                  className="h-auto py-2 flex-col items-start gap-0.5 text-left"
+                  disabled={loading}
+                  onClick={() => handleDemo(opt.role)}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-medium">
+                    {roleIcon(opt.role)}
+                    {demoRole === opt.role ? "登录中…" : opt.label}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                    {opt.desc}
+                  </span>
+                </Button>
+              ))}
+            </div>
+          </div>
 
           <p className="text-center text-[11px] text-muted-foreground">
             微信扫码登录即将上线
