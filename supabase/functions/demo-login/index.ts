@@ -277,7 +277,7 @@ async function ensureMerchantProducts(
 }
 
 async function ensureBuyerOrders(
-  admin: ReturnType<typeof createClient>,
+  admin: any,
   ids: Record<DemoRole, string>,
 ) {
   // 检查 buyer 是否已有订单（避免重复刷数据）
@@ -285,26 +285,33 @@ async function ensureBuyerOrders(
     .from("orders").select("id", { count: "exact", head: true }).eq("buyer_id", ids.buyer);
   if ((count ?? 0) > 0) return;
 
-  // 给 buyer 充值 200 元（直接更新钱包 + 流水），让购买可成功
-  const { data: buyerWallet } = await admin
-    .from("wallets").select("balance, total_recharge").eq("user_id", ids.buyer).maybeSingle();
-  if (!buyerWallet) return;
-  const rechargeAmount = 200;
-  const newBalance = Number(buyerWallet.balance) + rechargeAmount;
-  await admin.from("wallets").update({
-    balance: newBalance,
-    total_recharge: Number(buyerWallet.total_recharge) + rechargeAmount,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", ids.buyer);
-  await admin.from("wallet_transactions").insert({
-    user_id: ids.buyer,
-    type: "recharge",
-    amount: rechargeAmount,
-    balance_after: newBalance,
-    description: "Demo 初始体验金",
-  });
+  // 读取「钱包余额购买」开关
+  const { data: setting } = await admin
+    .from("app_settings").select("value").eq("key", "wallet_purchase_enabled").maybeSingle();
+  const walletEnabled = setting?.value === true;
 
-  // 取商家发布的商品，前 2 个让 buyer 购买（通过 RPC purchase_product 走完整分成）
+  // 仅当开关开启时才给买家充值体验金
+  if (walletEnabled) {
+    const { data: buyerWallet } = await admin
+      .from("wallets").select("balance, total_recharge").eq("user_id", ids.buyer).maybeSingle();
+    if (buyerWallet) {
+      const rechargeAmount = 200;
+      const newBalance = Number(buyerWallet.balance) + rechargeAmount;
+      await admin.from("wallets").update({
+        balance: newBalance,
+        total_recharge: Number(buyerWallet.total_recharge) + rechargeAmount,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", ids.buyer);
+      await admin.from("wallet_transactions").insert({
+        user_id: ids.buyer,
+        type: "recharge",
+        amount: rechargeAmount,
+        balance_after: newBalance,
+        description: "Demo 初始体验金",
+      });
+    }
+  }
+
   const { data: merchantRow } = await admin
     .from("merchants").select("id").eq("user_id", ids.merchant).maybeSingle();
   if (!merchantRow) return;
@@ -313,8 +320,6 @@ async function ensureBuyerOrders(
     .eq("merchant_id", merchantRow.id).eq("status", "published").limit(2);
   if (!products || products.length === 0) return;
 
-  // purchase_product 是 SECURITY DEFINER 但依赖 auth.uid()，service role 调用时为空
-  // 因此手工在 service role 下完成订单 + 钱包 + 佣金记录的写入（与 RPC 逻辑一致）
   const { data: cfg } = await admin
     .from("commission_config").select("l1_rate, l2_rate, platform_rate").limit(1).maybeSingle();
   const l1Rate = Number(cfg?.l1_rate ?? 0.1);
@@ -326,11 +331,9 @@ async function ensureBuyerOrders(
     const platformAmount = Math.round(price * platformRate * 100) / 100;
     const merchantAmount = Math.max(0, price - l1Amount - platformAmount);
 
-    // 取代理 profile id
     const { data: agentProfile } = await admin
       .from("profiles").select("id").eq("user_id", ids.agent).maybeSingle();
 
-    // 创建订单
     const { data: order } = await admin.from("orders").insert({
       buyer_id: ids.buyer,
       product_id: p.id,
@@ -342,17 +345,19 @@ async function ensureBuyerOrders(
     }).select("id").single();
     if (!order) continue;
 
-    // 扣买家
-    const { data: bw } = await admin.from("wallets").select("balance").eq("user_id", ids.buyer).single();
-    const buyerAfter = Number(bw!.balance) - price;
-    await admin.from("wallets").update({ balance: buyerAfter, updated_at: new Date().toISOString() })
-      .eq("user_id", ids.buyer);
-    await admin.from("wallet_transactions").insert({
-      user_id: ids.buyer, type: "purchase", amount: -price, balance_after: buyerAfter,
-      reference_id: order.id, description: `购买：${p.title}`,
-    });
+    // 仅当开关开启时扣买家钱包
+    if (walletEnabled) {
+      const { data: bw } = await admin.from("wallets").select("balance").eq("user_id", ids.buyer).single();
+      const buyerAfter = Number(bw!.balance) - price;
+      await admin.from("wallets").update({ balance: buyerAfter, updated_at: new Date().toISOString() })
+        .eq("user_id", ids.buyer);
+      await admin.from("wallet_transactions").insert({
+        user_id: ids.buyer, type: "purchase", amount: -price, balance_after: buyerAfter,
+        reference_id: order.id, description: `购买：${p.title}`,
+      });
+    }
 
-    // 商家入账
+    // 商家入账（始终）
     const { data: mw } = await admin.from("wallets").select("balance").eq("user_id", ids.merchant).single();
     const merchantAfter = Number(mw!.balance) + merchantAmount;
     await admin.from("wallets").update({ balance: merchantAfter, updated_at: new Date().toISOString() })
@@ -364,7 +369,7 @@ async function ensureBuyerOrders(
     await admin.from("merchants").update({ total_sales: price }).eq("id", merchantRow.id);
     await admin.from("products").update({ sales_count: 1 }).eq("id", p.id);
 
-    // 一级代理分成
+    // 一级代理分成（始终）
     if (agentProfile && l1Amount > 0) {
       const { data: aw } = await admin.from("wallets").select("balance, total_commission").eq("user_id", ids.agent).single();
       const agentAfter = Number(aw!.balance) + l1Amount;
