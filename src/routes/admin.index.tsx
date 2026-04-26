@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/h5/page-header";
 import { RouteGuard } from "@/components/route-guard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
+import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Store,
@@ -18,6 +21,8 @@ import {
   PlusCircle,
   ClipboardList,
   LogOut,
+  ShoppingCart,
+  TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
