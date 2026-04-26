@@ -331,6 +331,7 @@ export type Database = {
           fans_count: number | null
           id: string
           is_disabled: boolean
+          payment_channel_id: string | null
           public_account: string | null
           real_name: string | null
           shop_avatar_url: string | null
@@ -349,6 +350,7 @@ export type Database = {
           fans_count?: number | null
           id?: string
           is_disabled?: boolean
+          payment_channel_id?: string | null
           public_account?: string | null
           real_name?: string | null
           shop_avatar_url?: string | null
@@ -367,6 +369,7 @@ export type Database = {
           fans_count?: number | null
           id?: string
           is_disabled?: boolean
+          payment_channel_id?: string | null
           public_account?: string | null
           real_name?: string | null
           shop_avatar_url?: string | null
@@ -378,7 +381,15 @@ export type Database = {
           user_id?: string
           wechat_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "merchants_payment_channel_id_fkey"
+            columns: ["payment_channel_id"]
+            isOneToOne: false
+            referencedRelation: "payment_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -486,6 +497,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_channels: {
+        Row: {
+          code: string
+          config: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          provider: string
+          remark: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          provider: string
+          remark?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          provider?: string
+          remark?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       product_history: {
         Row: {
