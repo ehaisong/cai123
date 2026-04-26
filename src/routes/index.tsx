@@ -35,8 +35,10 @@ function HomeRouter() {
 
       // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
       let target: string | null = null;
+      let refResolved = true; // 没有 ref 时视为"无需解析"，不算失败
 
       if (search.ref) {
+        refResolved = false;
         if (user) {
           await supabase.rpc("bind_referrer", { _agent_code: search.ref });
         }
@@ -57,6 +59,31 @@ function HomeRouter() {
             target = ar?.bound_merchant_id ?? null;
           }
         }
+
+        // 校验 ref 解析出的商家有效（存在且已审核）
+        if (target) {
+          const { data: m } = await supabase
+            .from("merchants")
+            .select("id")
+            .eq("id", target)
+            .eq("status", "approved")
+            .maybeSingle();
+          if (m?.id) {
+            setState({ kind: "shop", merchantId: m.id });
+            return;
+          }
+        }
+
+        // ref 无法解析为有效商家 → 显示兜底页（带默认店铺入口）
+        const { data: s } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "default_shop_id")
+          .maybeSingle();
+        const v = s?.value;
+        const defaultShopId = typeof v === "string" && v.length > 0 ? v : null;
+        setState({ kind: "invalid-ref", defaultShopId });
+        return;
       }
 
       // 2) 已登录买家若有绑定商家，优先使用
@@ -95,6 +122,7 @@ function HomeRouter() {
       }
 
       setState({ kind: "no-default" });
+      void refResolved;
     })();
   }, [authLoading, user?.id, search.ref]);
 
