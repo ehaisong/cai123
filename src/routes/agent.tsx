@@ -1,14 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
-import { toast } from "sonner";
-import { Copy, Users, TrendingUp, Share2, Wallet, CalendarDays } from "lucide-react";
+import { Users, TrendingUp, Share2, Wallet, CalendarDays, ArrowRightLeft } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
