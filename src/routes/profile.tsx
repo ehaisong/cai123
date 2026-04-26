@@ -102,7 +102,10 @@ function ProfilePage() {
         )}
         <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
         <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="隐私协议" to="/privacy" />
-        <MenuItem icon={<Handshake className="w-6 h-6 text-success" />} label="代理推广" to="/agent" />
+        <MenuItem icon={<Handshake className="w-6 h-6 text-success" />} label="代理中心" to="/agent" />
+        {isAgent && (
+          <MenuItem icon={<Share2 className="w-6 h-6 text-warning" />} label="推广分享" to="/agent/share" />
+        )}
         <MenuItem icon={<MessageSquareWarning className="w-6 h-6 text-warning" />} label="反馈建议" to="/feedback" />
         <MenuItem icon={<HeadphonesIcon className="w-6 h-6 text-info" />} label="联系客服" to="/contact" />
       </div>
