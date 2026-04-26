@@ -26,6 +26,8 @@ type Merchant = {
   real_name: string | null;
   status: string;
   is_disabled: boolean;
+  disabled_reason: string | null;
+  disabled_at: string | null;
   total_sales: number;
   fans_count: number | null;
   wechat_id: string | null;
