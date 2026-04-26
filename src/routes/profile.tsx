@@ -5,8 +5,6 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/h5/bottom-nav";
 import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut, UserCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { signInAsDemo } from "@/lib/demo-login";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
