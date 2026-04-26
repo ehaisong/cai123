@@ -144,6 +144,33 @@ function HomeRouter() {
     return <Navigate to="/shop/$merchantId" params={{ merchantId: state.merchantId }} replace />;
   }
 
+  // 二维码 ref 解析失败或对应店铺不可用
+  if (state.kind === "invalid-ref") {
+    return (
+      <div className="h5-shell flex min-h-screen flex-col">
+        <PageHeader title="无效链接" />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-warning/15 flex items-center justify-center mb-4">
+            <AlertTriangle className="w-7 h-7 text-warning" />
+          </div>
+          <p className="text-base font-semibold">该二维码无效或店铺不可用</p>
+          <p className="mt-1 mb-6 text-xs text-muted-foreground max-w-[280px]">
+            请确认二维码或推广链接来源是否正确。您也可以前往默认店铺继续浏览。
+          </p>
+          {state.defaultShopId ? (
+            <Button asChild size="sm" className="min-w-[180px]">
+              <Link to="/shop/$merchantId" params={{ merchantId: state.defaultShopId }} replace>
+                返回默认店铺
+              </Link>
+            </Button>
+          ) : (
+            <p className="text-xs text-muted-foreground">管理员尚未配置默认店铺</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // 已登录但无默认店铺
   return (
     <div className="h5-shell flex min-h-screen flex-col">
