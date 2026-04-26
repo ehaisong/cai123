@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WalletTransactionsRouteImport } from './routes/wallet.transactions'
+import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
@@ -98,6 +99,11 @@ const WalletTransactionsRoute = WalletTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => WalletRoute,
 } as any)
+const ShopMeRoute = ShopMeRouteImport.update({
+  id: '/shop/me',
+  path: '/shop/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopMerchantIdRoute = ShopMerchantIdRouteImport.update({
   id: '/shop/$merchantId',
   path: '/shop/$merchantId',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/merchant/wallet': typeof MerchantWalletRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
+  '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/merchant/wallet': typeof MerchantWalletRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
+  '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/merchant/wallet': typeof MerchantWalletRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
+  '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/merchant/wallet'
     | '/product/$productId'
     | '/shop/$merchantId'
+    | '/shop/me'
     | '/wallet/transactions'
     | '/admin/'
     | '/merchant/'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/merchant/wallet'
     | '/product/$productId'
     | '/shop/$merchantId'
+    | '/shop/me'
     | '/wallet/transactions'
     | '/admin'
     | '/merchant'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/merchant/wallet'
     | '/product/$productId'
     | '/shop/$merchantId'
+    | '/shop/me'
     | '/wallet/transactions'
     | '/admin/'
     | '/merchant/'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   MerchantWalletRoute: typeof MerchantWalletRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
+  ShopMeRoute: typeof ShopMeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
 }
@@ -419,6 +432,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/wallet/transactions'
       preLoaderRoute: typeof WalletTransactionsRouteImport
       parentRoute: typeof WalletRoute
+    }
+    '/shop/me': {
+      id: '/shop/me'
+      path: '/shop/me'
+      fullPath: '/shop/me'
+      preLoaderRoute: typeof ShopMeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/shop/$merchantId': {
       id: '/shop/$merchantId'
@@ -535,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantWalletRoute: MerchantWalletRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
+  ShopMeRoute: ShopMeRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
 }
