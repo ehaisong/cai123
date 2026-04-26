@@ -4,6 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
@@ -39,14 +43,29 @@ function ShopPage() {
   const [isShopOwner, setIsShopOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const [boundMerchantName, setBoundMerchantName] = useState<string | null>(null);
+  const [switchOpen, setSwitchOpen] = useState(false);
+
   const loadAgent = async () => {
-    if (!user) { setAgentInfo(null); setIsShopOwner(false); return; }
+    if (!user) {
+      setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null);
+      return;
+    }
     const { data: ar } = await supabase
       .from("agent_relations")
       .select("is_agent, bound_merchant_id")
       .eq("user_id", user.id)
       .maybeSingle();
     setAgentInfo(ar ?? { is_agent: false, bound_merchant_id: null });
+
+    if (ar?.is_agent && ar.bound_merchant_id && ar.bound_merchant_id !== merchantId) {
+      const { data: bm } = await supabase
+        .from("merchants").select("shop_name").eq("id", ar.bound_merchant_id).maybeSingle();
+      setBoundMerchantName(bm?.shop_name ?? "未知商家");
+    } else {
+      setBoundMerchantName(null);
+    }
+
     const { data: m } = await supabase
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
     setIsShopOwner(!!m);
@@ -75,11 +94,11 @@ function ShopPage() {
     loadAgent();
   };
 
-  const switchAgentHere = async () => {
-    if (!confirm("切换归属后，原商家代理身份将失效，确认切换？")) return;
+  const performSwitch = async () => {
     setBusy(true);
     const { error } = await supabase.rpc("switch_agent_merchant", { _merchant_id: merchantId });
     setBusy(false);
+    setSwitchOpen(false);
     if (error) {
       reportRpcError(error, { op: "rpc:switch_agent_merchant", scope: "ShopPage", payload: { merchantId } });
       toast.error(error.message ?? "切换失败");
@@ -111,9 +130,43 @@ function ShopPage() {
           isBoundHere={agentInfo.bound_merchant_id === merchantId}
           busy={busy}
           onBecome={becomeAgentHere}
-          onSwitch={switchAgentHere}
+          onSwitch={() => setSwitchOpen(true)}
         />
       )}
+
+      {/* 切换归属确认弹窗 */}
+      <AlertDialog open={switchOpen} onOpenChange={setSwitchOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>切换代理归属</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>您即将把代理归属切换到 <span className="font-medium text-foreground">{merchant?.shop_name ?? "本店"}</span>。</p>
+                <div className="rounded-md bg-muted px-3 py-2 text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">当前归属</span>
+                    <span className="font-medium text-foreground">{boundMerchantName ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">切换为</span>
+                    <span className="font-medium text-primary">{merchant?.shop_name ?? "—"}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-warning">
+                  切换后您将立即失去原商家的代理身份，原有上线关系也会被清除，已结算的历史佣金不受影响。
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>取消</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); performSwitch(); }}>
+              {busy ? "切换中…" : "确认切换"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* 公告广告位 */}
       {ann && (
