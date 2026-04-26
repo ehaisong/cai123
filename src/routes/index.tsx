@@ -15,6 +15,7 @@ type State =
   | { kind: "loading" }
   | { kind: "shop"; merchantId: string }
   | { kind: "redirect-login" }
+  | { kind: "invalid-ref"; defaultShopId: string | null }
   | { kind: "no-default" };
 
 function HomeRouter() {
