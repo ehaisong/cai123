@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
     if (!DEMO_ACCOUNTS[role]) throw new Error("无效的 Demo 角色");
     const account = DEMO_ACCOUNTS[role];
 
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
+    // 使用 any 规避 supabase-js 在 Deno 下的复杂泛型推断
+    const admin: any = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
