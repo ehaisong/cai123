@@ -186,6 +186,9 @@ function WithdrawTab() {
             <div className="text-sm font-medium">{fmtMoney(w.amount)} · {w.channel}</div>
             <span className="text-xs text-muted-foreground">{fmtDate(w.created_at)}</span>
           </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            用户：{w.profile?.nickname ?? "-"}（{w.profile?.user_code ?? "-"}）
+          </div>
           <div className="text-xs text-muted-foreground mt-1">{w.account_info}</div>
           {w.status === "pending" && (
             <div className="mt-2 flex gap-2">
