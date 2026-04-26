@@ -142,13 +142,22 @@ function WithdrawTab() {
   const load = async () => {
     const { data, error } = await supabase
       .from("withdrawals")
-      .select("*, profiles!inner(nickname, user_code)")
+      .select("*")
       .order("created_at", { ascending: false });
     if (error) {
       reportRpcError(error, { op: "withdrawals.select", scope: "AdminHome/WithdrawTab" });
       return;
     }
-    setList(data ?? []);
+    const userIds = Array.from(new Set((data ?? []).map((w: any) => w.user_id).filter(Boolean)));
+    let profileMap: Record<string, { nickname: string | null; user_code: string | null }> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, nickname, user_code")
+        .in("user_id", userIds);
+      profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.user_id, p]));
+    }
+    setList((data ?? []).map((w: any) => ({ ...w, profile: profileMap[w.user_id] })));
   };
   useEffect(() => { load(); }, []);
   const review = async (w: any, status: "approved" | "rejected" | "paid", reason?: string) => {
@@ -176,6 +185,9 @@ function WithdrawTab() {
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium">{fmtMoney(w.amount)} · {w.channel}</div>
             <span className="text-xs text-muted-foreground">{fmtDate(w.created_at)}</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            用户：{w.profile?.nickname ?? "-"}（{w.profile?.user_code ?? "-"}）
           </div>
           <div className="text-xs text-muted-foreground mt-1">{w.account_info}</div>
           {w.status === "pending" && (
