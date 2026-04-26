@@ -50,7 +50,7 @@ function AgentPage() {
   const load = async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
-    setOrigin(window.location.origin);
+    
 
     const since14 = new Date();
     since14.setDate(since14.getDate() - 13);
