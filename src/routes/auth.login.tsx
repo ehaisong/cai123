@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { signInAsDemo } from "@/lib/demo-login";
-import { Sparkles } from "lucide-react";
+import { signInAsDemo, DEMO_ROLE_OPTIONS, type DemoRole } from "@/lib/demo-login";
+import { Sparkles, Shield, Store, Handshake, User } from "lucide-react";
 
 const searchSchema = z.object({ ref: z.string().optional(), redirect: z.string().optional() });
 
