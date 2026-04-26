@@ -42,7 +42,7 @@ function Inner() {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, user_id, user_code, nickname, phone, is_disabled, disabled_reason, created_at")
+      .select("id, user_id, user_code, nickname, phone, is_disabled, disabled_reason, disabled_at, created_at")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) { reportRpcError(error, { op: "profiles.select", scope: "AdminUsers" }); setLoading(false); return; }
