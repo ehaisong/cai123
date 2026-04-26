@@ -326,8 +326,11 @@ export type Database = {
       merchants: {
         Row: {
           created_at: string
+          disabled_at: string | null
+          disabled_reason: string | null
           fans_count: number | null
           id: string
+          is_disabled: boolean
           public_account: string | null
           real_name: string | null
           shop_avatar_url: string | null
@@ -341,8 +344,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          disabled_at?: string | null
+          disabled_reason?: string | null
           fans_count?: number | null
           id?: string
+          is_disabled?: boolean
           public_account?: string | null
           real_name?: string | null
           shop_avatar_url?: string | null
@@ -356,8 +362,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          disabled_at?: string | null
+          disabled_reason?: string | null
           fans_count?: number | null
           id?: string
+          is_disabled?: boolean
           public_account?: string | null
           real_name?: string | null
           shop_avatar_url?: string | null
@@ -598,7 +607,10 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          disabled_at: string | null
+          disabled_reason: string | null
           id: string
+          is_disabled: boolean
           nickname: string | null
           phone: string | null
           referred_merchant_id: string | null
@@ -610,7 +622,10 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          disabled_at?: string | null
+          disabled_reason?: string | null
           id?: string
+          is_disabled?: boolean
           nickname?: string | null
           phone?: string | null
           referred_merchant_id?: string | null
@@ -622,7 +637,10 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          disabled_at?: string | null
+          disabled_reason?: string | null
           id?: string
+          is_disabled?: boolean
           nickname?: string | null
           phone?: string | null
           referred_merchant_id?: string | null
@@ -789,6 +807,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_disabled: { Args: { _user_id: string }; Returns: boolean }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
       purchase_product: { Args: { _product_id: string }; Returns: string }
       submit_withdraw: {
