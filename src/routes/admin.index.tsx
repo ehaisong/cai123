@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/h5/page-header";
 import { RouteGuard } from "@/components/route-guard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
+import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Store,
@@ -18,6 +21,8 @@ import {
   PlusCircle,
   ClipboardList,
   LogOut,
+  ShoppingCart,
+  TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -76,9 +81,64 @@ const groups: Array<{ label: string; items: Card[] }> = [
   },
 ];
 
+type Stats = {
+  merchants: number;
+  users: number;
+  todayOrders: number;
+  todayAmount: number;
+};
+
 function AdminHomeInner() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const iso = startOfDay.toISOString();
+
+        const [mc, uc, oc, oa] = await Promise.all([
+          supabase.from("merchants").select("id", { count: "exact", head: true }),
+          supabase.from("profiles").select("id", { count: "exact", head: true }),
+          supabase
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", iso),
+          supabase
+            .from("orders")
+            .select("amount")
+            .eq("status", "paid")
+            .gte("paid_at", iso),
+        ]);
+
+        const todayAmount = (oa.data ?? []).reduce(
+          (sum, r: { amount: number | string | null }) => sum + Number(r.amount ?? 0),
+          0,
+        );
+
+        if (!cancel) {
+          setStats({
+            merchants: mc.count ?? 0,
+            users: uc.count ?? 0,
+            todayOrders: oc.count ?? 0,
+            todayAmount,
+          });
+        }
+      } catch (e) {
+        console.error("[admin stats]", e);
+      } finally {
+        if (!cancel) setLoadingStats(false);
+      }
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -89,6 +149,38 @@ function AdminHomeInner() {
       toast.error("退出失败，请重试");
     }
   };
+
+  const statCards: Array<{
+    label: string;
+    value: string;
+    icon: LucideIcon;
+    color: string;
+  }> = [
+    {
+      label: "商家总数",
+      value: stats ? String(stats.merchants) : "—",
+      icon: Store,
+      color: "bg-orange-500/10 text-orange-600",
+    },
+    {
+      label: "用户总数",
+      value: stats ? String(stats.users) : "—",
+      icon: Users,
+      color: "bg-blue-500/10 text-blue-600",
+    },
+    {
+      label: "今日订单",
+      value: stats ? String(stats.todayOrders) : "—",
+      icon: ShoppingCart,
+      color: "bg-cyan-500/10 text-cyan-600",
+    },
+    {
+      label: "今日成交",
+      value: stats ? fmtMoney(stats.todayAmount) : "—",
+      icon: TrendingUp,
+      color: "bg-emerald-500/10 text-emerald-600",
+    },
+  ];
 
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-muted/20">
@@ -108,6 +200,24 @@ function AdminHomeInner() {
         }
       />
       <main className="flex-1 px-3 py-3 space-y-4 pb-6">
+        <section>
+          <div className="grid grid-cols-2 gap-2">
+            {statCards.map((s) => (
+              <div key={s.label} className="bg-card rounded-xl p-3 flex items-center gap-3">
+                <div className={`shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${s.color}`}>
+                  <s.icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground truncate">{s.label}</div>
+                  <div className="text-lg font-semibold truncate">
+                    {loadingStats ? "…" : s.value}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {groups.map((g) => (
           <section key={g.label}>
             <h2 className="text-xs font-medium text-muted-foreground mb-2 px-1">{g.label}</h2>
