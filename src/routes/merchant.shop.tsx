@@ -189,10 +189,13 @@ function MerchantShopPageInner() {
             <Row label="收款通道">
               <select
                 value={form.payment_channel_id}
-                onChange={(e) => setForm({ ...form, payment_channel_id: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, payment_channel_id: e.target.value });
+                  toast("通道已切换，请点击下方「保存店铺信息」生效", { duration: 3500 });
+                }}
                 className="w-full bg-transparent text-sm py-1 outline-none"
               >
-                <option value="">未选择（暂不支持在线付款）</option>
+                <option value="">未选择</option>
                 {channels.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}（{c.provider === "wechat" ? "微信" : c.provider === "alipay" ? "支付宝" : "自定义"}）
@@ -200,6 +203,37 @@ function MerchantShopPageInner() {
                 ))}
               </select>
             </Row>
+          </div>
+
+          {/* 当前通道状态说明 */}
+          <div className="mx-3 mt-2">
+            {(() => {
+              const saved = (merchant as any).payment_channel_id as string | null;
+              const cur = saved ? channels.find((c) => c.id === saved) : null;
+              const dirty = (form.payment_channel_id || "") !== (saved || "");
+              if (cur) {
+                return (
+                  <div className="rounded-md bg-success/5 border border-success/20 p-2.5 text-xs text-success">
+                    当前生效通道：<span className="font-medium">{cur.name}</span>
+                    （{cur.provider === "wechat" ? "微信支付" : cur.provider === "alipay" ? "支付宝" : "自定义"}）
+                    {dirty && <span className="ml-2 text-warning">· 已修改未保存</span>}
+                  </div>
+                );
+              }
+              if (saved && !cur) {
+                return (
+                  <div className="rounded-md bg-warning/5 border border-warning/20 p-2.5 text-xs text-warning">
+                    原通道已被管理员禁用或删除，当前买家无法在线付款，请重新选择并保存。
+                  </div>
+                );
+              }
+              return (
+                <div className="rounded-md bg-muted/40 border border-border p-2.5 text-xs text-muted-foreground">
+                  暂未选择收款通道，买家暂不支持在线付款（订单将无法完成支付）。请在上方下拉中选择并保存。
+                  {dirty && <span className="ml-2 text-warning">· 已修改未保存</span>}
+                </div>
+              );
+            })()}
           </div>
 
           <div className="px-3 pt-4 pb-2 text-sm text-muted-foreground">店铺简介</div>
