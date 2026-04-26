@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/h5/bottom-nav";
-import { Settings, Wallet, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut } from "lucide-react";
+import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut, UserCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fmtMoney } from "@/lib/format";
+import { signInAsDemo } from "@/lib/demo-login";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
