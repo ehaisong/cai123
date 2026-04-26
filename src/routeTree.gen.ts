@@ -32,6 +32,11 @@ import { Route as MerchantProductsRouteImport } from './routes/merchant.products
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
+import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminRechargeRouteImport } from './routes/admin.recharge'
+import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
+import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 
 const WalletRoute = WalletRouteImport.update({
@@ -149,6 +154,31 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
+  id: '/admin/withdrawals',
+  path: '/admin/withdrawals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRechargeRoute = AdminRechargeRouteImport.update({
+  id: '/admin/recharge',
+  path: '/admin/recharge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCommissionRoute = AdminCommissionRouteImport.update({
+  id: '/admin/commission',
+  path: '/admin/commission',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
+  id: '/admin/applications',
+  path: '/admin/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -166,6 +196,11 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
+  '/admin/applications': typeof AdminApplicationsRoute
+  '/admin/commission': typeof AdminCommissionRoute
+  '/admin/recharge': typeof AdminRechargeRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -192,6 +227,11 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
+  '/admin/applications': typeof AdminApplicationsRoute
+  '/admin/commission': typeof AdminCommissionRoute
+  '/admin/recharge': typeof AdminRechargeRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -219,6 +259,11 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRouteWithChildren
+  '/admin/applications': typeof AdminApplicationsRoute
+  '/admin/commission': typeof AdminCommissionRoute
+  '/admin/recharge': typeof AdminRechargeRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -247,6 +292,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/wallet'
+    | '/admin/applications'
+    | '/admin/commission'
+    | '/admin/recharge'
+    | '/admin/settings'
+    | '/admin/withdrawals'
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -273,6 +323,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/wallet'
+    | '/admin/applications'
+    | '/admin/commission'
+    | '/admin/recharge'
+    | '/admin/settings'
+    | '/admin/withdrawals'
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -299,6 +354,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/wallet'
+    | '/admin/applications'
+    | '/admin/commission'
+    | '/admin/recharge'
+    | '/admin/settings'
+    | '/admin/withdrawals'
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -326,6 +386,11 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   WalletRoute: typeof WalletRouteWithChildren
+  AdminApplicationsRoute: typeof AdminApplicationsRoute
+  AdminCommissionRoute: typeof AdminCommissionRoute
+  AdminRechargeRoute: typeof AdminRechargeRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
   AuthLoginRoute: typeof AuthLoginRoute
   MerchantAgentsRoute: typeof MerchantAgentsRoute
   MerchantApplyRoute: typeof MerchantApplyRoute
@@ -503,6 +568,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/withdrawals': {
+      id: '/admin/withdrawals'
+      path: '/admin/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AdminWithdrawalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recharge': {
+      id: '/admin/recharge'
+      path: '/admin/recharge'
+      fullPath: '/admin/recharge'
+      preLoaderRoute: typeof AdminRechargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/commission': {
+      id: '/admin/commission'
+      path: '/admin/commission'
+      fullPath: '/admin/commission'
+      preLoaderRoute: typeof AdminCommissionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/applications': {
+      id: '/admin/applications'
+      path: '/admin/applications'
+      fullPath: '/admin/applications'
+      preLoaderRoute: typeof AdminApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/products/new': {
       id: '/merchant/products/new'
       path: '/new'
@@ -546,6 +646,11 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   WalletRoute: WalletRouteWithChildren,
+  AdminApplicationsRoute: AdminApplicationsRoute,
+  AdminCommissionRoute: AdminCommissionRoute,
+  AdminRechargeRoute: AdminRechargeRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminWithdrawalsRoute: AdminWithdrawalsRoute,
   AuthLoginRoute: AuthLoginRoute,
   MerchantAgentsRoute: MerchantAgentsRoute,
   MerchantApplyRoute: MerchantApplyRoute,
