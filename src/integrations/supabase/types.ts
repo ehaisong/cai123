@@ -777,6 +777,10 @@ export type Database = {
         Returns: string
       }
       become_agent: { Args: never; Returns: string }
+      become_agent_for_merchant: {
+        Args: { _merchant_id: string }
+        Returns: string
+      }
       bind_referrer: { Args: { _agent_code: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -790,6 +794,10 @@ export type Database = {
       submit_withdraw: {
         Args: { _account_info: string; _amount: number; _channel: string }
         Returns: string
+      }
+      switch_agent_merchant: {
+        Args: { _merchant_id: string }
+        Returns: boolean
       }
     }
     Enums: {
