@@ -10,11 +10,46 @@ type DemoRole = "admin" | "merchant" | "agent" | "buyer";
 
 const DEMO_PASSWORD = "demo-pass-2026!";
 
-const DEMO_ACCOUNTS: Record<DemoRole, { email: string; nickname: string; userCodePrefix: string }> = {
-  admin: { email: "demo.admin@hxxgo.test", nickname: "Demo 管理员", userCodePrefix: "admin" },
-  merchant: { email: "demo.merchant@hxxgo.test", nickname: "Demo 商家", userCodePrefix: "merch" },
-  agent: { email: "demo.agent@hxxgo.test", nickname: "Demo 代理", userCodePrefix: "agent" },
-  buyer: { email: "demo.buyer@hxxgo.test", nickname: "Demo 普通用户", userCodePrefix: "buyer" },
+// 为每个 Demo 角色配置完全不同的资料，便于测试区分（不同昵称 / 头像 / 手机号 / user_code）
+const DEMO_ACCOUNTS: Record<DemoRole, {
+  email: string;
+  nickname: string;
+  userCodePrefix: string;
+  phone: string;
+  avatarUrl: string;
+}> = {
+  admin: {
+    email: "demo.admin@hxxgo.test",
+    nickname: "🛡️ Demo 管理员",
+    userCodePrefix: "admin",
+    phone: "13800000001",
+    // DiceBear shapes —— 蓝色盾牌风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-admin&backgroundColor=2563eb",
+  },
+  merchant: {
+    email: "demo.merchant@hxxgo.test",
+    nickname: "🏪 Demo 商家",
+    userCodePrefix: "merch",
+    phone: "13800000002",
+    // 橙色 storefront 风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-merchant&backgroundColor=f97316",
+  },
+  agent: {
+    email: "demo.agent@hxxgo.test",
+    nickname: "🤝 Demo 代理",
+    userCodePrefix: "agent",
+    phone: "13800000003",
+    // 绿色推广风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-agent&backgroundColor=16a34a",
+  },
+  buyer: {
+    email: "demo.buyer@hxxgo.test",
+    nickname: "👤 Demo 普通用户",
+    userCodePrefix: "buyer",
+    phone: "13800000004",
+    // 紫色普通用户风
+    avatarUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=demo-buyer&backgroundColor=a855f7",
+  },
 };
 
 Deno.serve(async (req) => {
