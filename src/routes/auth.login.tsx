@@ -34,13 +34,20 @@ function LoginPage() {
     return <User className="w-4 h-4 text-warning" />;
   };
 
+  const roleHome: Record<DemoRole, string> = {
+    admin: "/admin",
+    merchant: "/merchant",
+    agent: "/agent",
+    buyer: "/",
+  };
+
   const handleDemo = async (role: DemoRole) => {
     setDemoRole(role);
     setLoading(true);
     try {
       await signInAsDemo(role);
       toast.success("已登录 Demo 账号");
-      navigate({ to: search.redirect ?? "/" });
+      navigate({ to: search.redirect ?? roleHome[role] });
     } catch (e: any) {
       toast.error(e?.message ?? "Demo 登录失败");
     } finally {
