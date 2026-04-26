@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/auth/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const search = useSearch({ from: "/auth/login" });
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -41,13 +42,30 @@ function LoginPage() {
     buyer: "/",
   };
 
+  // 仅允许站内相对路径，避免开放重定向
+  const safeRedirect = (raw?: string): string | null => {
+    if (!raw) return null;
+    if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+    return raw;
+  };
+
+  const goAfterAuth = (fallback: string) => {
+    const target = safeRedirect(search.redirect);
+    if (target) {
+      // 使用 history.push 支持任意已注册的路由（含 /shop/$merchantId 这类动态路由）
+      router.history.push(target);
+      return;
+    }
+    navigate({ to: fallback });
+  };
+
   const handleDemo = async (role: DemoRole) => {
     setDemoRole(role);
     setLoading(true);
     try {
       await signInAsDemo(role);
       toast.success("已登录 Demo 账号");
-      navigate({ to: search.redirect ?? roleHome[role] });
+      goAfterAuth(roleHome[role]);
     } catch (e: any) {
       toast.error(e?.message ?? "Demo 登录失败");
     } finally {
@@ -81,7 +99,7 @@ function LoginPage() {
         if (error) throw error;
         toast.success("登录成功");
       }
-      navigate({ to: search.redirect ?? "/" });
+      goAfterAuth("/");
     } catch (e: any) {
       toast.error(e.message ?? "操作失败");
     } finally {
