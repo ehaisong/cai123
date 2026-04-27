@@ -83,6 +83,7 @@ function MerchantHomeInner() {
         <Cell icon={<Wallet className="w-6 h-6 text-warning" />} label="收益提现" to="/merchant/wallet" />
         <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
         <Cell icon={<Users className="w-6 h-6 text-info" />} label="代理管理" to="/merchant/agents" />
+        <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
       </div>
     </div>
   );
