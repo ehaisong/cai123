@@ -228,9 +228,9 @@ const MerchantProductsIndexRoute = MerchantProductsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => MerchantProductsRoute,
+  id: '/merchant/products/new',
+  path: '/merchant/products/new',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -505,6 +505,7 @@ export interface RootRouteChildren {
   ShopMeRoute: typeof ShopMeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
+  MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
 }
 
@@ -764,10 +765,10 @@ declare module '@tanstack/react-router' {
     }
     '/merchant/products/new': {
       id: '/merchant/products/new'
-      path: '/new'
+      path: '/merchant/products/new'
       fullPath: '/merchant/products/new'
       preLoaderRoute: typeof MerchantProductsNewRouteImport
-      parentRoute: typeof MerchantProductsRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -827,6 +828,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShopMeRoute: ShopMeRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
+  MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
 }
 export const routeTree = rootRouteImport
