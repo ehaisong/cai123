@@ -46,6 +46,10 @@ import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcem
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
+import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
+import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
+import { Route as MerchantProductsProductIdIssuesBulkImportRouteImport } from './routes/merchant.products.$productId.issues.bulk-import'
+import { Route as MerchantProductsProductIdIssuesIssueIdEditRouteImport } from './routes/merchant.products.$productId.issues.$issueId.edit'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -232,6 +236,30 @@ const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
   path: '/merchant/products/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantProductsProductIdIssuesIndexRoute =
+  MerchantProductsProductIdIssuesIndexRouteImport.update({
+    id: '/merchant/products/$productId/issues/',
+    path: '/merchant/products/$productId/issues/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MerchantProductsProductIdIssuesNewRoute =
+  MerchantProductsProductIdIssuesNewRouteImport.update({
+    id: '/merchant/products/$productId/issues/new',
+    path: '/merchant/products/$productId/issues/new',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MerchantProductsProductIdIssuesBulkImportRoute =
+  MerchantProductsProductIdIssuesBulkImportRouteImport.update({
+    id: '/merchant/products/$productId/issues/bulk-import',
+    path: '/merchant/products/$productId/issues/bulk-import',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MerchantProductsProductIdIssuesIssueIdEditRoute =
+  MerchantProductsProductIdIssuesIssueIdEditRouteImport.update({
+    id: '/merchant/products/$productId/issues/$issueId/edit',
+    path: '/merchant/products/$productId/issues/$issueId/edit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -271,6 +299,10 @@ export interface FileRoutesByFullPath {
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
+  '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
+  '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
+  '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
+  '/merchant/products/$productId/issues/$issueId/edit': typeof MerchantProductsProductIdIssuesIssueIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -310,6 +342,10 @@ export interface FileRoutesByTo {
   '/merchant': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
+  '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
+  '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
+  '/merchant/products/$productId/issues': typeof MerchantProductsProductIdIssuesIndexRoute
+  '/merchant/products/$productId/issues/$issueId/edit': typeof MerchantProductsProductIdIssuesIssueIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -350,6 +386,10 @@ export interface FileRoutesById {
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
+  '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
+  '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
+  '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
+  '/merchant/products/$productId/issues/$issueId/edit': typeof MerchantProductsProductIdIssuesIssueIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -391,6 +431,10 @@ export interface FileRouteTypes {
     | '/merchant/'
     | '/merchant/products/new'
     | '/merchant/products/'
+    | '/merchant/products/$productId/issues/bulk-import'
+    | '/merchant/products/$productId/issues/new'
+    | '/merchant/products/$productId/issues/'
+    | '/merchant/products/$productId/issues/$issueId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -430,6 +474,10 @@ export interface FileRouteTypes {
     | '/merchant'
     | '/merchant/products/new'
     | '/merchant/products'
+    | '/merchant/products/$productId/issues/bulk-import'
+    | '/merchant/products/$productId/issues/new'
+    | '/merchant/products/$productId/issues'
+    | '/merchant/products/$productId/issues/$issueId/edit'
   id:
     | '__root__'
     | '/'
@@ -469,6 +517,10 @@ export interface FileRouteTypes {
     | '/merchant/'
     | '/merchant/products/new'
     | '/merchant/products/'
+    | '/merchant/products/$productId/issues/bulk-import'
+    | '/merchant/products/$productId/issues/new'
+    | '/merchant/products/$productId/issues/'
+    | '/merchant/products/$productId/issues/$issueId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -507,6 +559,10 @@ export interface RootRouteChildren {
   MerchantIndexRoute: typeof MerchantIndexRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
+  MerchantProductsProductIdIssuesBulkImportRoute: typeof MerchantProductsProductIdIssuesBulkImportRoute
+  MerchantProductsProductIdIssuesNewRoute: typeof MerchantProductsProductIdIssuesNewRoute
+  MerchantProductsProductIdIssuesIndexRoute: typeof MerchantProductsProductIdIssuesIndexRoute
+  MerchantProductsProductIdIssuesIssueIdEditRoute: typeof MerchantProductsProductIdIssuesIssueIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -770,6 +826,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantProductsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/products/$productId/issues/': {
+      id: '/merchant/products/$productId/issues/'
+      path: '/merchant/products/$productId/issues'
+      fullPath: '/merchant/products/$productId/issues/'
+      preLoaderRoute: typeof MerchantProductsProductIdIssuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/products/$productId/issues/new': {
+      id: '/merchant/products/$productId/issues/new'
+      path: '/merchant/products/$productId/issues/new'
+      fullPath: '/merchant/products/$productId/issues/new'
+      preLoaderRoute: typeof MerchantProductsProductIdIssuesNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/products/$productId/issues/bulk-import': {
+      id: '/merchant/products/$productId/issues/bulk-import'
+      path: '/merchant/products/$productId/issues/bulk-import'
+      fullPath: '/merchant/products/$productId/issues/bulk-import'
+      preLoaderRoute: typeof MerchantProductsProductIdIssuesBulkImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/products/$productId/issues/$issueId/edit': {
+      id: '/merchant/products/$productId/issues/$issueId/edit'
+      path: '/merchant/products/$productId/issues/$issueId/edit'
+      fullPath: '/merchant/products/$productId/issues/$issueId/edit'
+      preLoaderRoute: typeof MerchantProductsProductIdIssuesIssueIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -830,6 +914,14 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantIndexRoute: MerchantIndexRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
+  MerchantProductsProductIdIssuesBulkImportRoute:
+    MerchantProductsProductIdIssuesBulkImportRoute,
+  MerchantProductsProductIdIssuesNewRoute:
+    MerchantProductsProductIdIssuesNewRoute,
+  MerchantProductsProductIdIssuesIndexRoute:
+    MerchantProductsProductIdIssuesIndexRoute,
+  MerchantProductsProductIdIssuesIssueIdEditRoute:
+    MerchantProductsProductIdIssuesIssueIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
