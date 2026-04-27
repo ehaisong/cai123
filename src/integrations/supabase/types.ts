@@ -162,7 +162,9 @@ export type Database = {
       commission_config: {
         Row: {
           id: string
+          l1_max_rate: number
           l1_rate: number
+          l2_max_rate: number
           l2_rate: number
           platform_rate: number
           updated_at: string
@@ -170,7 +172,9 @@ export type Database = {
         }
         Insert: {
           id?: string
+          l1_max_rate?: number
           l1_rate?: number
+          l2_max_rate?: number
           l2_rate?: number
           platform_rate?: number
           updated_at?: string
@@ -178,7 +182,9 @@ export type Database = {
         }
         Update: {
           id?: string
+          l1_max_rate?: number
           l1_rate?: number
+          l2_max_rate?: number
           l2_rate?: number
           platform_rate?: number
           updated_at?: string
@@ -331,6 +337,9 @@ export type Database = {
           fans_count: number | null
           id: string
           is_disabled: boolean
+          l1_rate: number
+          l2_enabled: boolean
+          l2_rate: number
           payment_channel_id: string | null
           public_account: string | null
           real_name: string | null
@@ -350,6 +359,9 @@ export type Database = {
           fans_count?: number | null
           id?: string
           is_disabled?: boolean
+          l1_rate?: number
+          l2_enabled?: boolean
+          l2_rate?: number
           payment_channel_id?: string | null
           public_account?: string | null
           real_name?: string | null
@@ -369,6 +381,9 @@ export type Database = {
           fans_count?: number | null
           id?: string
           is_disabled?: boolean
+          l1_rate?: number
+          l2_enabled?: boolean
+          l2_rate?: number
           payment_channel_id?: string | null
           public_account?: string | null
           real_name?: string | null
