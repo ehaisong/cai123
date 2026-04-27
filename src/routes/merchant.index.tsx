@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2 } from "lucide-react";
+import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2, Percent } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/merchant/")({

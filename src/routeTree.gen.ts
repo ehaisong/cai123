@@ -28,6 +28,7 @@ import { Route as ProductProductIdRouteImport } from './routes/product.$productI
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
+import { Route as MerchantCommissionRouteImport } from './routes/merchant.commission'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
@@ -145,6 +146,11 @@ const MerchantShopRoute = MerchantShopRouteImport.update({
 const MerchantQrcodeRoute = MerchantQrcodeRouteImport.update({
   id: '/merchant/qrcode',
   path: '/merchant/qrcode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantCommissionRoute = MerchantCommissionRouteImport.update({
+  id: '/merchant/commission',
+  path: '/merchant/commission',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantApplyRoute = MerchantApplyRouteImport.update({
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
+  '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
+  '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
+  '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
@@ -430,6 +439,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
+    | '/merchant/commission'
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
@@ -474,6 +484,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
+    | '/merchant/commission'
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/merchant/agents'
     | '/merchant/apply'
+    | '/merchant/commission'
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
@@ -561,6 +573,7 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   MerchantAgentsRoute: typeof MerchantAgentsRoute
   MerchantApplyRoute: typeof MerchantApplyRoute
+  MerchantCommissionRoute: typeof MerchantCommissionRoute
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
   MerchantWalletRoute: typeof MerchantWalletRoute
@@ -710,6 +723,13 @@ declare module '@tanstack/react-router' {
       path: '/merchant/qrcode'
       fullPath: '/merchant/qrcode'
       preLoaderRoute: typeof MerchantQrcodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/commission': {
+      id: '/merchant/commission'
+      path: '/merchant/commission'
+      fullPath: '/merchant/commission'
+      preLoaderRoute: typeof MerchantCommissionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/merchant/apply': {
@@ -925,6 +945,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   MerchantAgentsRoute: MerchantAgentsRoute,
   MerchantApplyRoute: MerchantApplyRoute,
+  MerchantCommissionRoute: MerchantCommissionRoute,
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,
   MerchantWalletRoute: MerchantWalletRoute,
