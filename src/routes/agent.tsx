@@ -223,7 +223,7 @@ function AgentPage() {
             <div className="text-lg font-bold">¥{todayEarnings.toFixed(2)}</div>
           </div>
         </div>
-        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
+        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex items-center gap-3 active:opacity-70">
           <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
             <Users className="h-5 w-5" />
           </div>
@@ -231,8 +231,8 @@ function AgentPage() {
             <div className="text-xs text-muted-foreground">直接邀请</div>
             <div className="text-lg font-bold">{counts.l1}</div>
           </div>
-        </div>
-        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
+        </Link>
+        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex items-center gap-3 active:opacity-70">
           <div className="h-10 w-10 rounded-full bg-success/10 text-success flex items-center justify-center">
             <TrendingUp className="h-5 w-5" />
           </div>
@@ -240,7 +240,7 @@ function AgentPage() {
             <div className="text-xs text-muted-foreground">间接邀请</div>
             <div className="text-lg font-bold">{counts.l2}</div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* 业绩走势图：14 天每日返佣 */}
