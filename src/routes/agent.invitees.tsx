@@ -171,7 +171,7 @@ function InviteesPage() {
     <div className="h5-shell flex min-h-screen flex-col bg-background">
       <PageHeader
         title="我邀请的买家"
-        rightSlot={
+        right={
           <Link to="/agent/share" className="text-xs text-primary inline-flex items-center gap-1">
             <Share2 className="h-3.5 w-3.5" /> 推广
           </Link>
