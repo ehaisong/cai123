@@ -435,6 +435,7 @@ export type Database = {
           buyer_id: string
           created_at: string
           id: string
+          issue_id: string | null
           merchant_id: string
           paid_at: string | null
           product_id: string
@@ -448,6 +449,7 @@ export type Database = {
           buyer_id: string
           created_at?: string
           id?: string
+          issue_id?: string | null
           merchant_id: string
           paid_at?: string | null
           product_id: string
@@ -461,6 +463,7 @@ export type Database = {
           buyer_id?: string
           created_at?: string
           id?: string
+          issue_id?: string | null
           merchant_id?: string
           paid_at?: string | null
           product_id?: string
@@ -571,6 +574,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_issues: {
+        Row: {
+          created_at: string
+          id: string
+          issue_no: string
+          paid_content: string | null
+          product_id: string
+          publish_at: string
+          result: Database["public"]["Enums"]["product_result"]
+          result_note: string | null
+          reveal_at: string | null
+          sales_count: number
+          status: Database["public"]["Enums"]["product_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issue_no: string
+          paid_content?: string | null
+          product_id: string
+          publish_at?: string
+          result?: Database["public"]["Enums"]["product_result"]
+          result_note?: string | null
+          reveal_at?: string | null
+          sales_count?: number
+          status?: Database["public"]["Enums"]["product_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issue_no?: string
+          paid_content?: string | null
+          product_id?: string
+          publish_at?: string
+          result?: Database["public"]["Enums"]["product_result"]
+          result_note?: string | null
+          reveal_at?: string | null
+          sales_count?: number
+          status?: Database["public"]["Enums"]["product_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_issues_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -862,7 +918,9 @@ export type Database = {
       }
       is_user_disabled: { Args: { _user_id: string }; Returns: boolean }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
-      purchase_product: { Args: { _product_id: string }; Returns: string }
+      purchase_product:
+        | { Args: { _product_id: string }; Returns: string }
+        | { Args: { _issue_id?: string; _product_id: string }; Returns: string }
       submit_withdraw: {
         Args: { _account_info: string; _amount: number; _channel: string }
         Returns: string
