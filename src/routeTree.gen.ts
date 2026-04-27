@@ -32,6 +32,7 @@ import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AgentShareRouteImport } from './routes/agent.share'
+import { Route as AgentInviteesRouteImport } from './routes/agent.invitees'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
 import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -166,6 +167,11 @@ const AgentShareRoute = AgentShareRouteImport.update({
   path: '/share',
   getParentRoute: () => AgentRoute,
 } as any)
+const AgentInviteesRoute = AgentInviteesRouteImport.update({
+  id: '/invitees',
+  path: '/invitees',
+  getParentRoute: () => AgentRoute,
+} as any)
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   id: '/admin/withdrawals',
   path: '/admin/withdrawals',
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/invitees': typeof AgentInviteesRoute
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/invitees': typeof AgentInviteesRoute
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
@@ -371,6 +379,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/invitees': typeof AgentInviteesRoute
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/merchant/agents': typeof MerchantAgentsRoute
@@ -416,6 +425,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/invitees'
     | '/agent/share'
     | '/auth/login'
     | '/merchant/agents'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/invitees'
     | '/agent/share'
     | '/auth/login'
     | '/merchant/agents'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/invitees'
     | '/agent/share'
     | '/auth/login'
     | '/merchant/agents'
@@ -728,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentShareRouteImport
       parentRoute: typeof AgentRoute
     }
+    '/agent/invitees': {
+      id: '/agent/invitees'
+      path: '/invitees'
+      fullPath: '/agent/invitees'
+      preLoaderRoute: typeof AgentInviteesRouteImport
+      parentRoute: typeof AgentRoute
+    }
     '/admin/withdrawals': {
       id: '/admin/withdrawals'
       path: '/admin/withdrawals'
@@ -858,10 +877,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AgentRouteChildren {
+  AgentInviteesRoute: typeof AgentInviteesRoute
   AgentShareRoute: typeof AgentShareRoute
 }
 
 const AgentRouteChildren: AgentRouteChildren = {
+  AgentInviteesRoute: AgentInviteesRoute,
   AgentShareRoute: AgentShareRoute,
 }
 
