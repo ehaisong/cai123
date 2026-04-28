@@ -52,6 +52,7 @@ const groups: Array<{ label: string; items: Card[] }> = [
     label: "审核中心",
     items: [
       { to: "/admin/applications", title: "商家审核", desc: "审核入驻申请", icon: ShieldCheck, color: "bg-amber-500/10 text-amber-600" },
+      { to: "/admin/merchant-recruit", title: "商家招募码", desc: "分享开店申请二维码", icon: QrCode, color: "bg-indigo-500/10 text-indigo-600" },
       { to: "/admin/withdrawals", title: "提现审批", desc: "审核打款申请", icon: Wallet, color: "bg-emerald-500/10 text-emerald-600" },
     ],
   },
