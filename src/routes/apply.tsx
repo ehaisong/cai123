@@ -187,19 +187,44 @@ function ApplyForm() {
 
   const submit = async () => {
     if (!user) return;
+    if (submitting) return; // 防止双击重复提交
     const name = shopName.trim();
     if (name.length < 2) { toast.error("请输入店铺名称（至少 2 个字）"); return; }
     setSubmitting(true);
-    const { error } = await supabase.from("merchant_applications").insert({
-      user_id: user.id,
-      shop_name: name,
-      phone: user.phone ?? null,
-      real_name: name, // 占位，后续完善资料向导补齐
-    });
-    setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("申请已提交，请等待审核");
-    load();
+    try {
+      // 二次校验：如果已有 pending 记录，直接刷新状态，不再插入
+      const { data: pendingRow } = await supabase
+        .from("merchant_applications")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "pending")
+        .maybeSingle();
+      if (pendingRow) {
+        toast.info("您已提交申请，正在审核中");
+        await load();
+        return;
+      }
+      const { error } = await supabase.from("merchant_applications").insert({
+        user_id: user.id,
+        shop_name: name,
+        phone: user.phone ?? null,
+        real_name: name, // 占位，后续完善资料向导补齐
+      });
+      if (error) {
+        // 23505 = 唯一约束冲突（同用户/同手机号已有 pending 申请）
+        if ((error as any).code === "23505") {
+          toast.info("您已提交申请，正在审核中");
+          await load();
+          return;
+        }
+        toast.error(error.message);
+        return;
+      }
+      toast.success("申请已提交，请等待审核");
+      await load();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
