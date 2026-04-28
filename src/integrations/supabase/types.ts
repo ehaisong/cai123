@@ -284,12 +284,13 @@ export type Database = {
           description: string | null
           fans_count: number | null
           id: string
-          phone: string
+          phone: string | null
           public_account: string | null
-          real_name: string
+          real_name: string | null
           reject_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          shop_name: string | null
           status: Database["public"]["Enums"]["merchant_status"]
           updated_at: string
           user_id: string
@@ -300,12 +301,13 @@ export type Database = {
           description?: string | null
           fans_count?: number | null
           id?: string
-          phone: string
+          phone?: string | null
           public_account?: string | null
-          real_name: string
+          real_name?: string | null
           reject_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          shop_name?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
           updated_at?: string
           user_id: string
@@ -316,12 +318,13 @@ export type Database = {
           description?: string | null
           fans_count?: number | null
           id?: string
-          phone?: string
+          phone?: string | null
           public_account?: string | null
-          real_name?: string
+          real_name?: string | null
           reject_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          shop_name?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
           updated_at?: string
           user_id?: string
