@@ -34,7 +34,7 @@ function Inner() {
     if (approve) {
       const { error: me } = await supabase.from("merchants").upsert({
         user_id: app.user_id,
-        shop_name: app.real_name + " 的店铺",
+        shop_name: app.shop_name ?? (app.real_name ? app.real_name + " 的店铺" : "新店铺"),
         real_name: app.real_name,
         wechat_id: app.wechat_id,
         fans_count: app.fans_count,

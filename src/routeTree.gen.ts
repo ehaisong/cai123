@@ -43,6 +43,7 @@ import { Route as AdminRechargeRouteImport } from './routes/admin.recharge'
 import { Route as AdminPaymentRouteImport } from './routes/admin.payment'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminMerchantRecruitRouteImport } from './routes/admin.merchant-recruit'
 import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
@@ -224,6 +225,11 @@ const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   path: '/admin/merchants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMerchantRecruitRoute = AdminMerchantRecruitRouteImport.update({
+  id: '/admin/merchant-recruit',
+  path: '/admin/merchant-recruit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCommissionRoute = AdminCommissionRouteImport.update({
   id: '/admin/commission',
   path: '/admin/commission',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
@@ -388,6 +396,7 @@ export interface FileRoutesById {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
@@ -436,6 +445,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
@@ -482,6 +492,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
@@ -528,6 +539,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
@@ -575,6 +587,7 @@ export interface RootRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminCommissionRoute: typeof AdminCommissionRoute
+  AdminMerchantRecruitRoute: typeof AdminMerchantRecruitRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentRoute: typeof AdminPaymentRoute
@@ -843,6 +856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/merchant-recruit': {
+      id: '/admin/merchant-recruit'
+      path: '/admin/merchant-recruit'
+      fullPath: '/admin/merchant-recruit'
+      preLoaderRoute: typeof AdminMerchantRecruitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/commission': {
       id: '/admin/commission'
       path: '/admin/commission'
@@ -955,6 +975,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
   AdminCommissionRoute: AdminCommissionRoute,
+  AdminMerchantRecruitRoute: AdminMerchantRecruitRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentRoute: AdminPaymentRoute,
