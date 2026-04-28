@@ -23,6 +23,7 @@ import {
   LogOut,
   ShoppingCart,
   TrendingUp,
+  QrCode,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
