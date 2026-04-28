@@ -17,6 +17,7 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
@@ -42,6 +43,7 @@ import { Route as AdminRechargeRouteImport } from './routes/admin.recharge'
 import { Route as AdminPaymentRouteImport } from './routes/admin.payment'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminMerchantRecruitRouteImport } from './routes/admin.merchant-recruit'
 import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
@@ -91,6 +93,11 @@ const FeedbackRoute = FeedbackRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyRoute = ApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRoute = AgentRouteImport.update({
@@ -218,6 +225,11 @@ const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   path: '/admin/merchants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMerchantRecruitRoute = AdminMerchantRecruitRouteImport.update({
+  id: '/admin/merchant-recruit',
+  path: '/admin/merchant-recruit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCommissionRoute = AdminCommissionRouteImport.update({
   id: '/admin/commission',
   path: '/admin/commission',
@@ -276,6 +288,7 @@ const MerchantProductsProductIdIssuesIssueIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent': typeof AgentRouteWithChildren
+  '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -288,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
@@ -321,6 +335,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent': typeof AgentRouteWithChildren
+  '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -333,6 +348,7 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
@@ -367,6 +383,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agent': typeof AgentRouteWithChildren
+  '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -379,6 +396,7 @@ export interface FileRoutesById {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
@@ -414,6 +432,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agent'
+    | '/apply'
     | '/contact'
     | '/feedback'
     | '/merchants'
@@ -426,6 +445,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
@@ -459,6 +479,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agent'
+    | '/apply'
     | '/contact'
     | '/feedback'
     | '/merchants'
@@ -471,6 +492,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
@@ -504,6 +526,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agent'
+    | '/apply'
     | '/contact'
     | '/feedback'
     | '/merchants'
@@ -516,6 +539,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
@@ -550,6 +574,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRouteWithChildren
+  ApplyRoute: typeof ApplyRoute
   ContactRoute: typeof ContactRoute
   FeedbackRoute: typeof FeedbackRoute
   MerchantsRoute: typeof MerchantsRoute
@@ -562,6 +587,7 @@ export interface RootRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminCommissionRoute: typeof AdminCommissionRoute
+  AdminMerchantRecruitRoute: typeof AdminMerchantRecruitRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentRoute: typeof AdminPaymentRoute
@@ -646,6 +672,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent': {
@@ -823,6 +856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/merchant-recruit': {
+      id: '/admin/merchant-recruit'
+      path: '/admin/merchant-recruit'
+      fullPath: '/admin/merchant-recruit'
+      preLoaderRoute: typeof AdminMerchantRecruitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/commission': {
       id: '/admin/commission'
       path: '/admin/commission'
@@ -922,6 +962,7 @@ const WalletRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRouteWithChildren,
+  ApplyRoute: ApplyRoute,
   ContactRoute: ContactRoute,
   FeedbackRoute: FeedbackRoute,
   MerchantsRoute: MerchantsRoute,
@@ -934,6 +975,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
   AdminCommissionRoute: AdminCommissionRoute,
+  AdminMerchantRecruitRoute: AdminMerchantRecruitRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentRoute: AdminPaymentRoute,

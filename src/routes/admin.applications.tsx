@@ -34,7 +34,7 @@ function Inner() {
     if (approve) {
       const { error: me } = await supabase.from("merchants").upsert({
         user_id: app.user_id,
-        shop_name: app.real_name + " 的店铺",
+        shop_name: app.shop_name ?? (app.real_name ? app.real_name + " 的店铺" : "新店铺"),
         real_name: app.real_name,
         wechat_id: app.wechat_id,
         fans_count: app.fans_count,
@@ -76,13 +76,18 @@ function Inner() {
         {list.map((a) => (
           <div key={a.id} className="bg-card rounded-md p-3">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">{a.real_name}</div>
+              <div className="text-sm font-medium">{a.shop_name ?? a.real_name ?? "未填写店铺名"}</div>
               <span className={`text-xs px-2 py-0.5 rounded ${a.status === "approved" ? "bg-success/10 text-success" : a.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>
                 {({ pending: "待审核", approved: "已通过", rejected: "已驳回" } as any)[a.status]}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">{a.phone} · 微信 {a.wechat_id} · 粉丝 {a.fans_count}</div>
-            <p className="text-xs mt-1 text-muted-foreground line-clamp-2">{a.description}</p>
+            <div className="text-xs text-muted-foreground mt-1">
+              手机号 {a.phone ?? "—"}
+              {a.real_name && a.shop_name && ` · 联系人 ${a.real_name}`}
+              {a.wechat_id && ` · 微信 ${a.wechat_id}`}
+              {a.fans_count ? ` · 粉丝 ${a.fans_count}` : ""}
+            </div>
+            {a.description && <p className="text-xs mt-1 text-muted-foreground line-clamp-2">{a.description}</p>}
             {a.status === "pending" && (
               <div className="mt-2 flex gap-2">
                 <Button size="sm" className="flex-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => review(a, true)}>通过</Button>
