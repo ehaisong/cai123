@@ -297,7 +297,7 @@ function AgentPage() {
 
 
       {/* 操作入口：推广分享 / 申请提现 */}
-      <div className="mx-3 mt-3 grid grid-cols-2 gap-3">
+      <div className="mx-3 mt-3 grid grid-cols-3 gap-3">
         <Link
           to="/agent/share"
           className="rounded-2xl p-4 text-white flex flex-col items-start justify-between min-h-[88px]"
@@ -305,8 +305,8 @@ function AgentPage() {
         >
           <Share2 className="h-5 w-5" />
           <div>
-            <div className="text-base font-semibold">推广分享</div>
-            <div className="text-[11px] opacity-90">二维码 / 链接 / 话术</div>
+            <div className="text-sm font-semibold">推广分享</div>
+            <div className="text-[11px] opacity-90">二维码 / 链接</div>
           </div>
         </Link>
         <Link
@@ -315,8 +315,18 @@ function AgentPage() {
         >
           <ArrowRightLeft className="h-5 w-5 text-primary" />
           <div>
-            <div className="text-base font-semibold">申请提现</div>
-            <div className="text-[11px] text-muted-foreground">分成实时到账钱包</div>
+            <div className="text-sm font-semibold">申请提现</div>
+            <div className="text-[11px] text-muted-foreground">分成实时到账</div>
+          </div>
+        </Link>
+        <Link
+          to="/apply"
+          className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
+        >
+          <Store className="h-5 w-5 text-success" />
+          <div>
+            <div className="text-sm font-semibold">我要开店</div>
+            <div className="text-[11px] text-muted-foreground">申请成为商家</div>
           </div>
         </Link>
       </div>
