@@ -17,6 +17,7 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
@@ -91,6 +92,11 @@ const FeedbackRoute = FeedbackRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyRoute = ApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRoute = AgentRouteImport.update({
@@ -276,6 +282,7 @@ const MerchantProductsProductIdIssuesIssueIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent': typeof AgentRouteWithChildren
+  '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -321,6 +328,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent': typeof AgentRouteWithChildren
+  '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -367,6 +375,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agent': typeof AgentRouteWithChildren
+  '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
@@ -414,6 +423,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agent'
+    | '/apply'
     | '/contact'
     | '/feedback'
     | '/merchants'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agent'
+    | '/apply'
     | '/contact'
     | '/feedback'
     | '/merchants'
@@ -504,6 +515,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agent'
+    | '/apply'
     | '/contact'
     | '/feedback'
     | '/merchants'
@@ -550,6 +562,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentRoute: typeof AgentRouteWithChildren
+  ApplyRoute: typeof ApplyRoute
   ContactRoute: typeof ContactRoute
   FeedbackRoute: typeof FeedbackRoute
   MerchantsRoute: typeof MerchantsRoute
@@ -646,6 +659,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent': {
@@ -922,6 +942,7 @@ const WalletRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRouteWithChildren,
+  ApplyRoute: ApplyRoute,
   ContactRoute: ContactRoute,
   FeedbackRoute: FeedbackRoute,
   MerchantsRoute: MerchantsRoute,
