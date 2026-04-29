@@ -1,115 +1,85 @@
+# 部署方案：继续 Lovable 发布 + 绑定自有域名
 
-## 一、整站环境介绍
+## 决策摘要
 
-**前端语言 / 框架**
-- 语言：TypeScript + React 19
-- 框架：**TanStack Start v1**（全栈 React 框架，带 SSR）
-- 构建工具：Vite 7
-- 样式：Tailwind CSS v4（通过 `src/styles.css` 配置）
-- UI 组件：shadcn/ui + Radix UI
-- 路由：TanStack Router（基于文件的路由，自动生成 `routeTree.gen.ts`）
+基于你的现状（用户在中国大陆、Supabase 在新加坡、有未备案域名、还未实测速度），推荐**保持当前架构不动**，通过绑定自有域名提升访问稳定性，先实测再决定是否进一步优化。
 
-**后端**
-- Supabase（数据库、认证、存储、Edge Functions）
-- 项目 URL：`https://aonequdtprbhviskbvrw.supabase.co`
-
-**目标运行时（关键）**
-- 当前 `wrangler.jsonc` 配置的是 **Cloudflare Workers** 运行时（带 `nodejs_compat`）
-- `vite.config.ts` 使用了 `@lovable.dev/vite-tanstack-config`，它在 build 时**默认绑定 Cloudflare 输出**
-- 这就是 Zeabur 部署失败的**根本原因**：Zeabur 是 Node.js 容器/服务运行环境，不是 Cloudflare Workers，构建产物不兼容
+**理由：**
+- Lovable 自带发布本身就跑在 Cloudflare 全球边缘网络上，香港/日本节点对中国大陆延迟通常 30–80ms，并不慢
+- 主要风险是 `*.lovable.app` 这个域名在国内**偶发被干扰**，绑定自有域名后，DNS 由你自主控制，稳定性显著提升
+- 未备案域名无法用国内 CDN，但走 Cloudflare 边缘已经是非备案域名能拿到的最优解
+- 真正可能慢的是 Supabase 数据请求（新加坡），这需要通过迁移数据库区域解决，与前端部署无关，先实测再决定
 
 ---
 
-## 二、GitHub 同步文件检查清单
+## 实施步骤（无需改代码）
 
-请确认以下文件**已同步**到 GitHub（`.gitignore` 默认会忽略其中部分，需要特别关注）：
+### 步骤 1：在 Lovable 绑定你的自有域名
 
-必须存在：
-- `package.json`、`package-lock.json` 或 `bun.lockb`
-- `vite.config.ts`、`tsconfig.json`
-- `src/`（全部源码）
-- `supabase/`（迁移文件）
-- `components.json`、`eslint.config.js`、`.prettierrc`
+**桌面端：** 项目左上角项目名 → Settings → Domains 标签 → Connect Domain
+**移动端：** 右下角 `...` → Settings → Domains → Connect Domain
 
-不应同步（应在 `.gitignore` 中）：
-- `node_modules/`、`.env`、`.lovable/`、`.workspace/`、`dist/`、`.output/`
+输入你的域名（例如 `cai123.com`），按提示在你的域名注册商后台添加 DNS 记录：
 
-**特别注意**：`.env` 文件**不会**同步到 GitHub（也不应同步）。Zeabur 上必须**手动配置环境变量**。
+| 记录类型 | 名称 | 值 |
+|---------|------|----|
+| A | @ | `185.158.133.1` |
+| A | www | `185.158.133.1` |
+| TXT | _lovable | `lovable_verify=...`（按 Lovable 给出的值） |
 
----
+**重要提示：**
+- 如果你的域名在 Cloudflare 托管并启用了橙色云朵代理，连接时勾选 **Advanced → Domain uses Cloudflare or a similar proxy**，会改用 CNAME 验证
+- 同时添加根域名和 `www` 子域名，并选一个作为 Primary
 
-## 三、Zeabur 部署配置（提供给 Zeabur 使用）
+### 步骤 2：等待 DNS 生效与 SSL 自动签发
 
-### 1. 构建 / 启动命令
+- DNS 传播通常 10 分钟到 72 小时
+- Lovable 会自动签发 SSL 证书
+- 状态变为 **Active** 后即可通过自有域名访问
 
-| 项目 | 值 |
-|------|---|
-| Node 版本 | 20 或 22 |
-| 安装命令 | `npm install`（或 `bun install`） |
-| 构建命令 | `npm run build` |
-| 启动命令 | `node .output/server/index.mjs` |
-| 监听端口 | `3000`（TanStack Start 默认） |
+### 步骤 3：实测访问速度
 
-### 2. 必须配置的环境变量（在 Zeabur Dashboard → Variables）
+绑域名生效后，请按以下维度实测，并把结果反馈给我，再决定是否进一步优化：
 
-```
-VITE_SUPABASE_URL=https://aonequdtprbhviskbvrw.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...（与 .env 中相同）
-VITE_SUPABASE_PROJECT_ID=aonequdtprbhviskbvrw
-SUPABASE_URL=https://aonequdtprbhviskbvrw.supabase.co
-SUPABASE_PUBLISHABLE_KEY=（同上 publishable key）
-SUPABASE_SERVICE_ROLE_KEY=（从 Supabase Dashboard → Project Settings → API 复制）
-PORT=3000
-HOST=0.0.0.0
-```
-
-### 3. 关键改动：必须切换构建目标（不再绑定 Cloudflare）
-
-当前 `vite.config.ts` 默认输出 Cloudflare Workers 产物，Zeabur 无法运行。需要改为 **Node 服务器输出**：
-
-**改动文件 `vite.config.ts`**：
-```ts
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-
-export default defineConfig({
-  vite: {
-    build: {
-      // 强制使用 Node 服务器目标，而不是 Cloudflare Workers
-      target: "node20",
-    },
-  },
-  // 关闭 Cloudflare 插件（让 TanStack Start 输出标准 Node 服务）
-  cloudflare: false,
-});
-```
-
-**同时删除或保留但忽略 `wrangler.jsonc`**（Zeabur 不需要它，仅 Cloudflare 用）。
-
-### 4. 推荐 Zeabur 模板
-
-在 Zeabur 选择 **"Node.js" 服务模板**（不要选 Static / Cloudflare Workers 模板）。
+1. **首屏白屏时间**：在中国大陆不同地区（电信/联通/移动）打开你的自有域名首页，记录从输入网址到看到内容的秒数
+2. **数据请求耗时**：登录后打开浏览器开发者工具 → Network 标签 → 筛选 `aonequdtprbhviskbvrw.supabase.co` → 看典型请求耗时（通常 100–400ms 是新加坡正常范围）
+3. **是否有打不开/超时**：多刷新几次，记录失败比例
 
 ---
 
-## 四、为什么之前部署失败
+## 后续优化触发条件（根据实测结果）
 
-1. `@lovable.dev/vite-tanstack-config` 默认带 Cloudflare 插件 → 构建出 `_worker.js` 而非 Node 入口
-2. Zeabur 找不到 `node ...` 可启动文件 → 启动失败
-3. `.env` 未同步 → 即使构建成功，运行时也因缺少 Supabase 变量而报错
-4. `wrangler.jsonc` 让 Zeabur 误判为 Cloudflare 项目
-
----
-
-## 五、可选方案
-
-如果不想改 `vite.config.ts`，**最简单的部署方式**是：
-- 直接用 Lovable 的"Publish"按钮发布（已有 `https://cai123.lovable.app`），无需 Zeabur
-- 或部署到 **Cloudflare Pages / Workers**（与当前配置 100% 匹配，零改动）
-- 或部署到 **Vercel / Netlify**（TanStack Start 官方支持，需要类似的 vite.config.ts 调整）
+| 实测现象 | 应对方案 |
+|---------|---------|
+| 首屏 < 3 秒，数据请求 < 300ms，几乎不失败 | **保持现状**，不需要任何改动 |
+| 首屏正常，但数据请求 > 500ms 或频繁失败 | 考虑 **Supabase 数据库迁移到东京区域**（对中国大陆延迟更优） |
+| 首屏白屏 > 5 秒，或频繁打不开 | 迁到 **你自己的 Cloudflare 账户**（方案 B），自定义路由策略；或考虑域名备案后用国内 CDN |
+| 体验完全不可接受 | 走完整的国内化方案：备案域名 + 国内服务器 + 自建 Supabase（重运维） |
 
 ---
 
-**下一步请告诉我选择哪种方案：**
-1. 我帮你修改 `vite.config.ts` 适配 Zeabur（Node 服务器模式）
-2. 改为部署到 Cloudflare Pages（零改动）
-3. 改为部署到 Vercel/Netlify
+## 不推荐的方向（已排除）
+
+- **❌ 继续折腾 Zeabur 部署**：需要重构 TanStack Start 的输出目标，之前已验证会破坏 Lovable 预览，且 Zeabur 海外节点对中国大陆并不比 Cloudflare 更优
+- **❌ 立即迁到 Cloudflare Pages/Workers**：与 Lovable 自带发布走的是同一张 Cloudflare 网络，未备案场景下速度差异极小，徒增运维成本
+- **❌ 立即迁移 Supabase**：在没有实测数据前盲目迁移数据库风险大（数据迁移、Auth 用户迁移、连接字符串变更）
+
+---
+
+## 技术细节（可选阅读）
+
+- 当前项目运行时：TanStack Start v1 + Cloudflare Workers（带 `nodejs_compat`）
+- 当前部署位置：Lovable 托管的 Cloudflare 边缘网络
+- 已发布 URL：`https://cai123.lovable.app`
+- 自有域名一旦绑定，Lovable 会自动把请求路由到同一套 Cloudflare 部署，**不需要任何代码改动**
+- 自有域名同时也走 Cloudflare 全球网络，但你拥有 DNS 控制权，可以随时切换到其他服务商
+
+---
+
+## 我需要你做的
+
+1. 现在去 **项目 Settings → Domains** 把自有域名绑上
+2. 域名生效后，按"步骤 3"实测速度，把数字反馈给我
+3. 我根据实测数据告诉你是否需要进一步优化（迁 Supabase 区域、迁 Cloudflare 等）
+
+如果绑域名过程中遇到 DNS 配置问题，告诉我你的域名注册商（阿里云/腾讯云/Cloudflare/GoDaddy 等），我可以给出对应的具体配置截图说明。
