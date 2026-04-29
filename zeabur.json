@@ -3,6 +3,6 @@
   "build": {
     "type": "static",
     "command": "bun install && bun run build",
-    "outputDirectory": "dist"
+    "outputDirectory": "dist/client"
   }
 }
