@@ -1,124 +1,115 @@
-## 背景与现状
 
-目前数据表 `products` 既保存商品元信息（标题、彩种、价格、推荐、商家），又保存"当期内容"（issue_no / paid_content / publish_at / reveal_at / result）。每一期都需要重新建一条 product，导致：
+## 一、整站环境介绍
 
-- 商家要重复填标题/价格/分类
-- 历史期数靠 `product_history` 手工维护
-- 没法批量管理（批量公开、批量定结果、批量发布下一期）
-- 定时公开依赖人工改 status / result
+**前端语言 / 框架**
+- 语言：TypeScript + React 19
+- 框架：**TanStack Start v1**（全栈 React 框架，带 SSR）
+- 构建工具：Vite 7
+- 样式：Tailwind CSS v4（通过 `src/styles.css` 配置）
+- UI 组件：shadcn/ui + Radix UI
+- 路由：TanStack Router（基于文件的路由，自动生成 `routeTree.gen.ts`）
 
-## 设计目标
+**后端**
+- Supabase（数据库、认证、存储、Edge Functions）
+- 项目 URL：`https://aonequdtprbhviskbvrw.supabase.co`
 
-把"商品系列（series）"与"每一期（issue）"在概念与操作上拆开：
-- 一个**商品系列**：标题、彩种、价格、推荐、免责声明、商家 — 长期不变。
-- 多个**期号**：期号、付费内容、发布时间、公开时间、结果 — 每期一条。
+**目标运行时（关键）**
+- 当前 `wrangler.jsonc` 配置的是 **Cloudflare Workers** 运行时（带 `nodejs_compat`）
+- `vite.config.ts` 使用了 `@lovable.dev/vite-tanstack-config`，它在 build 时**默认绑定 Cloudflare 输出**
+- 这就是 Zeabur 部署失败的**根本原因**：Zeabur 是 Node.js 容器/服务运行环境，不是 Cloudflare Workers，构建产物不兼容
 
-商家工作流变为：建一次系列 → 反复"加新一期 / 改某期 / 批量公开 / 批量判中"。
+---
 
-## 数据模型调整（不破坏现有数据）
+## 二、GitHub 同步文件检查清单
 
-### 新表 `product_issues`（一期一条）
+请确认以下文件**已同步**到 GitHub（`.gitignore` 默认会忽略其中部分，需要特别关注）：
+
+必须存在：
+- `package.json`、`package-lock.json` 或 `bun.lockb`
+- `vite.config.ts`、`tsconfig.json`
+- `src/`（全部源码）
+- `supabase/`（迁移文件）
+- `components.json`、`eslint.config.js`、`.prettierrc`
+
+不应同步（应在 `.gitignore` 中）：
+- `node_modules/`、`.env`、`.lovable/`、`.workspace/`、`dist/`、`.output/`
+
+**特别注意**：`.env` 文件**不会**同步到 GitHub（也不应同步）。Zeabur 上必须**手动配置环境变量**。
+
+---
+
+## 三、Zeabur 部署配置（提供给 Zeabur 使用）
+
+### 1. 构建 / 启动命令
+
+| 项目 | 值 |
+|------|---|
+| Node 版本 | 20 或 22 |
+| 安装命令 | `npm install`（或 `bun install`） |
+| 构建命令 | `npm run build` |
+| 启动命令 | `node .output/server/index.mjs` |
+| 监听端口 | `3000`（TanStack Start 默认） |
+
+### 2. 必须配置的环境变量（在 Zeabur Dashboard → Variables）
+
 ```
-id              uuid pk
-product_id      uuid  → products.id  （系列）
-issue_no        text  not null
-paid_content    text
-publish_at      timestamptz default now()  -- 此期对买家可见的时间
-reveal_at       timestamptz                -- 答案/结果公开的时间（可选定时）
-result          product_result default 'pending'   -- pending/won/lost
-result_note     text
-status          product_status default 'published' -- published/unpublished/draft
-sales_count     integer default 0
-created_at / updated_at
-unique (product_id, issue_no)
+VITE_SUPABASE_URL=https://aonequdtprbhviskbvrw.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...（与 .env 中相同）
+VITE_SUPABASE_PROJECT_ID=aonequdtprbhviskbvrw
+SUPABASE_URL=https://aonequdtprbhviskbvrw.supabase.co
+SUPABASE_PUBLISHABLE_KEY=（同上 publishable key）
+SUPABASE_SERVICE_ROLE_KEY=（从 Supabase Dashboard → Project Settings → API 复制）
+PORT=3000
+HOST=0.0.0.0
 ```
-索引：`(product_id, publish_at desc)`、`(reveal_at) where reveal_at is not null and result='pending'`。
 
-### `products` 角色弱化为"系列"
-保留：title / subtitle / category_id / merchant_id / price / is_recommended / disclaimer / status。
-现有的 issue_no / paid_content / publish_at / reveal_at / result / result_note 字段保留（兼容老数据），但新流程统一改用 `product_issues`。
+### 3. 关键改动：必须切换构建目标（不再绑定 Cloudflare）
 
-### 数据迁移
-一次性把现有 products 的当期字段 + product_history 全部回填到 product_issues：
-- 每条 product → 写一条 product_issues（取自身 issue_no/paid_content/publish_at/...）
-- 每条 product_history → 写一条 product_issues（取 issue_no/content/publish_at/result）
+当前 `vite.config.ts` 默认输出 Cloudflare Workers 产物，Zeabur 无法运行。需要改为 **Node 服务器输出**：
 
-后续 `product_history` 仅作只读归档，新写入全部走 product_issues。
+**改动文件 `vite.config.ts`**：
+```ts
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-### purchase_product 调整
-订单仍然挂在系列（products.id）+ 买家维度，但增加 `orders.issue_id`（可空，老订单为 null），表示"这一笔买的是哪一期"。前端购买时传当前展示的 issue_id；销量计入对应 issue 的 sales_count，并仍累加 product 的 sales_count 用于排行。
-
-### 定时公开（可选自动化）
-新增 `pg_cron` 任务每分钟扫描：`reveal_at <= now() AND result='pending' AND status='published'` 的 issue，仅触发"到点解锁"逻辑（实际上前端已经按 reveal_at 控制可见性，所以这里**主要由前端按时间判断**即可，不一定要 cron）。结果判定（中/未中）必须由商家手动确认，不自动判。
-
-## 商家端操作设计（核心交付物）
-
-### 页面 1：`/merchant/products` —— 系列列表（改造）
-卡片只展示系列级信息：标题 / 彩种 / 价格 / 最新一期号 / 最新一期状态徽章（待公开/已公开-中/已公开-未中）。
-卡片操作：`管理期数` `编辑系列` `上/下架`。
-
-### 页面 2：`/merchant/products/new` —— 新建系列（瘦身）
-只填系列字段（标题/副标题/分类/价格/推荐/免责声明）。提交后引导跳转到"添加首期"。
-
-### 页面 3：`/merchant/products/$productId/issues` —— 期数管理（新增，最重要）
-顶部：系列标题、`+ 添加新一期`、`批量操作` 按钮。
-
-表格/列表（移动端用卡片列表），每行一期：
+export default defineConfig({
+  vite: {
+    build: {
+      // 强制使用 Node 服务器目标，而不是 Cloudflare Workers
+      target: "node20",
+    },
+  },
+  // 关闭 Cloudflare 插件（让 TanStack Start 输出标准 Node 服务）
+  cloudflare: false,
+});
 ```
-☐  期号 2026115     发布: 11-12 20:00     公开: 11-13 21:30
-   状态: 已公开  结果: ⏳待判定 / ✅中奖 / ❌未中
-   [编辑]  [复制为下一期]  [立即公开]  [判中]  [判未中]  [删除]
-```
-顶部多选后出现批量操作条：
-- 批量公开（把选中项 status=published 且 reveal_at=now()）
-- 批量判中 / 批量判未中
-- 批量下架 / 批量删除
-- 批量改公开时间（弹日期选择器，统一覆盖 reveal_at）
 
-支持"复制为下一期"：把当前期的 paid_content 作为草稿，期号自动 +1，发布/公开时间各 +1 周期（按彩种节奏，默认 +1 天），方便快速建下一期。
+**同时删除或保留但忽略 `wrangler.jsonc`**（Zeabur 不需要它，仅 Cloudflare 用）。
 
-### 页面 4：`/merchant/products/$productId/issues/new` 与 `.../$issueId/edit`
-表单只关注一期：期号、发布时间、公开时间、付费内容、（可选）结果。
+### 4. 推荐 Zeabur 模板
 
-### 页面 5：`/merchant/products/$productId/issues/bulk-import` —— 批量添加
-一次性贴入多期。两种输入方式：
-1. **文本粘贴**：每行一期，约定分隔符
-   ```
-   2026115 | 2026-11-12 20:00 | 2026-11-13 21:30 | 三肖：龙虎兔
-   2026116 | 2026-11-13 20:00 | 2026-11-14 21:30 | 三肖：蛇马羊
-   ```
-2. **CSV 上传**：`issue_no, publish_at, reveal_at, paid_content`
-解析后先在页面里以可编辑表格预览（每行可单独修改 / 删除），确认无误再点"全部提交"。
+在 Zeabur 选择 **"Node.js" 服务模板**（不要选 Static / Cloudflare Workers 模板）。
 
-### 页面 6：买家详情页（小调整）
-`/product/$productId` 默认展示"最新一期"（`product_issues` 按 publish_at desc 取第一条 publish_at <= now()），往期记录列表改为查 `product_issues` 而非 `product_history`。订单按 issue 判断是否已解锁。
+---
 
-## 操作总览（商家视角速览）
+## 四、为什么之前部署失败
 
-| 场景 | 路径 |
-|---|---|
-| 新建一个预测系列 | 商品列表 → 新增系列 |
-| 当天发新一期 | 系列列表 → 管理期数 → +新一期（或在最新期上"复制为下一期"） |
-| 一次发一周的预告 | 管理期数 → 批量添加 → 粘贴 7 行 → 预览 → 全部提交 |
-| 修改某期内容 | 管理期数 → 编辑 |
-| 开奖后公开答案 | 管理期数 → 勾选今日开奖的几期 → 批量公开 |
-| 标记中奖结果 | 管理期数 → 勾选 → 批量判中 / 批量判未中 |
-| 下架某期不再可买 | 管理期数 → 单条下架 或 批量下架 |
+1. `@lovable.dev/vite-tanstack-config` 默认带 Cloudflare 插件 → 构建出 `_worker.js` 而非 Node 入口
+2. Zeabur 找不到 `node ...` 可启动文件 → 启动失败
+3. `.env` 未同步 → 即使构建成功，运行时也因缺少 Supabase 变量而报错
+4. `wrangler.jsonc` 让 Zeabur 误判为 Cloudflare 项目
 
-## 技术细节
+---
 
-- 迁移：使用 migration 工具创建 `product_issues` 表 + 索引 + RLS（商家自管自己系列下的期，admin 全权，published 期 select 公开）。
-- 数据回填：用 insert 工具将 `products` 当期字段与 `product_history` 行迁入 `product_issues`。
-- 修改 `purchase_product` SQL 函数：增加 `_issue_id` 入参，向 `orders` 写 `issue_id`，对应 `product_issues.sales_count` +1。
-- `orders` 增加 `issue_id uuid` 列（可空）。
-- 前端新增路由：`merchant.products.$productId.issues.tsx`、`merchant.products.$productId.issues.new.tsx`、`merchant.products.$productId.issues.$issueId.edit.tsx`、`merchant.products.$productId.issues.bulk-import.tsx`。
-- 现有 `merchant.products.new.tsx` 移除"期号/付费内容/发布时间/公开时间"字段。
-- 现有 `merchant.products.index.tsx` 新增"管理期数"入口；状态徽章改读最新一期。
-- `product.$productId.tsx` 改为按最新一期渲染；购买按钮带上 issue_id。
-- 给 demo 商家追加 5~10 期 demo 数据，覆盖 已公开-中 / 已公开-未中 / 待公开 / 草稿 等所有状态，方便点查。
+## 五、可选方案
 
-## 不在本次范围
+如果不想改 `vite.config.ts`，**最简单的部署方式**是：
+- 直接用 Lovable 的"Publish"按钮发布（已有 `https://cai123.lovable.app`），无需 Zeabur
+- 或部署到 **Cloudflare Pages / Workers**（与当前配置 100% 匹配，零改动）
+- 或部署到 **Vercel / Netlify**（TanStack Start 官方支持，需要类似的 vite.config.ts 调整）
 
-- 自动判中（依赖外部开奖数据源），仍由商家人工点"判中/判未中"。
-- 多商家共用同一系列。
-- 期数评论 / 退款。
+---
+
+**下一步请告诉我选择哪种方案：**
+1. 我帮你修改 `vite.config.ts` 适配 Zeabur（Node 服务器模式）
+2. 改为部署到 Cloudflare Pages（零改动）
+3. 改为部署到 Vercel/Netlify
