@@ -1,85 +1,73 @@
-# 部署方案：继续 Lovable 发布 + 绑定自有域名
+# 抗封锁部署方案：已实施
 
-## 决策摘要
+## 已完成的改造
 
-基于你的现状（用户在中国大陆、Supabase 在新加坡、有未备案域名、还未实测速度），推荐**保持当前架构不动**，通过绑定自有域名提升访问稳定性，先实测再决定是否进一步优化。
+| 改动 | 文件 | 作用 |
+|------|------|------|
+| 关闭 Cloudflare Worker 输出 | `vite.config.ts` (`cloudflare: false`) | 不再产出 Worker 包 |
+| 启用 SPA 模式 | `vite.config.ts` (`tanstackStart.spa.enabled: true`) | `bun run build` 输出纯静态 `dist/` |
+| 删除 Worker 配置 | 移除 `wrangler.jsonc` | 静态部署不需要 |
+| 删除未使用的服务端脚手架 | 移除 `src/integrations/supabase/client.server.ts`、`auth-middleware.ts` | 防止误用泄漏 service_role |
+| Zeabur 静态站点配置 | 新增 `zeabur.json` | 一键部署到 Zeabur |
+| SPA fallback（Netlify/Cloudflare Pages） | 新增 `public/_redirects` | 刷新子路径不 404 |
+| SPA fallback（Vercel） | 新增 `vercel.json` | 同上 |
 
-**理由：**
-- Lovable 自带发布本身就跑在 Cloudflare 全球边缘网络上，香港/日本节点对中国大陆延迟通常 30–80ms，并不慢
-- 主要风险是 `*.lovable.app` 这个域名在国内**偶发被干扰**，绑定自有域名后，DNS 由你自主控制，稳定性显著提升
-- 未备案域名无法用国内 CDN，但走 Cloudflare 边缘已经是非备案域名能拿到的最优解
-- 真正可能慢的是 Supabase 数据请求（新加坡），这需要通过迁移数据库区域解决，与前端部署无关，先实测再决定
+## 现在的部署矩阵
 
----
+- **主线**：Lovable 一键发布（仍可用，自动走 Cloudflare 边缘）
+- **备线**：把 GitHub 仓库（或 Lovable 同步出去的仓库）接入 Zeabur / Vercel / Netlify / 自有 VPS。`bun install && bun run build` → `dist/` 直接拖部署即可
+- **被封时切换**：在域名注册商或 Cloudflare DNS 处把 A 记录指向备用节点，TTL 建议设 300s
 
-## 实施步骤（无需改代码）
+## 多节点 + DNS 灾备的具体做法
 
-### 步骤 1：在 Lovable 绑定你的自有域名
+### 简易版：手动 DNS 切换
+1. 同时在 Lovable 发布主站、Zeabur 部署备站（用同一个仓库）
+2. 域名 DNS A 记录初始指向 Lovable IP `185.158.133.1`
+3. 主站不可用时，把 A 记录改成 Zeabur 节点 IP（Zeabur 控制台可看到）
+4. 由于 TTL 短，5 分钟内全网生效
 
-**桌面端：** 项目左上角项目名 → Settings → Domains 标签 → Connect Domain
-**移动端：** 右下角 `...` → Settings → Domains → Connect Domain
+### 进阶版：Cloudflare Load Balancer 自动切换
+1. 把域名 DNS 托管到 Cloudflare（橙色云朵）
+2. 创建 Load Balancer，加两个 Pool：Lovable / Zeabur
+3. 设置健康检查（每 60s 探测 `/`），主节点失败自动切到备节点
+4. 收费功能，约 $5/月起
 
-输入你的域名（例如 `cai123.com`），按提示在你的域名注册商后台添加 DNS 记录：
+### 完全免费版：DNSPod / 阿里云 DNS 故障转移
+1. 国内 DNS 服务商（如 DNSPod）支持基础的故障转移
+2. 把主备 IP 都加进去，开启故障转移
+3. 探测失败自动切，免费
 
-| 记录类型 | 名称 | 值 |
-|---------|------|----|
-| A | @ | `185.158.133.1` |
-| A | www | `185.158.133.1` |
-| TXT | _lovable | `lovable_verify=...`（按 Lovable 给出的值） |
+## Lovable 编辑流程
 
-**重要提示：**
-- 如果你的域名在 Cloudflare 托管并启用了橙色云朵代理，连接时勾选 **Advanced → Domain uses Cloudflare or a similar proxy**，会改用 CNAME 验证
-- 同时添加根域名和 `www` 子域名，并选一个作为 Primary
+完全不变：
+- 在 Lovable 里照常修改、预览
+- Lovable 自带「发布」继续可用 — 但产物现在是静态资源，由 Cloudflare 静态分发（更稳）
+- Lovable 预览（`id-preview--*.lovable.app`）也走 SPA，没有 Internal Server Error 风险
 
-### 步骤 2：等待 DNS 生效与 SSL 自动签发
+## Supabase 不受影响
 
-- DNS 传播通常 10 分钟到 72 小时
-- Lovable 会自动签发 SSL 证书
-- 状态变为 **Active** 后即可通过自有域名访问
+- 浏览器仍直连 `aonequdtprbhviskbvrw.supabase.co`
+- 跟前端跑在哪个 CDN/服务器无关
+- 任何节点（Lovable / Zeabur / Vercel / 你自己的 VPS）都连同一个 Supabase
 
-### 步骤 3：实测访问速度
+## 风险与回退
 
-绑域名生效后，请按以下维度实测，并把结果反馈给我，再决定是否进一步优化：
+| 风险 | 应对 |
+|------|------|
+| 后续要加服务端逻辑（`createServerFn`、API 路由） | 把 `tanstackStart.spa.enabled` 改回 false，恢复 SSR；但失去多平台部署能力，需取舍 |
+| Lovable 预览异常 | git revert `vite.config.ts`，恢复默认 Worker 模式 |
+| Zeabur 节点也被封 | 多备几个：Vercel（部分线路通）/ Netlify / 自己的境外 VPS（小鸡 + nginx 静态托管）|
 
-1. **首屏白屏时间**：在中国大陆不同地区（电信/联通/移动）打开你的自有域名首页，记录从输入网址到看到内容的秒数
-2. **数据请求耗时**：登录后打开浏览器开发者工具 → Network 标签 → 筛选 `aonequdtprbhviskbvrw.supabase.co` → 看典型请求耗时（通常 100–400ms 是新加坡正常范围）
-3. **是否有打不开/超时**：多刷新几次，记录失败比例
+## 接下来你要做的
 
----
+1. **验证 Lovable 主站**：等本次发布完成后，访问 `https://cai123.lovable.app` 看是否正常
+2. **设置 Zeabur 备线**：
+   - 把 Lovable 项目接入 GitHub（如果还没）
+   - 在 Zeabur 创建项目，连同一个仓库，会自动识别 `zeabur.json` 并构建
+   - 拿到 Zeabur 给的临时域名，测试一下
+3. **域名 DNS 准备**：
+   - 把 TTL 调到 300s（方便切换）
+   - 记录主备节点 IP
+4. **被封演练**：手动切一次 DNS，验证切换流程通畅
 
-## 后续优化触发条件（根据实测结果）
-
-| 实测现象 | 应对方案 |
-|---------|---------|
-| 首屏 < 3 秒，数据请求 < 300ms，几乎不失败 | **保持现状**，不需要任何改动 |
-| 首屏正常，但数据请求 > 500ms 或频繁失败 | 考虑 **Supabase 数据库迁移到东京区域**（对中国大陆延迟更优） |
-| 首屏白屏 > 5 秒，或频繁打不开 | 迁到 **你自己的 Cloudflare 账户**（方案 B），自定义路由策略；或考虑域名备案后用国内 CDN |
-| 体验完全不可接受 | 走完整的国内化方案：备案域名 + 国内服务器 + 自建 Supabase（重运维） |
-
----
-
-## 不推荐的方向（已排除）
-
-- **❌ 继续折腾 Zeabur 部署**：需要重构 TanStack Start 的输出目标，之前已验证会破坏 Lovable 预览，且 Zeabur 海外节点对中国大陆并不比 Cloudflare 更优
-- **❌ 立即迁到 Cloudflare Pages/Workers**：与 Lovable 自带发布走的是同一张 Cloudflare 网络，未备案场景下速度差异极小，徒增运维成本
-- **❌ 立即迁移 Supabase**：在没有实测数据前盲目迁移数据库风险大（数据迁移、Auth 用户迁移、连接字符串变更）
-
----
-
-## 技术细节（可选阅读）
-
-- 当前项目运行时：TanStack Start v1 + Cloudflare Workers（带 `nodejs_compat`）
-- 当前部署位置：Lovable 托管的 Cloudflare 边缘网络
-- 已发布 URL：`https://cai123.lovable.app`
-- 自有域名一旦绑定，Lovable 会自动把请求路由到同一套 Cloudflare 部署，**不需要任何代码改动**
-- 自有域名同时也走 Cloudflare 全球网络，但你拥有 DNS 控制权，可以随时切换到其他服务商
-
----
-
-## 我需要你做的
-
-1. 现在去 **项目 Settings → Domains** 把自有域名绑上
-2. 域名生效后，按"步骤 3"实测速度，把数字反馈给我
-3. 我根据实测数据告诉你是否需要进一步优化（迁 Supabase 区域、迁 Cloudflare 等）
-
-如果绑域名过程中遇到 DNS 配置问题，告诉我你的域名注册商（阿里云/腾讯云/Cloudflare/GoDaddy 等），我可以给出对应的具体配置截图说明。
+如果某一步有问题，告诉我具体现象（构建报错、节点访问失败、DNS 不生效等），我帮你排查。
