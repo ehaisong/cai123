@@ -1,73 +1,61 @@
-# 抗封锁部署方案：已实施
+# 部署架构：Zeabur 主站 + Lovable 仅作编辑器
 
-## 已完成的改造
+## 架构
 
-| 改动 | 文件 | 作用 |
-|------|------|------|
-| 关闭 Cloudflare Worker 输出 | `vite.config.ts` (`cloudflare: false`) | 不再产出 Worker 包 |
-| 启用 SPA 模式 | `vite.config.ts` (`tanstackStart.spa.enabled: true`) | `bun run build` 输出纯静态 `dist/` |
-| 删除 Worker 配置 | 移除 `wrangler.jsonc` | 静态部署不需要 |
-| 删除未使用的服务端脚手架 | 移除 `src/integrations/supabase/client.server.ts`、`auth-middleware.ts` | 防止误用泄漏 service_role |
-| Zeabur 静态站点配置 | 新增 `zeabur.json` | 一键部署到 Zeabur |
-| SPA fallback（Netlify/Cloudflare Pages） | 新增 `public/_redirects` | 刷新子路径不 404 |
-| SPA fallback（Vercel） | 新增 `vercel.json` | 同上 |
+```
+Lovable 编辑/预览  →  GitHub 自动同步  →  Zeabur 自动构建  →  对外发布
+                                                       ↑
+                                          自有域名 DNS A 记录
+```
 
-## 现在的部署矩阵
+- **Lovable**：只用于编辑代码 + 预览（`id-preview--*.lovable.app` 走 vite dev，正常）
+- **GitHub**：作为代码中转，Lovable 双向同步
+- **Zeabur**：拉取仓库 → `bun install && bun run build` → 用 `dist/client/` 当静态站发布
+- **Supabase**：浏览器直连，跟前端跑在哪个 CDN 无关
 
-- **主线**：Lovable 一键发布（仍可用，自动走 Cloudflare 边缘）
-- **备线**：把 GitHub 仓库（或 Lovable 同步出去的仓库）接入 Zeabur / Vercel / Netlify / 自有 VPS。`bun install && bun run build` → `dist/` 直接拖部署即可
-- **被封时切换**：在域名注册商或 Cloudflare DNS 处把 A 记录指向备用节点，TTL 建议设 300s
+## 关键配置
 
-## 多节点 + DNS 灾备的具体做法
-
-### 简易版：手动 DNS 切换
-1. 同时在 Lovable 发布主站、Zeabur 部署备站（用同一个仓库）
-2. 域名 DNS A 记录初始指向 Lovable IP `185.158.133.1`
-3. 主站不可用时，把 A 记录改成 Zeabur 节点 IP（Zeabur 控制台可看到）
-4. 由于 TTL 短，5 分钟内全网生效
-
-### 进阶版：Cloudflare Load Balancer 自动切换
-1. 把域名 DNS 托管到 Cloudflare（橙色云朵）
-2. 创建 Load Balancer，加两个 Pool：Lovable / Zeabur
-3. 设置健康检查（每 60s 探测 `/`），主节点失败自动切到备节点
-4. 收费功能，约 $5/月起
-
-### 完全免费版：DNSPod / 阿里云 DNS 故障转移
-1. 国内 DNS 服务商（如 DNSPod）支持基础的故障转移
-2. 把主备 IP 都加进去，开启故障转移
-3. 探测失败自动切，免费
-
-## Lovable 编辑流程
-
-完全不变：
-- 在 Lovable 里照常修改、预览
-- Lovable 自带「发布」继续可用 — 但产物现在是静态资源，由 Cloudflare 静态分发（更稳）
-- Lovable 预览（`id-preview--*.lovable.app`）也走 SPA，没有 Internal Server Error 风险
-
-## Supabase 不受影响
-
-- 浏览器仍直连 `aonequdtprbhviskbvrw.supabase.co`
-- 跟前端跑在哪个 CDN/服务器无关
-- 任何节点（Lovable / Zeabur / Vercel / 你自己的 VPS）都连同一个 Supabase
-
-## 风险与回退
-
-| 风险 | 应对 |
+| 文件 | 作用 |
 |------|------|
-| 后续要加服务端逻辑（`createServerFn`、API 路由） | 把 `tanstackStart.spa.enabled` 改回 false，恢复 SSR；但失去多平台部署能力，需取舍 |
-| Lovable 预览异常 | git revert `vite.config.ts`，恢复默认 Worker 模式 |
-| Zeabur 节点也被封 | 多备几个：Vercel（部分线路通）/ Netlify / 自己的境外 VPS（小鸡 + nginx 静态托管）|
+| `vite.config.ts` | `cloudflare: false` + SPA 模式，构建出 `dist/client/` |
+| `zeabur.json` | 显式声明构建命令、输出目录、SPA rewrites |
+| `vercel.json` / `public/_redirects` | 备用：将来在 Vercel/Netlify 部署兜底用 |
 
-## 接下来你要做的
+## 抗封锁策略
 
-1. **验证 Lovable 主站**：等本次发布完成后，访问 `https://cai123.lovable.app` 看是否正常
-2. **设置 Zeabur 备线**：
-   - 把 Lovable 项目接入 GitHub（如果还没）
-   - 在 Zeabur 创建项目，连同一个仓库，会自动识别 `zeabur.json` 并构建
-   - 拿到 Zeabur 给的临时域名，测试一下
-3. **域名 DNS 准备**：
-   - 把 TTL 调到 300s（方便切换）
-   - 记录主备节点 IP
-4. **被封演练**：手动切一次 DNS，验证切换流程通畅
+1. **主**：Zeabur 部署，绑自有域名，DNS A 记录指向 Zeabur IP
+2. **备**：同一仓库再接一份 Vercel 或 Netlify，拿到备用 IP
+3. **被封时**：在域名 DNS 处把 A 记录切到备用 IP（TTL 设 300s，5 分钟生效）
+4. **进阶**：用 Cloudflare Load Balancer / DNSPod 故障转移自动切换
 
-如果某一步有问题，告诉我具体现象（构建报错、节点访问失败、DNS 不生效等），我帮你排查。
+## ⚠️ 重要警告
+
+**不要点 Lovable 的「发布」按钮。**
+
+原因：当前 `vite.config.ts` 关掉了 Cloudflare Worker 配置，但 TanStack Start 在 SPA 模式下仍然会产出 `dist/server/server.js`。Lovable 的发布管线检测到 server bundle 就当 Worker 部署，但 Worker 入口缺东西 → `https://cai123.lovable.app/` 会一直返回 Internal Server Error。
+
+这没影响业务——我们不靠 Lovable 发布对外服务。如果想彻底屏蔽这个按钮，可以在项目设置里把 publish visibility 设为 private。
+
+## 验证步骤（接入 Zeabur 时执行）
+
+1. 确认 Lovable 已连 GitHub（Connectors → GitHub → Connect project）
+2. Zeabur 控制台 → New Project → Import from GitHub → 选本仓库
+3. Zeabur 自动读 `zeabur.json`，跑 `bun install && bun run build`
+4. 用 Zeabur 分配的 `xxx.zeabur.app` 临时域名访问首页
+5. 测试 SPA 路由：访问 `/admin/users` 后**直接刷新**，确认不会 404（验证 rewrites 生效）
+6. 绑定自有域名：Zeabur 控制台添加 → 按提示设 DNS
+
+## Supabase 提醒
+
+浏览器直连 `aonequdtprbhviskbvrw.supabase.co`。无论前端跑在 Zeabur / Vercel / 自有 VPS，连的都是同一个 Supabase 实例，数据互通。
+
+如果将来要加服务端逻辑（敏感密钥、定时任务等），用 **Supabase Edge Functions**，不要回到 TanStack Start 的 SSR——那会破坏当前的纯静态部署。
+
+## 故障排查
+
+| 现象 | 排查方向 |
+|------|---------|
+| Zeabur 构建失败 | 看构建日志；检查 `bun install` 是否所有依赖装上 |
+| 部署后访问首页空白 | F12 看 Console，通常是 `dist/client` 路径没对，或 assets 404 |
+| 子路径刷新 404 | `zeabur.json` 的 `rewrites` 没生效，确认配置在 |
+| Supabase 连不上 | 检查 `.env` 里的 `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` 是否被 Zeabur 注入 |

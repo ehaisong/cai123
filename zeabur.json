@@ -1,8 +1,11 @@
 {
-  "$schema": "https://schema.zeabur.app/template.json",
   "build": {
-    "type": "static",
-    "command": "bun install && bun run build",
-    "outputDirectory": "dist/client"
-  }
+    "command": "bun install && bun run build"
+  },
+  "output": {
+    "directory": "dist/client"
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
