@@ -745,6 +745,8 @@ export type Database = {
           updated_at: string
           user_code: string
           user_id: string
+          wechat_openid: string | null
+          wechat_unionid: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -760,6 +762,8 @@ export type Database = {
           updated_at?: string
           user_code: string
           user_id: string
+          wechat_openid?: string | null
+          wechat_unionid?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -775,6 +779,8 @@ export type Database = {
           updated_at?: string
           user_code?: string
           user_id?: string
+          wechat_openid?: string | null
+          wechat_unionid?: string | null
         }
         Relationships: [
           {
@@ -927,6 +933,20 @@ export type Database = {
         Returns: string
       }
       bind_referrer: { Args: { _agent_code: string }; Returns: boolean }
+      bind_wechat_to_profile: {
+        Args: {
+          _avatar: string
+          _nickname: string
+          _openid: string
+          _unionid: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      find_user_by_wechat: {
+        Args: { _openid: string; _unionid: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
