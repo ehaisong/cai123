@@ -55,8 +55,8 @@ export const exchangeWechatTicket = createServerFn({ method: "POST" })
       "find_user_by_wechat",
       {
         _openid: wxUser.openid,
-        _unionid: wxUser.unionid,
-      },
+        _unionid: wxUser.unionid ?? "",
+      } as any,
     );
     if (findErr) throw new Error(`查找用户失败: ${findErr.message}`);
 
@@ -87,10 +87,10 @@ export const exchangeWechatTicket = createServerFn({ method: "POST" })
       {
         _user_id: userId,
         _openid: wxUser.openid,
-        _unionid: wxUser.unionid,
-        _nickname: wxUser.nickname,
-        _avatar: wxUser.avatar,
-      },
+        _unionid: wxUser.unionid ?? "",
+        _nickname: wxUser.nickname ?? "",
+        _avatar: wxUser.avatar ?? "",
+      } as any,
     );
     if (bindErr) {
       console.error("bind_wechat_to_profile failed", bindErr);
