@@ -100,10 +100,15 @@ function WechatDonePage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted px-6">
-        <div className="max-w-sm text-center">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-6 py-10">
+        <div className="w-full max-w-md text-center">
           <h1 className="text-lg font-semibold text-foreground">微信登录失败</h1>
           <p className="mt-2 break-all text-sm text-muted-foreground">{error}</p>
+          {detail ? (
+            <pre className="mt-4 max-h-60 overflow-auto rounded-md bg-background p-3 text-left text-xs text-muted-foreground">
+              {JSON.stringify(detail, null, 2)}
+            </pre>
+          ) : null}
           <Link
             to="/auth/login"
             className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
