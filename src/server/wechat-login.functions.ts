@@ -39,14 +39,24 @@ export const exchangeWechatTicket = createServerFn({ method: "POST" })
       }),
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: "exchange_failed" }));
-      throw new Error(`微信登录失败: ${err.error ?? res.status}`);
+    const raw = await res.text();
+    let payload: any = null;
+    try {
+      payload = raw ? JSON.parse(raw) : null;
+    } catch {
+      // ignore
     }
 
-    const wxUser = (await res.json()) as HubUser;
+    if (!res.ok) {
+      const code = payload?.error ?? payload?.errcode ?? res.status;
+      const msg = payload?.message ?? payload?.errmsg ?? raw?.slice(0, 200) ?? "exchange_failed";
+      throw new Error(`微信登录失败 [${code}]: ${msg}`);
+    }
 
-    if (!wxUser.openid) {
+    // 兼容两种返回结构：{ user: {...} } 或顶层即用户
+    const wxUser = (payload?.user ?? payload) as HubUser;
+
+    if (!wxUser?.openid) {
       throw new Error("微信返回数据缺少 openid");
     }
 
