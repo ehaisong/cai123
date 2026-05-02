@@ -1,10 +1,18 @@
 import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { exchangeWechatTicket } from "@/server/wechat-login.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
+const searchSchema = z.object({
+  ticket: z.string().optional(),
+  return_path: z.string().optional(),
+});
+
 export const Route = createFileRoute("/login/wechat-done")({
+  validateSearch: searchSchema,
+  ssr: false, // 完全交给客户端处理，避免 SSR Invariant
   component: WechatDonePage,
   head: () => ({ meta: [{ title: "正在登录..." }] }),
 });
@@ -12,16 +20,16 @@ export const Route = createFileRoute("/login/wechat-done")({
 function WechatDonePage() {
   const navigate = useNavigate();
   const router = useRouter();
+  const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
   const ranRef = useRef(false);
 
   useEffect(() => {
-    if (ranRef.current) return; // StrictMode 防双调
+    if (ranRef.current) return;
     ranRef.current = true;
 
-    const params = new URLSearchParams(window.location.search);
-    const ticket = params.get("ticket");
-    const return_path = params.get("return_path") ?? "/";
+    const ticket = search.ticket;
+    const return_path = search.return_path ?? "/";
 
     if (!ticket) {
       setError("缺少 ticket 参数");
@@ -31,15 +39,19 @@ function WechatDonePage() {
     (async () => {
       try {
         const r = await exchangeWechatTicket({ data: { ticket, return_path } });
-        // 用 token_hash 完成 Supabase Auth 登录
+
         const { error: vErr } = await supabase.auth.verifyOtp({
-          type: "magiclink",
+          type: "email",
           token_hash: r.tokenHash,
         });
         if (vErr) throw new Error(vErr.message);
 
-        if (r.redirectTo.startsWith("/") && !r.redirectTo.startsWith("//")) {
-          router.history.push(r.redirectTo);
+        const target =
+          r.redirectTo.startsWith("/") && !r.redirectTo.startsWith("//")
+            ? r.redirectTo
+            : "/";
+        if (target !== "/") {
+          router.history.push(target);
         } else {
           navigate({ to: "/" });
         }
@@ -47,14 +59,14 @@ function WechatDonePage() {
         setError(e?.message ?? "登录失败");
       }
     })();
-  }, [navigate, router]);
+  }, [search.ticket, search.return_path, navigate, router]);
 
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted px-6">
         <div className="max-w-sm text-center">
           <h1 className="text-lg font-semibold text-foreground">微信登录失败</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+          <p className="mt-2 break-all text-sm text-muted-foreground">{error}</p>
           <Link
             to="/auth/login"
             className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
