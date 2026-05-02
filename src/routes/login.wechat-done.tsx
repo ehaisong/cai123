@@ -22,6 +22,7 @@ function WechatDonePage() {
   const router = useRouter();
   const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -31,6 +32,12 @@ function WechatDonePage() {
     const ticket = search.ticket;
     const return_path = search.return_path ?? "/";
 
+    console.log("[wechat-done] mount", {
+      hasTicket: !!ticket,
+      ticketTail: ticket?.slice(-8),
+      return_path,
+    });
+
     if (!ticket) {
       setError("缺少 ticket 参数");
       return;
@@ -39,12 +46,32 @@ function WechatDonePage() {
     (async () => {
       try {
         const r = await exchangeWechatTicket({ data: { ticket, return_path } });
+        console.log("[wechat-done] exchange ok", {
+          email: r.email,
+          redirectTo: r.redirectTo,
+          hasTokenHash: !!r.tokenHash,
+        });
 
         const { error: vErr } = await supabase.auth.verifyOtp({
           type: "email",
           token_hash: r.tokenHash,
         });
-        if (vErr) throw new Error(vErr.message);
+        if (vErr) {
+          console.error("[wechat-done] verifyOtp failed", {
+            message: vErr.message,
+            status: (vErr as any).status,
+            name: vErr.name,
+          });
+          setDetail({
+            step: "verifyOtp",
+            status: (vErr as any).status ?? null,
+            name: vErr.name,
+            message: vErr.message,
+          });
+          throw new Error(`verifyOtp 失败: ${vErr.message}`);
+        }
+
+        console.log("[wechat-done] verifyOtp ok, redirect", { redirectTo: r.redirectTo });
 
         const target =
           r.redirectTo.startsWith("/") && !r.redirectTo.startsWith("//")
@@ -56,6 +83,16 @@ function WechatDonePage() {
           navigate({ to: "/" });
         }
       } catch (e: any) {
+        // 服务端 WechatLoginError 透出的字段（通过 message 透传 + 可能挂在对象上）
+        const info: Record<string, unknown> = {
+          message: e?.message ?? "登录失败",
+        };
+        if (e?.step) info.step = e.step;
+        if (e?.errcode != null) info.errcode = e.errcode;
+        if (e?.errmsg) info.errmsg = e.errmsg;
+        if (e?.raw) info.raw = e.raw;
+        console.error("[wechat-done] failed", info);
+        setDetail((prev) => prev ?? info);
         setError(e?.message ?? "登录失败");
       }
     })();
