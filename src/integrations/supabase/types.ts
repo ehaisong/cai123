@@ -943,6 +943,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      bootstrap_admin_role: { Args: never; Returns: boolean }
       find_user_by_wechat: {
         Args: { _openid: string; _unionid: string }
         Returns: string
