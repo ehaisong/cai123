@@ -93,7 +93,7 @@ type Stats = {
 
 function AdminHomeInner() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const logout = useLogout();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
