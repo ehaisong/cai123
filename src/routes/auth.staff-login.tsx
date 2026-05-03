@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Phone, Clock } from "lucide-react";
+import { ArrowLeft, Phone, Clock, Smartphone } from "lucide-react";
+
+const HUB_PHONE_START = "https://wx.lovclaw.com/oauth/phone/start";
+const HUB_CLIENT = "66cai";
 
 export const Route = createFileRoute("/auth/staff-login")({
   component: StaffLoginPage,
