@@ -143,15 +143,7 @@ function AdminHomeInner() {
     };
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("已退出登录");
-      navigate({ to: "/auth/staff-login" });
-    } catch (e) {
-      toast.error("退出失败，请重试");
-    }
-  };
+  const handleSignOut = () => { void logout(); };
 
   const statCards: Array<{
     label: string;
