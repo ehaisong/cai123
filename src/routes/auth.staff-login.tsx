@@ -4,10 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { ArrowLeft, Phone, Clock, Smartphone } from "lucide-react";
+import { ArrowLeft, Smartphone, Clock } from "lucide-react";
 
 const HUB_PHONE_START = "https://wx.lovclaw.com/oauth/phone/start";
 const HUB_CLIENT = "66cai";
@@ -27,19 +24,7 @@ function StaffLoginPage() {
   const { user, refreshRoles } = useAuth();
   const navigate = useNavigate();
 
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [step, setStep] = useState<"phone" | "code">("phone");
-  const [sending, setSending] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
   const [routing, setRouting] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
 
   // 已登录则自动按角色路由
   useEffect(() => {
@@ -48,46 +33,17 @@ function StaffLoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const normalizePhone = (raw: string): string | null => {
-    const trimmed = raw.trim().replace(/\s|-/g, "");
-    if (/^\+\d{8,15}$/.test(trimmed)) return trimmed;
-    if (/^1\d{10}$/.test(trimmed)) return `+86${trimmed}`;
-    return null;
-  };
-
-  const sendCode = async () => {
-    const p = normalizePhone(phone);
-    if (!p) { toast.error("请输入有效的手机号"); return; }
-    setSending(true);
-    const { error } = await supabase.auth.signInWithOtp({ phone: p });
-    setSending(false);
-    if (error) {
-      toast.error(error.message || "发送失败，请检查短信通道是否已开通");
-      return;
-    }
-    toast.success("验证码已发送");
-    setStep("code");
-    setCooldown(60);
-  };
-
-  const verifyCode = async () => {
-    const p = normalizePhone(phone);
-    if (!p || !code) { toast.error("请输入验证码"); return; }
-    setVerifying(true);
-    const { error } = await supabase.auth.verifyOtp({ phone: p, token: code, type: "sms" });
-    setVerifying(false);
-    if (error) {
-      toast.error(error.message || "验证失败");
-      return;
-    }
-    toast.success("登录成功");
-    // useEffect 监听 user 变化后会自动调 routeAfterLogin
+  const goHubPhoneLogin = () => {
+    const ret = "/auth/staff-login";
+    window.location.href =
+      `${HUB_PHONE_START}?client=${encodeURIComponent(HUB_CLIENT)}` +
+      `&return_path=${encodeURIComponent(ret)}`;
   };
 
   const routeAfterLogin = async () => {
     setRouting("正在为您准备工作台…");
     try {
-      // 1) 尝试根据手机号白名单赋予 admin 角色（命中则继续按 admin 路由）
+      // 1) 尝试根据手机号白名单赋予 admin 角色
       try {
         await supabase.rpc("bootstrap_admin_role");
         await refreshRoles();
@@ -116,7 +72,6 @@ function StaffLoginPage() {
         .eq("user_id", uid)
         .maybeSingle();
       if (merchant && merchant.status === "approved") {
-        // 确保有 merchant 角色
         if (!roles.includes("merchant")) {
           await supabase.from("user_roles").insert({ user_id: uid, role: "merchant" });
           await refreshRoles();
@@ -148,12 +103,10 @@ function StaffLoginPage() {
         return;
       }
       if (app?.status === "approved") {
-        // 极少数情况：已通过但 merchants 还没建好，仍跳商家后台
         navigate({ to: "/merchant" });
         return;
       }
 
-      // 无申请 / 已驳回 → 去开店申请页
       navigate({ to: "/apply" });
     } finally {
       // 不重置 routing，避免界面闪烁
@@ -209,99 +162,27 @@ function StaffLoginPage() {
         <p className="mt-1 text-sm text-muted-foreground">管理员 / 商家 / 代理 专用入口</p>
       </div>
 
-      {/* 推荐入口：通过中转站发送短信，避开 Supabase 必须配置 SMS Provider 的限制 */}
-      <Card className="mx-4 mb-3 p-5 bg-primary/5 border-primary/20">
-        <div className="flex items-center gap-2 mb-3">
+      <Card className="mx-4 p-6">
+        <div className="flex items-center gap-2 mb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
             <Smartphone className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <div className="text-sm font-semibold">短信验证码登录（推荐）</div>
-            <p className="text-[11px] text-muted-foreground">通过登录中心安全发送验证码</p>
-          </div>
-        </div>
-        <Button
-          className="w-full"
-          onClick={() => {
-            const ret = "/auth/staff-login";
-            window.location.href =
-              `${HUB_PHONE_START}?client=${encodeURIComponent(HUB_CLIENT)}` +
-              `&return_path=${encodeURIComponent(ret)}`;
-          }}
-        >
-          使用手机号登录
-        </Button>
-      </Card>
-
-      <Card className="mx-4 p-6">
-        <div className="text-[11px] text-muted-foreground mb-3">备用：直接通过 Supabase 发送短信（需在 Supabase 配置 SMS Provider）</div>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <Phone className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold">手机号验证码登录</div>
+            <div className="text-sm font-semibold">手机号短信验证码登录</div>
             <p className="text-[11px] text-muted-foreground">未注册的手机号将自动创建账号</p>
           </div>
         </div>
-
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">手机号</Label>
-            <Input
-              inputMode="tel"
-              placeholder="请输入手机号"
-              value={phone}
-              disabled={step === "code"}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-
-          {step === "code" && (
-            <div>
-              <Label className="text-xs text-muted-foreground">验证码</Label>
-              <div className="flex gap-2">
-                <Input
-                  inputMode="numeric"
-                  placeholder="6 位验证码"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                />
-                <Button
-                  variant="outline"
-                  disabled={cooldown > 0 || sending}
-                  onClick={sendCode}
-                  className="whitespace-nowrap"
-                >
-                  {cooldown > 0 ? `${cooldown}s` : "重新发送"}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === "phone" ? (
-            <Button className="w-full" onClick={sendCode} disabled={sending}>
-              {sending ? "发送中…" : "获取验证码"}
-            </Button>
-          ) : (
-            <Button className="w-full" onClick={verifyCode} disabled={verifying}>
-              {verifying ? "验证中…" : "登录 / 注册"}
-            </Button>
-          )}
-
-          {step === "code" && (
-            <button
-              className="w-full text-xs text-muted-foreground"
-              onClick={() => { setStep("phone"); setCode(""); }}
-            >
-              修改手机号
-            </button>
-          )}
-        </div>
+        <Button className="w-full" onClick={goHubPhoneLogin}>
+          使用手机号登录
+        </Button>
+        <p className="mt-3 text-[11px] text-muted-foreground text-center">
+          点击后将跳转至「登录中心」完成短信验证
+        </p>
       </Card>
 
       <p className="mt-6 px-6 text-center text-xs text-muted-foreground">
-        若您是通过店铺/代理推广链接进入，请使用<Link to="/auth/login" className="text-info">微信扫码登录</Link>
+        若您是通过店铺/代理推广链接进入，请使用
+        <Link to="/auth/login" className="text-info">微信扫码登录</Link>
       </p>
     </div>
   );
