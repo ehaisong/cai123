@@ -290,6 +290,7 @@ export type Database = {
           reject_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          shop_avatar_url: string | null
           shop_name: string | null
           status: Database["public"]["Enums"]["merchant_status"]
           updated_at: string
@@ -307,6 +308,7 @@ export type Database = {
           reject_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          shop_avatar_url?: string | null
           shop_name?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
           updated_at?: string
@@ -324,6 +326,7 @@ export type Database = {
           reject_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          shop_avatar_url?: string | null
           shop_name?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
           updated_at?: string
