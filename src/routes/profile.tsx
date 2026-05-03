@@ -133,7 +133,7 @@ function ProfilePage() {
       <div className="flex-1" />
 
       <div className="px-3 py-4">
-        <Button variant="outline" className="w-full" onClick={async () => { await signOut(); navigate({ to: "/" }); }}>
+        <Button variant="outline" className="w-full" onClick={() => { void logout(); }}>
           <LogOut className="w-4 h-4 mr-2" /> 退出登录
         </Button>
       </div>
