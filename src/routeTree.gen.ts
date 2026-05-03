@@ -33,6 +33,7 @@ import { Route as MerchantCommissionRouteImport } from './routes/merchant.commis
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as LoginWechatDoneRouteImport } from './routes/login.wechat-done'
+import { Route as LoginDoneRouteImport } from './routes/login.done'
 import { Route as AuthStaffLoginRouteImport } from './routes/auth.staff-login'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AgentShareRouteImport } from './routes/agent.share'
@@ -175,6 +176,11 @@ const MerchantAgentsRoute = MerchantAgentsRouteImport.update({
 const LoginWechatDoneRoute = LoginWechatDoneRouteImport.update({
   id: '/login/wechat-done',
   path: '/login/wechat-done',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginDoneRoute = LoginDoneRouteImport.update({
+  id: '/login/done',
+  path: '/login/done',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthStaffLoginRoute = AuthStaffLoginRouteImport.update({
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
+  '/login/done': typeof LoginDoneRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -375,6 +382,7 @@ export interface FileRoutesByTo {
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
+  '/login/done': typeof LoginDoneRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
+  '/login/done': typeof LoginDoneRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
@@ -476,6 +485,7 @@ export interface FileRouteTypes {
     | '/agent/share'
     | '/auth/login'
     | '/auth/staff-login'
+    | '/login/done'
     | '/login/wechat-done'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -525,6 +535,7 @@ export interface FileRouteTypes {
     | '/agent/share'
     | '/auth/login'
     | '/auth/staff-login'
+    | '/login/done'
     | '/login/wechat-done'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -574,6 +585,7 @@ export interface FileRouteTypes {
     | '/agent/share'
     | '/auth/login'
     | '/auth/staff-login'
+    | '/login/done'
     | '/login/wechat-done'
     | '/merchant/agents'
     | '/merchant/apply'
@@ -622,6 +634,7 @@ export interface RootRouteChildren {
   AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthStaffLoginRoute: typeof AuthStaffLoginRoute
+  LoginDoneRoute: typeof LoginDoneRoute
   LoginWechatDoneRoute: typeof LoginWechatDoneRoute
   MerchantAgentsRoute: typeof MerchantAgentsRoute
   MerchantApplyRoute: typeof MerchantApplyRoute
@@ -810,6 +823,13 @@ declare module '@tanstack/react-router' {
       path: '/login/wechat-done'
       fullPath: '/login/wechat-done'
       preLoaderRoute: typeof LoginWechatDoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/done': {
+      id: '/login/done'
+      path: '/login/done'
+      fullPath: '/login/done'
+      preLoaderRoute: typeof LoginDoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/staff-login': {
@@ -1026,6 +1046,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminWithdrawalsRoute: AdminWithdrawalsRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthStaffLoginRoute: AuthStaffLoginRoute,
+  LoginDoneRoute: LoginDoneRoute,
   LoginWechatDoneRoute: LoginWechatDoneRoute,
   MerchantAgentsRoute: MerchantAgentsRoute,
   MerchantApplyRoute: MerchantApplyRoute,
