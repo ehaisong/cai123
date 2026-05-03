@@ -1,61 +1,98 @@
-# 部署架构：Zeabur 主站 + Lovable 仅作编辑器
+## 结论
 
-## 架构
+当前失败不是中转站 ticket 内容问题，而是本站部署形态与代码不匹配：
 
+- `vite.config.ts` 已开启 `tanstackStart.spa.enabled = true`，Zeabur 输出的是静态站点 `dist/client`。
+- `/login/wechat-done` 页面里仍调用 `createServerFn`：`exchangeWechatTicket`。
+- 线上 `https://66cai.site/_serverFn/...` 返回 `405 Allow: GET, HEAD`，说明 Zeabur 静态部署没有服务端函数运行环境。
+- 所以前端兑换 ticket 时服务端函数入口不可用，TanStack 客户端抛出 `Invariant failed`，页面只显示 `{ "message": "Invariant failed" }`。
+
+## 修复方案
+
+### 1. 把微信 ticket 兑换改成真实 HTTP API 路由
+
+新增一个公开 API 路由，例如：
+
+```text
+POST /api/public/wechat/exchange-ticket
 ```
-Lovable 编辑/预览  →  GitHub 自动同步  →  Zeabur 自动构建  →  对外发布
-                                                       ↑
-                                          自有域名 DNS A 记录
+
+它在服务端完成：
+
+1. 校验 `ticket` 和 `return_path`。
+2. 使用服务端环境变量 `WECHAT_HUB_SECRET` 调用中转站：
+   `https://wx.lovclaw.com/api/public/oauth/wechat/exchange`。
+3. 解析 openid / unionid / nickname / avatar。
+4. 调用 Supabase admin client：
+   - `find_user_by_wechat`
+   - 新用户 `auth.admin.createUser`
+   - `bind_wechat_to_profile`
+   - `auth.admin.generateLink`
+5. 返回前端需要的：
+   - `tokenHash`
+   - `email`
+   - `redirectTo`
+
+保留现有结构化日志，并把 `errcode / errmsg / step / raw` 以 JSON 原样返回给前端。
+
+### 2. 修改 `/login/wechat-done` 前端调用方式
+
+把当前的：
+
+```ts
+exchangeWechatTicket({ data: { ticket, return_path } })
 ```
 
-- **Lovable**：只用于编辑代码 + 预览（`id-preview--*.lovable.app` 走 vite dev，正常）
-- **GitHub**：作为代码中转，Lovable 双向同步
-- **Zeabur**：拉取仓库 → `bun install && bun run build` → 用 `dist/client/` 当静态站发布
-- **Supabase**：浏览器直连，跟前端跑在哪个 CDN 无关
+改成：
 
-## 关键配置
+```ts
+fetch('/api/public/wechat/exchange-ticket', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ ticket, return_path }),
+})
+```
 
-| 文件 | 作用 |
-|------|------|
-| `vite.config.ts` | `cloudflare: false` + SPA 模式，构建出 `dist/client/` |
-| `zeabur.json` | 显式声明构建命令、输出目录、SPA rewrites |
-| `vercel.json` / `public/_redirects` | 备用：将来在 Vercel/Netlify 部署兜底用 |
+失败时读取 API JSON，把 `errcode / errmsg / message` 显示在页面上。
+成功后继续用现有逻辑：
 
-## 抗封锁策略
+```ts
+supabase.auth.verifyOtp({ type: 'email', token_hash: tokenHash })
+```
 
-1. **主**：Zeabur 部署，绑自有域名，DNS A 记录指向 Zeabur IP
-2. **备**：同一仓库再接一份 Vercel 或 Netlify，拿到备用 IP
-3. **被封时**：在域名 DNS 处把 A 记录切到备用 IP（TTL 设 300s，5 分钟生效）
-4. **进阶**：用 Cloudflare Load Balancer / DNSPod 故障转移自动切换
+### 3. 移除或停用当前不适合静态部署的 server function 调用
 
-## ⚠️ 重要警告
+`src/server/wechat-login.functions.ts` 里的业务逻辑可以复用/迁移到 API route 的 server handler；前端不再直接 import 它，避免静态部署时生成 `/_serverFn/...` 调用。
 
-**不要点 Lovable 的「发布」按钮。**
+### 4. Zeabur 部署要求
 
-原因：当前 `vite.config.ts` 关掉了 Cloudflare Worker 配置，但 TanStack Start 在 SPA 模式下仍然会产出 `dist/server/server.js`。Lovable 的发布管线检测到 server bundle 就当 Worker 部署，但 Worker 入口缺东西 → `https://cai123.lovable.app/` 会一直返回 Internal Server Error。
+因为这是部署在你自己的 Zeabur 服务器上，必须确保 Zeabur 运行的是支持后端 API 的 TanStack Start/Node 服务，而不是纯静态 `dist/client`。
 
-这没影响业务——我们不靠 Lovable 发布对外服务。如果想彻底屏蔽这个按钮，可以在项目设置里把 publish visibility 设为 private。
+我会同步调整项目配置：
 
-## 验证步骤（接入 Zeabur 时执行）
+- 关闭当前 SPA-only 静态构建说明/配置。
+- 让构建产物包含可处理 `/api/public/*` 的服务端入口。
+- 避免把 `client_secret` 放进前端包。
 
-1. 确认 Lovable 已连 GitHub（Connectors → GitHub → Connect project）
-2. Zeabur 控制台 → New Project → Import from GitHub → 选本仓库
-3. Zeabur 自动读 `zeabur.json`，跑 `bun install && bun run build`
-4. 用 Zeabur 分配的 `xxx.zeabur.app` 临时域名访问首页
-5. 测试 SPA 路由：访问 `/admin/users` 后**直接刷新**，确认不会 404（验证 rewrites 生效）
-6. 绑定自有域名：Zeabur 控制台添加 → 按提示设 DNS
+同时需要在 Zeabur 环境变量里配置：
 
-## Supabase 提醒
+```text
+WECHAT_HUB_SECRET
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+```
 
-浏览器直连 `aonequdtprbhviskbvrw.supabase.co`。无论前端跑在 Zeabur / Vercel / 自有 VPS，连的都是同一个 Supabase 实例，数据互通。
+## 验证方式
 
-如果将来要加服务端逻辑（敏感密钥、定时任务等），用 **Supabase Edge Functions**，不要回到 TanStack Start 的 SSR——那会破坏当前的纯静态部署。
+实施后验证：
 
-## 故障排查
+1. 打开 `https://66cai.site/login/wechat-done?ticket=...` 不再出现 `Invariant failed`。
+2. 浏览器网络请求应出现：
+   `POST /api/public/wechat/exchange-ticket`。
+3. 若 ticket 过期或中转站拒绝，页面显示中转站返回的 `errcode/message`。
+4. 若 ticket 有效，`verifyOtp` 成功并跳转到 `return_path` 或首页。
 
-| 现象 | 排查方向 |
-|------|---------|
-| Zeabur 构建失败 | 看构建日志；检查 `bun install` 是否所有依赖装上 |
-| 部署后访问首页空白 | F12 看 Console，通常是 `dist/client` 路径没对，或 assets 404 |
-| 子路径刷新 404 | `zeabur.json` 的 `rewrites` 没生效，确认配置在 |
-| Supabase 连不上 | 检查 `.env` 里的 `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` 是否被 Zeabur 注入 |
+## 风险提示
+
+你提供的这个 ticket 已经超过 2 分钟有效期，修复后用它测试预计会返回“ticket 过期/无效”；需要重新从微信登录流程获取新 ticket 测试。
