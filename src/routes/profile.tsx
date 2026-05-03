@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useLogout } from "@/lib/use-logout";
 import { BottomNav } from "@/components/h5/bottom-nav";
 import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut, UserCircle2, Sparkles, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,9 @@ export const Route = createFileRoute("/profile")({
 interface Profile { user_code: string; nickname: string | null; avatar_url: string | null; }
 
 function ProfilePage() {
-  const { user, roles, signOut } = useAuth();
+  const { user, roles } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [balance, setBalance] = useState(0);
   const [hideBalance, setHideBalance] = useState(false);
@@ -131,7 +133,7 @@ function ProfilePage() {
       <div className="flex-1" />
 
       <div className="px-3 py-4">
-        <Button variant="outline" className="w-full" onClick={async () => { await signOut(); navigate({ to: "/" }); }}>
+        <Button variant="outline" className="w-full" onClick={() => { void logout(); }}>
           <LogOut className="w-4 h-4 mr-2" /> 退出登录
         </Button>
       </div>

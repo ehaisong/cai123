@@ -1,7 +1,7 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { toast } from "sonner";
+import { useLogout } from "@/lib/use-logout";
 
 // Routes where we don't need an extra floating logout button
 // (auth flow pages, or pages that already render their own 退出登录 button)
@@ -12,23 +12,15 @@ const HIDE_EXACT = new Set<string>([
 ]);
 
 export function GlobalLogout() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const logout = useLogout();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (!user) return null;
   if (HIDE_ON_PREFIX.some((p) => pathname.startsWith(p))) return null;
   if (HIDE_EXACT.has(pathname)) return null;
 
-  const handle = async () => {
-    try {
-      await signOut();
-      toast.success("已退出登录");
-      navigate({ to: "/auth/staff-login" });
-    } catch {
-      toast.error("退出失败，请重试");
-    }
-  };
+  const handle = () => { void logout(); };
 
   return (
     <button

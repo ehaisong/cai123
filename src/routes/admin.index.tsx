@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/h5/page-header";
 import { RouteGuard } from "@/components/route-guard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useLogout } from "@/lib/use-logout";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -92,7 +93,7 @@ type Stats = {
 
 function AdminHomeInner() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const logout = useLogout();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -142,15 +143,7 @@ function AdminHomeInner() {
     };
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("已退出登录");
-      navigate({ to: "/auth/staff-login" });
-    } catch (e) {
-      toast.error("退出失败，请重试");
-    }
-  };
+  const handleSignOut = () => { void logout(); };
 
   const statCards: Array<{
     label: string;
