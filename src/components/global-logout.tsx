@@ -1,7 +1,7 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { toast } from "sonner";
+import { useLogout } from "@/lib/use-logout";
 
 // Routes where we don't need an extra floating logout button
 // (auth flow pages, or pages that already render their own 退出登录 button)
