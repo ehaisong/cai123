@@ -152,7 +152,9 @@ function HomeRouter() {
   }
 
   if (state.kind === "redirect-login") {
-    return <Navigate to="/auth/login" search={{ redirect: "/" }} replace />;
+    // 未带推广 ref：默认走「员工登录」（手机号 + 验证码）
+    // 带 ref 走 /auth/login（微信扫码登录），由前面的逻辑处理（带 ref 时不会进入此分支）
+    return <Navigate to="/auth/staff-login" replace />;
   }
 
   if (state.kind === "redirect-admin") {
