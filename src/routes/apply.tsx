@@ -325,6 +325,37 @@ function ApplyForm() {
             />
           </div>
 
+          <div>
+            <Label className="text-xs text-muted-foreground">店铺头像</Label>
+            <div className="mt-2 flex items-center gap-3">
+              <img
+                src={avatarUrl}
+                alt="店铺头像预览"
+                className="h-14 w-14 rounded-full border border-border object-cover bg-muted"
+              />
+              <div className="flex flex-1 flex-wrap gap-2">
+                {DEFAULT_AVATARS.map((url) => (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => setAvatarUrl(url)}
+                    className={`h-9 w-9 rounded-full overflow-hidden border-2 transition ${
+                      avatarUrl === url ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={url} alt="默认头像" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Input
+              className="mt-2"
+              placeholder="或粘贴自定义头像图片链接"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+            />
+          </div>
+
           <div className="text-xs text-muted-foreground">
             申请人手机号：<span className="text-foreground">{user?.phone ?? "—"}</span>
           </div>
