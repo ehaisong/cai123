@@ -157,10 +157,18 @@ function PhoneLogin() {
 }
 
 /* ------------------------------ Apply Form ------------------------------ */
+const DEFAULT_AVATARS = [
+  "https://api.dicebear.com/7.x/shapes/svg?seed=shop1&backgroundColor=ffd5dc",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=shop2&backgroundColor=c0e8ff",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=shop3&backgroundColor=d4f0c0",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=shop4&backgroundColor=ffe4b5",
+];
+
 function ApplyForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [shopName, setShopName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATARS[0]);
   const [existing, setExisting] = useState<any>(null);
   const [merchant, setMerchant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -192,7 +200,6 @@ function ApplyForm() {
     if (name.length < 2) { toast.error("请输入店铺名称（至少 2 个字）"); return; }
     setSubmitting(true);
     try {
-      // 二次校验：如果已有 pending 记录，直接刷新状态，不再插入
       const { data: pendingRow } = await supabase
         .from("merchant_applications")
         .select("id")
@@ -207,11 +214,11 @@ function ApplyForm() {
       const { error } = await supabase.from("merchant_applications").insert({
         user_id: user.id,
         shop_name: name,
+        shop_avatar_url: avatarUrl || null,
         phone: user.phone ?? null,
-        real_name: name, // 占位，后续完善资料向导补齐
+        real_name: name,
       });
       if (error) {
-        // 23505 = 唯一约束冲突（同用户/同手机号已有 pending 申请）
         if ((error as any).code === "23505") {
           toast.info("您已提交申请，正在审核中");
           await load();
