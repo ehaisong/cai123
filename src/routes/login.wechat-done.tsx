@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { exchangeWechatTicket } from "@/server/wechat-login.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -12,10 +11,17 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/login/wechat-done")({
   validateSearch: searchSchema,
-  ssr: false, // 完全交给客户端处理，避免 SSR Invariant
+  ssr: false,
   component: WechatDonePage,
   head: () => ({ meta: [{ title: "正在登录..." }] }),
 });
+
+const SUPABASE_URL =
+  (import.meta as any).env?.VITE_SUPABASE_URL ??
+  "https://aonequdtprbhviskbvrw.supabase.co";
+const SUPABASE_ANON =
+  (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
 
 function WechatDonePage() {
   const navigate = useNavigate();
@@ -45,23 +51,53 @@ function WechatDonePage() {
 
     (async () => {
       try {
-        const r = await exchangeWechatTicket({ data: { ticket, return_path } });
-        console.log("[wechat-done] exchange ok", {
-          email: r.email,
-          redirectTo: r.redirectTo,
-          hasTokenHash: !!r.tokenHash,
+        const res = await fetch(EXCHANGE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON,
+            Authorization: `Bearer ${SUPABASE_ANON}`,
+          },
+          body: JSON.stringify({ ticket, return_path }),
         });
+
+        const text = await res.text();
+        let body: any = null;
+        try {
+          body = text ? JSON.parse(text) : null;
+        } catch {
+          // 非 JSON
+        }
+
+        console.log("[wechat-done] exchange http", {
+          status: res.status,
+          ok: res.ok,
+          keys: body && typeof body === "object" ? Object.keys(body) : null,
+          rawPreview: !body ? text?.slice(0, 200) : null,
+        });
+
+        if (!res.ok || !body?.success) {
+          const info: Record<string, unknown> = {
+            httpStatus: res.status,
+            step: body?.step ?? "exchange",
+            message: body?.message ?? text?.slice(0, 200) ?? "exchange_failed",
+          };
+          if (body?.errcode != null) info.errcode = body.errcode;
+          if (body?.errmsg) info.errmsg = body.errmsg;
+          if (body?.raw) info.raw = body.raw;
+          setDetail(info);
+          throw new Error(String(info.message));
+        }
+
+        const tokenHash = body.tokenHash as string;
+        const redirectTo = (body.redirectTo as string) ?? "/";
 
         const { error: vErr } = await supabase.auth.verifyOtp({
           type: "email",
-          token_hash: r.tokenHash,
+          token_hash: tokenHash,
         });
         if (vErr) {
-          console.error("[wechat-done] verifyOtp failed", {
-            message: vErr.message,
-            status: (vErr as any).status,
-            name: vErr.name,
-          });
+          console.error("[wechat-done] verifyOtp failed", vErr);
           setDetail({
             step: "verifyOtp",
             status: (vErr as any).status ?? null,
@@ -71,11 +107,11 @@ function WechatDonePage() {
           throw new Error(`verifyOtp 失败: ${vErr.message}`);
         }
 
-        console.log("[wechat-done] verifyOtp ok, redirect", { redirectTo: r.redirectTo });
+        console.log("[wechat-done] verifyOtp ok, redirect", { redirectTo });
 
         const target =
-          r.redirectTo.startsWith("/") && !r.redirectTo.startsWith("//")
-            ? r.redirectTo
+          redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+            ? redirectTo
             : "/";
         if (target !== "/") {
           router.history.push(target);
@@ -83,16 +119,7 @@ function WechatDonePage() {
           navigate({ to: "/" });
         }
       } catch (e: any) {
-        // 服务端 WechatLoginError 透出的字段（通过 message 透传 + 可能挂在对象上）
-        const info: Record<string, unknown> = {
-          message: e?.message ?? "登录失败",
-        };
-        if (e?.step) info.step = e.step;
-        if (e?.errcode != null) info.errcode = e.errcode;
-        if (e?.errmsg) info.errmsg = e.errmsg;
-        if (e?.raw) info.raw = e.raw;
-        console.error("[wechat-done] failed", info);
-        setDetail((prev) => prev ?? info);
+        console.error("[wechat-done] failed", e?.message);
         setError(e?.message ?? "登录失败");
       }
     })();
