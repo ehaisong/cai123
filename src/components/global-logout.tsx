@@ -4,7 +4,12 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
 // Routes where we don't need an extra floating logout button
+// (auth flow pages, or pages that already render their own 退出登录 button)
 const HIDE_ON_PREFIX = ["/auth", "/login"];
+const HIDE_EXACT = new Set<string>([
+  "/profile", // 个人中心已自带退出登录
+  "/admin",   // 管理后台首页已自带退出登录
+]);
 
 export function GlobalLogout() {
   const { user, signOut } = useAuth();
