@@ -18,6 +18,7 @@ export function GlobalLogout() {
 
   if (!user) return null;
   if (HIDE_ON_PREFIX.some((p) => pathname.startsWith(p))) return null;
+  if (HIDE_EXACT.has(pathname)) return null;
 
   const handle = async () => {
     try {
