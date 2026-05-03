@@ -209,7 +209,32 @@ function StaffLoginPage() {
         <p className="mt-1 text-sm text-muted-foreground">管理员 / 商家 / 代理 专用入口</p>
       </div>
 
+      {/* 推荐入口：通过中转站发送短信，避开 Supabase 必须配置 SMS Provider 的限制 */}
+      <Card className="mx-4 mb-3 p-5 bg-primary/5 border-primary/20">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
+            <Smartphone className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold">短信验证码登录（推荐）</div>
+            <p className="text-[11px] text-muted-foreground">通过登录中心安全发送验证码</p>
+          </div>
+        </div>
+        <Button
+          className="w-full"
+          onClick={() => {
+            const ret = "/auth/staff-login";
+            window.location.href =
+              `${HUB_PHONE_START}?client=${encodeURIComponent(HUB_CLIENT)}` +
+              `&return_path=${encodeURIComponent(ret)}`;
+          }}
+        >
+          使用手机号登录
+        </Button>
+      </Card>
+
       <Card className="mx-4 p-6">
+        <div className="text-[11px] text-muted-foreground mb-3">备用：直接通过 Supabase 发送短信（需在 Supabase 配置 SMS Provider）</div>
         <div className="flex items-center gap-2 mb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
             <Phone className="h-5 w-5 text-primary" />
