@@ -118,44 +118,18 @@ function LoginPage() {
   const routeAfterLogin = async () => {
     setRouting(true);
     try {
-      try { await supabase.rpc("bootstrap_admin_role"); await refreshRoles(); } catch {}
-      const uid = (await supabase.auth.getUser()).data.user?.id;
-      if (!uid) return;
-
-      const { data: rolesRows } = await supabase
-        .from("user_roles").select("role").eq("user_id", uid);
-      const roles = (rolesRows ?? []).map(r => r.role as string);
-
-      if (roles.includes("admin")) { navigate({ to: "/admin" }); return; }
-      if (roles.includes("agent")) { navigate({ to: "/agent" }); return; }
-
-      const { data: merchant } = await supabase
-        .from("merchants").select("id, status").eq("user_id", uid).maybeSingle();
-      if (merchant?.status === "approved") {
-        if (!roles.includes("merchant")) {
-          await supabase.from("user_roles").insert({ user_id: uid, role: "merchant" });
-          await refreshRoles();
-        }
-        navigate({ to: "/merchant" });
-        return;
+      const dest = await resolveLoginDestination({
+        tab,
+        ref: search.ref,
+        redirect: safeRedirect(search.redirect) ?? undefined,
+      });
+      // merchant 角色刚补全时刷新本地 roles 缓存
+      try { await refreshRoles(); } catch {}
+      if (dest.hard) {
+        window.location.href = dest.path;
+      } else {
+        navigate({ to: dest.path });
       }
-      if (roles.includes("merchant")) { navigate({ to: "/merchant" }); return; }
-
-      // 普通用户：客户 Tab 走首页（含 ref 解析），商家 Tab 检查申请状态
-      if (tab === "staff") {
-        const { data: app } = await supabase
-          .from("merchant_applications")
-          .select("status").eq("user_id", uid)
-          .order("created_at", { ascending: false }).limit(1).maybeSingle();
-        if (app?.status === "pending") { navigate({ to: "/apply" }); return; }
-        if (app?.status === "approved") { navigate({ to: "/merchant" }); return; }
-        navigate({ to: "/apply" });
-        return;
-      }
-
-      const back = safeRedirect(search.redirect)
-        ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
-      window.location.href = back;
     } finally {
       setRouting(false);
     }
