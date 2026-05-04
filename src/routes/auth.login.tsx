@@ -8,7 +8,7 @@ import { Loader2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import heroImage from "@/assets/login-hero.jpg";
 import { resolveLoginDestination } from "@/lib/route-after-login";
-import { sendSmsCode, verifySmsCode } from "@/server/sms.functions";
+
 
 const searchSchema = z.object({
   ref: z.string().optional(),
@@ -292,7 +292,8 @@ function StaffPanel({
     requireAgree(async () => {
       setSending(true);
       try {
-        const res = await sendSmsCode({ data: { phone } });
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string }>("sms-send", { body: { phone } });
+        if (fnErr || !res) { toast.error(fnErr?.message ?? "发送失败"); return; }
         if (!res.ok) {
           toast.error(res.message);
           return;
@@ -313,7 +314,8 @@ function StaffPanel({
     requireAgree(async () => {
       setVerifying(true);
       try {
-        const res = await verifySmsCode({ data: { phone, code } });
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; tokenHash?: string; email?: string }>("sms-verify", { body: { phone, code } });
+        if (fnErr || !res) { toast.error(fnErr?.message ?? "登录失败"); return; }
         if (!res.ok) {
           toast.error(res.message);
           return;
