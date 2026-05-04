@@ -14,14 +14,14 @@ export const Route = createFileRoute("/login/done")({
   validateSearch: searchSchema,
   ssr: false,
   component: LoginDonePage,
-  head: () => ({ meta: [{ title: "正在登录..." }, { name: "robots", content: "noindex,nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "正在登录..." }, { name: "robots", content: "noindex,nofollow" }],
+  }),
 });
 
 const SUPABASE_URL =
-  (import.meta as any).env?.VITE_SUPABASE_URL ??
-  "https://aonequdtprbhviskbvrw.supabase.co";
-const SUPABASE_ANON =
-  (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+  (import.meta as any).env?.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
+const SUPABASE_ANON = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
 
 function readTicketFromUrl() {
@@ -33,7 +33,8 @@ function readTicketFromUrl() {
 function safeBusinessRedirect(raw?: string | null) {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
   const path = raw.split("?")[0];
-  if (path === "/login/done" || path === "/login/iframe-bridge" || path === "/auth/login") return "/";
+  if (path === "/login/done" || path === "/login/iframe-bridge" || path === "/auth/login")
+    return "/";
   return raw;
 }
 
@@ -54,8 +55,13 @@ function LoginDonePage() {
     if (typeof window !== "undefined" && window.parent && window.parent !== window) {
       try {
         const payload: Record<string, string> = {};
-        new URL(window.location.href).searchParams.forEach((v, k) => { payload[k] = v; });
-        window.parent.postMessage({ type: "lovable-login-bridge", payload }, window.location.origin);
+        new URL(window.location.href).searchParams.forEach((v, k) => {
+          payload[k] = v;
+        });
+        window.parent.postMessage(
+          { type: "lovable-login-bridge", payload },
+          window.location.origin,
+        );
         return;
       } catch {
         // 同源失败则继续在本窗口处理
@@ -164,7 +170,8 @@ function LoginDonePage() {
 
         // 统一回到 /auth/login，由该页 useEffect 按角色（admin>agent>merchant>普通）路由
         const tab = provider === "phone" ? "staff" : "customer";
-        const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
+        const safeRedirect =
+          redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
         navigate({ to: "/auth/login", search: { tab, redirect: safeRedirect } });
       } catch (e: any) {
         console.error("[login-done] failed", e?.message);
