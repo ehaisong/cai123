@@ -95,7 +95,10 @@ function LoginPage() {
     // 微信内置浏览器：必须整页跳转走 OAuth，iframe 内微信会强制 fallback 到扫码
     if (isWechatBrowser()) {
       const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
-      const returnPath = `/login/done?return_path=${encodeURIComponent(back)}`;
+      // 把业务回跳路径暂存到 sessionStorage，避免与中转站附加的 ?ticket= 拼接冲突
+      try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
+      // return_path 必须是干净的路径，中转站会在其后追加 ?ticket=xxx
+      const returnPath = "/login/done?provider=wechat";
       const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
       window.location.href = url;
       return;
