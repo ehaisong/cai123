@@ -51,7 +51,17 @@ function LoginDonePage() {
 
     const ticket = search.ticket;
     const provider = search.provider;
-    const return_path = search.return_path ?? "/";
+    let return_path = search.return_path ?? "/";
+    // 微信内浏览器场景：业务回跳路径在 openWechat 时存到 sessionStorage
+    if ((!search.return_path || search.return_path === "/") && typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("wechat_login_return_path");
+        if (saved) {
+          return_path = saved;
+          sessionStorage.removeItem("wechat_login_return_path");
+        }
+      } catch {}
+    }
 
     if (provider === "phone") setHint("正在完成短信登录，请稍候…");
     else if (provider === "wechat") setHint("正在完成微信登录，请稍候…");
