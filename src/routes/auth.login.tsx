@@ -97,8 +97,8 @@ function LoginPage() {
       const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
       // 把业务回跳路径暂存到 sessionStorage，避免与中转站附加的 ?ticket= 拼接冲突
       try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
-      // return_path 必须是干净的路径，中转站会在其后追加 ?ticket=xxx
-      const returnPath = "/login/done?provider=wechat";
+      // return_path 必须是不带 query 的干净路径；中转站会在其后追加 ?ticket=xxx
+      const returnPath = "/login/done";
       const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
       window.location.href = url;
       return;
