@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
-import { fmtDate, fmtMoney } from "@/lib/format";
+import { fmtDate, fmtCredits } from "@/lib/format";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/merchant/products/")({
   component: ProductsList,
@@ -14,32 +15,46 @@ export const Route = createFileRoute("/merchant/products/")({
 
 function ProductsList() {
   return (
-    <RouteGuard title="我的商品" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
-      <ProductsListInner />
+    <RouteGuard title="我的发布" roles={["merchant"]} forbiddenText="此页面仅限商家访问">
+      <Inner />
     </RouteGuard>
   );
 }
 
-type Row = {
+type ProductRow = {
   id: string; title: string; price: number; status: string; sales_count: number;
+  kind: string | null;
+  has_self_issue: boolean | null;
+  types: string[] | null;
+  is_presale: boolean | null;
+  no_win_refund: boolean | null;
   latest_issue_no: string | null; latest_publish_at: string | null;
   latest_status: string | null; latest_result: string | null;
 };
 
-function ProductsListInner() {
+type PackageRow = {
+  id: string; title: string; price: number; status: string; sales_count: number;
+  duration_days: number; types: string[] | null; logo_url: string | null;
+  show_on_home: boolean; show_in_zone: boolean; created_at: string;
+};
+
+function Inner() {
   const { user } = useAuth();
-  const [list, setList] = useState<Row[]>([]);
+  const [tab, setTab] = useState<"single" | "package">("single");
+  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [packages, setPackages] = useState<PackageRow[]>([]);
 
   const load = async () => {
     if (!user) return;
     const { data: m } = await supabase.from("merchants").select("id").eq("user_id", user.id).maybeSingle();
     if (!m) return;
-    const { data: products } = await supabase
+
+    const { data: ps } = await supabase
       .from("products")
-      .select("id, title, price, status, sales_count")
+      .select("id, title, price, status, sales_count, kind, has_self_issue, types, is_presale, no_win_refund")
       .eq("merchant_id", m.id)
       .order("created_at", { ascending: false });
-    const ids = (products ?? []).map((p) => p.id);
+    const ids = (ps ?? []).map((p) => p.id);
     let issuesMap = new Map<string, any>();
     if (ids.length > 0) {
       const { data: issues } = await supabase
@@ -47,12 +62,10 @@ function ProductsListInner() {
         .select("product_id, issue_no, publish_at, status, result")
         .in("product_id", ids)
         .order("publish_at", { ascending: false });
-      for (const it of issues ?? []) {
-        if (!issuesMap.has(it.product_id)) issuesMap.set(it.product_id, it);
-      }
+      for (const it of issues ?? []) if (!issuesMap.has(it.product_id)) issuesMap.set(it.product_id, it);
     }
-    setList(
-      (products ?? []).map((p) => {
+    setProducts(
+      (ps ?? []).map((p) => {
         const it = issuesMap.get(p.id);
         return {
           ...p,
@@ -60,19 +73,36 @@ function ProductsListInner() {
           latest_publish_at: it?.publish_at ?? null,
           latest_status: it?.status ?? null,
           latest_result: it?.result ?? null,
-        } as Row;
+        } as ProductRow;
       })
     );
+
+    const { data: pkgs } = await supabase
+      .from("product_packages")
+      .select("id, title, price, status, sales_count, duration_days, types, logo_url, show_on_home, show_in_zone, created_at")
+      .eq("merchant_id", m.id)
+      .order("created_at", { ascending: false });
+    setPackages((pkgs ?? []) as PackageRow[]);
   };
   useEffect(() => { load(); }, [user?.id]);
 
-  const toggleStatus = async (p: Row) => {
+  const toggleProductStatus = async (p: ProductRow) => {
     const next = p.status === "published" ? "unpublished" : "published";
     const { error } = await supabase.from("products").update({ status: next }).eq("id", p.id);
     if (error) toast.error(error.message); else { toast.success("已更新"); load(); }
   };
+  const togglePackageStatus = async (p: PackageRow) => {
+    const next = p.status === "published" ? "unpublished" : "published";
+    const { error } = await supabase.from("product_packages").update({ status: next }).eq("id", p.id);
+    if (error) toast.error(error.message); else { toast.success("已更新"); load(); }
+  };
+  const deletePackage = async (id: string) => {
+    if (!confirm("确认删除该套餐？")) return;
+    const { error } = await supabase.from("product_packages").delete().eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("已删除"); load(); }
+  };
 
-  const issueBadge = (p: Row) => {
+  const issueBadge = (p: ProductRow) => {
     if (!p.latest_issue_no) return <span className="text-muted-foreground">未添加期号</span>;
     if (p.latest_status !== "published") return <span className="text-muted-foreground">草稿/下架</span>;
     if (p.latest_result === "won") return <span className="text-success">✅ 中奖</span>;
@@ -82,42 +112,116 @@ function ProductsListInner() {
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
-      <PageHeader title="商品系列" right={<Link to="/merchant/products/new" className="text-xs text-info">＋ 新建系列</Link>} />
-      <main className="flex-1 px-3 py-3 space-y-2">
-        {list.length === 0 && <p className="text-center py-12 text-muted-foreground text-sm">暂无系列</p>}
-        {list.map((p) => (
-          <div key={p.id} className="bg-card rounded-md p-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-1">{p.title}</h3>
-              <span className="text-primary font-semibold text-sm">{fmtMoney(p.price)}</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className={`px-1.5 py-0.5 rounded ${p.status === "published" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-                  {p.status === "published" ? "已上架" : p.status === "unpublished" ? "已下架" : "草稿"}
-                </span>
-                <span className="text-muted-foreground">销量 {p.sales_count}</span>
-              </div>
-              <span className="text-muted-foreground">{p.latest_publish_at ? fmtDate(p.latest_publish_at) : "—"}</span>
-            </div>
-            <div className="mt-2 text-xs flex items-center gap-2">
-              <span className="text-muted-foreground">最新期：</span>
-              <span className="font-medium">{p.latest_issue_no ?? "—"}</span>
-              {issueBadge(p)}
-            </div>
-            <div className="mt-2 flex gap-2">
-              <Link to="/merchant/products/$productId/issues" params={{ productId: p.id }} className="flex-1">
-                <Button variant="default" size="sm" className="w-full">管理期数</Button>
-              </Link>
-              <Button variant="outline" size="sm" className="flex-1" onClick={() => toggleStatus(p)}>
-                {p.status === "published" ? "下架" : "上架"}
-              </Button>
-              <Link to="/product/$productId" params={{ productId: p.id }} className="flex-1">
-                <Button variant="outline" size="sm" className="w-full">预览</Button>
-              </Link>
-            </div>
-          </div>
+      <PageHeader
+        title="我的发布"
+        right={<Link to="/merchant/products/new" className="text-xs text-info">＋ 新建</Link>}
+      />
+
+      <div className="flex items-center justify-center gap-10 py-3 bg-card border-b border-border">
+        {(["single", "package"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={cn(
+              "text-sm relative pb-1.5",
+              tab === k ? "font-semibold text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {k === "single" ? `单卖 (${products.length})` : `包时套餐 (${packages.length})`}
+            {tab === k && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />}
+          </button>
         ))}
+      </div>
+
+      <main className="flex-1 px-3 py-3 space-y-2">
+        {tab === "single" && (
+          <>
+            {products.length === 0 && <p className="text-center py-12 text-muted-foreground text-sm">暂无单卖商品</p>}
+            {products.map((p) => (
+              <div key={p.id} className="bg-card rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-1">{p.title}</h3>
+                  <span className="text-primary font-semibold text-sm">{fmtCredits(p.price)}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className={`px-1.5 py-0.5 rounded ${p.status === "published" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                    {p.status === "published" ? "已上架" : p.status === "unpublished" ? "已下架" : "草稿"}
+                  </span>
+                  {(p.types ?? []).map((t) => (
+                    <span key={t} className="px-1.5 py-0.5 rounded bg-accent text-primary">{t}</span>
+                  ))}
+                  {p.is_presale && <span className="px-1.5 py-0.5 rounded bg-warning/10 text-warning">预售</span>}
+                  {p.no_win_refund && <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">不中退还</span>}
+                  <span className="text-muted-foreground ml-auto">销量 {p.sales_count}</span>
+                </div>
+                {p.has_self_issue && (
+                  <div className="mt-2 text-xs flex items-center gap-2">
+                    <span className="text-muted-foreground">最新期：</span>
+                    <span className="font-medium">{p.latest_issue_no ?? "—"}</span>
+                    {issueBadge(p)}
+                    <span className="text-muted-foreground ml-auto">{p.latest_publish_at ? fmtDate(p.latest_publish_at) : ""}</span>
+                  </div>
+                )}
+                <div className="mt-2 flex gap-2">
+                  {p.has_self_issue && (
+                    <Link to="/merchant/products/$productId/issues" params={{ productId: p.id }} className="flex-1">
+                      <Button variant="default" size="sm" className="w-full">管理期数</Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => toggleProductStatus(p)}>
+                    {p.status === "published" ? "下架" : "上架"}
+                  </Button>
+                  <Link to="/product/$productId" params={{ productId: p.id }} className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full">预览</Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {tab === "package" && (
+          <>
+            {packages.length === 0 && <p className="text-center py-12 text-muted-foreground text-sm">暂无套餐</p>}
+            {packages.map((p) => (
+              <div key={p.id} className="bg-card rounded-md p-3">
+                <div className="flex items-start gap-3">
+                  {p.logo_url ? (
+                    <img src={p.logo_url} alt="" className="w-12 h-12 rounded object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">LOGO</div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-1">{p.title}</h3>
+                      <span className="text-primary font-semibold text-sm">{fmtCredits(p.price)}</span>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className={`px-1.5 py-0.5 rounded ${p.status === "published" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                        {p.status === "published" ? "已上架" : "已下架"}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-accent text-primary">{p.duration_days} 天</span>
+                      {(p.types ?? []).map((t) => (
+                        <span key={t} className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{t}</span>
+                      ))}
+                      {p.show_on_home && <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">首页</span>}
+                      {p.show_in_zone && <span className="px-1.5 py-0.5 rounded bg-warning/10 text-warning">专区</span>}
+                      <span className="text-muted-foreground ml-auto">销量 {p.sales_count}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => togglePackageStatus(p)}>
+                    {p.status === "published" ? "下架" : "上架"}
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-destructive" onClick={() => deletePackage(p.id)}>
+                    删除
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </main>
     </div>
   );
