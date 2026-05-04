@@ -33,7 +33,7 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
   if (!uid) return { path: "/auth/login" };
 
   // 后台尝试初始化 admin 角色，失败也不阻塞
-  void supabase.rpc("bootstrap_admin_role").catch(() => {});
+  void (async () => { try { await supabase.rpc("bootstrap_admin_role"); } catch {} })();
 
   // 并行：roles + merchant 状态
   const [rolesRes, merchantRes] = await Promise.all([
