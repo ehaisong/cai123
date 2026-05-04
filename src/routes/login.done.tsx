@@ -79,13 +79,20 @@ function LoginDonePage() {
       return_path,
     });
 
-    if (!ticket) {
-      setError("缺少 ticket 参数");
-      return;
-    }
-
     (async () => {
       try {
+        if (!ticket) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            console.log("[login-done] no ticket but session exists, continue routing", { return_path });
+            navigate({ to: "/auth/login", search: { tab: "customer", redirect: return_path } });
+            return;
+          }
+          console.log("[login-done] no ticket and no session, back to login", { return_path });
+          navigate({ to: "/auth/login", search: { tab: "customer", redirect: return_path } });
+          return;
+        }
+
         const res = await fetch(EXCHANGE_URL, {
           method: "POST",
           headers: {
