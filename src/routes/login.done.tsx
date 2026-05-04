@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,15 +14,27 @@ export const Route = createFileRoute("/login/done")({
   validateSearch: searchSchema,
   ssr: false,
   component: LoginDonePage,
-  head: () => ({ meta: [{ title: "正在登录..." }, { name: "robots", content: "noindex,nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "正在登录..." }, { name: "robots", content: "noindex,nofollow" }],
+  }),
 });
 
-const SUPABASE_URL =
-  (import.meta as any).env?.VITE_SUPABASE_URL ??
-  "https://aonequdtprbhviskbvrw.supabase.co";
-const SUPABASE_ANON =
-  (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+const env = import.meta.env as Record<string, string | undefined>;
+const SUPABASE_URL = env.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
+const SUPABASE_ANON = env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
+
+type ExchangeResponse = {
+  success?: boolean;
+  provider?: string;
+  tokenHash?: string;
+  redirectTo?: string;
+  step?: string;
+  message?: string;
+  errcode?: unknown;
+  errmsg?: unknown;
+  raw?: unknown;
+};
 
 function readTicketFromUrl() {
   if (typeof window === "undefined") return null;
@@ -30,9 +42,16 @@ function readTicketFromUrl() {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
+function safeBusinessRedirect(raw?: string | null) {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  const path = raw.split("?")[0];
+  if (path === "/login/done" || path === "/login/iframe-bridge" || path === "/auth/login")
+    return "/";
+  return raw;
+}
+
 function LoginDonePage() {
   const navigate = useNavigate();
-  const router = useRouter();
   const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
@@ -47,8 +66,13 @@ function LoginDonePage() {
     if (typeof window !== "undefined" && window.parent && window.parent !== window) {
       try {
         const payload: Record<string, string> = {};
-        new URL(window.location.href).searchParams.forEach((v, k) => { payload[k] = v; });
-        window.parent.postMessage({ type: "lovable-login-bridge", payload }, window.location.origin);
+        new URL(window.location.href).searchParams.forEach((v, k) => {
+          payload[k] = v;
+        });
+        window.parent.postMessage(
+          { type: "lovable-login-bridge", payload },
+          window.location.origin,
+        );
         return;
       } catch {
         // 同源失败则继续在本窗口处理
@@ -66,8 +90,11 @@ function LoginDonePage() {
           return_path = saved;
           sessionStorage.removeItem("wechat_login_return_path");
         }
-      } catch {}
+      } catch {
+        // 忽略不可用的 sessionStorage
+      }
     }
+    return_path = safeBusinessRedirect(return_path);
 
     if (provider === "phone") setHint("正在完成短信登录，请稍候…");
     else if (provider === "wechat") setHint("正在完成微信登录，请稍候…");
@@ -79,13 +106,22 @@ function LoginDonePage() {
       return_path,
     });
 
-    if (!ticket) {
-      setError("缺少 ticket 参数");
-      return;
-    }
-
     (async () => {
       try {
+        if (!ticket) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            console.log("[login-done] no ticket but session exists, continue routing", {
+              return_path,
+            });
+            navigate({ to: "/auth/login", search: { tab: "customer", redirect: return_path } });
+            return;
+          }
+          console.log("[login-done] no ticket and no session, back to login", { return_path });
+          navigate({ to: "/auth/login", search: { tab: "customer", redirect: return_path } });
+          return;
+        }
+
         const res = await fetch(EXCHANGE_URL, {
           method: "POST",
           headers: {
@@ -97,9 +133,9 @@ function LoginDonePage() {
         });
 
         const text = await res.text();
-        let body: any = null;
+        let body: ExchangeResponse | null = null;
         try {
-          body = text ? JSON.parse(text) : null;
+          body = text ? (JSON.parse(text) as ExchangeResponse) : null;
         } catch {
           // 非 JSON
         }
@@ -136,7 +172,7 @@ function LoginDonePage() {
           console.error("[login-done] verifyOtp failed", vErr);
           setDetail({
             step: "verifyOtp",
-            status: (vErr as any).status ?? null,
+            status: (vErr as { status?: number }).status ?? null,
             name: vErr.name,
             message: vErr.message,
           });
@@ -147,14 +183,16 @@ function LoginDonePage() {
 
         // 统一回到 /auth/login，由该页 useEffect 按角色（admin>agent>merchant>普通）路由
         const tab = provider === "phone" ? "staff" : "customer";
-        const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
+        const safeRedirect =
+          redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
         navigate({ to: "/auth/login", search: { tab, redirect: safeRedirect } });
-      } catch (e: any) {
-        console.error("[login-done] failed", e?.message);
-        setError(e?.message ?? "登录失败");
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "登录失败";
+        console.error("[login-done] failed", message);
+        setError(message);
       }
     })();
-  }, [search.ticket, search.provider, search.return_path, navigate, router]);
+  }, [search.ticket, search.provider, search.return_path, navigate]);
 
   if (error) {
     return (
