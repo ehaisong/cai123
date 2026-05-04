@@ -173,6 +173,28 @@ function ApplyForm() {
   const [merchant, setMerchant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) { toast.error("请选择图片文件"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("图片不能超过 5MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("shop-avatars").upload(path, file, {
+        upsert: true, contentType: file.type,
+      });
+      if (error) { toast.error(error.message); return; }
+      const { data } = supabase.storage.from("shop-avatars").getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      toast.success("头像已上传");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const load = async () => {
     if (!user) return;
