@@ -37,6 +37,18 @@ function LoginDonePage() {
     if (ranRef.current) return;
     ranRef.current = true;
 
+    // 若意外被加载在 iframe 内（例如直接命中本页），把参数转给父页处理，避免重复交换
+    if (typeof window !== "undefined" && window.parent && window.parent !== window) {
+      try {
+        const payload: Record<string, string> = {};
+        new URL(window.location.href).searchParams.forEach((v, k) => { payload[k] = v; });
+        window.parent.postMessage({ type: "lovable-login-bridge", payload }, window.location.origin);
+        return;
+      } catch {
+        // 同源失败则继续在本窗口处理
+      }
+    }
+
     const ticket = search.ticket;
     const provider = search.provider;
     const return_path = search.return_path ?? "/";
@@ -115,17 +127,12 @@ function LoginDonePage() {
           throw new Error(`verifyOtp 失败: ${vErr.message}`);
         }
 
-        console.log("[login-done] verifyOtp ok, redirect", { redirectTo });
+        console.log("[login-done] verifyOtp ok, route by role via /auth/login", { redirectTo });
 
-        const target =
-          redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-            ? redirectTo
-            : "/";
-        if (target !== "/") {
-          router.history.push(target);
-        } else {
-          navigate({ to: "/" });
-        }
+        // 统一回到 /auth/login，由该页 useEffect 按角色（admin>agent>merchant>普通）路由
+        const tab = provider === "phone" ? "staff" : "customer";
+        const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
+        navigate({ to: "/auth/login", search: { tab, redirect: safeRedirect } });
       } catch (e: any) {
         console.error("[login-done] failed", e?.message);
         setError(e?.message ?? "登录失败");
