@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { resolveLoginDestination } from "@/lib/route-after-login";
 
 const searchSchema = z.object({
   ticket: z.string().optional(),
@@ -179,13 +180,19 @@ function LoginDonePage() {
           throw new Error(`verifyOtp 失败: ${vErr.message}`);
         }
 
-        console.log("[login-done] verifyOtp ok, route by role via /auth/login", { redirectTo });
+        console.log("[login-done] verifyOtp ok, resolving role…", { redirectTo });
 
-        // 统一回到 /auth/login，由该页 useEffect 按角色（admin>agent>merchant>普通）路由
+        // 直接按角色路由，省掉 /auth/login 中转
         const tab = provider === "phone" ? "staff" : "customer";
-        const safeRedirect =
-          redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
-        navigate({ to: "/auth/login", search: { tab, redirect: safeRedirect } });
+        const dest = await resolveLoginDestination({
+          tab,
+          redirect: redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/",
+        });
+        if (dest.hard) {
+          window.location.href = dest.path;
+        } else {
+          navigate({ to: dest.path });
+        }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "登录失败";
         console.error("[login-done] failed", message);
