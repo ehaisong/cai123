@@ -83,9 +83,22 @@ function LoginPage() {
     return () => window.removeEventListener("message", onMessage);
   }, [navigate, search.redirect, search.ref]);
 
+  const isWechatBrowser = () => {
+    if (typeof navigator === "undefined") return false;
+    return /micromessenger/i.test(navigator.userAgent);
+  };
+
   const openWechat = () => {
     if (search.ref) {
       try { localStorage.setItem("pending_referrer", search.ref); } catch {}
+    }
+    // 微信内置浏览器：必须整页跳转走 OAuth，iframe 内微信会强制 fallback 到扫码
+    if (isWechatBrowser()) {
+      const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
+      const returnPath = `/login/done?return_path=${encodeURIComponent(back)}`;
+      const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
+      window.location.href = url;
+      return;
     }
     const returnPath = "/login/iframe-bridge";
     const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
