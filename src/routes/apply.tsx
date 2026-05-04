@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, XCircle, Store } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, Store, Upload, Loader2 } from "lucide-react";
 
 const searchSchema = z.object({ ref: z.string().optional() });
 
@@ -173,6 +173,28 @@ function ApplyForm() {
   const [merchant, setMerchant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) { toast.error("请选择图片文件"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("图片不能超过 5MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("shop-avatars").upload(path, file, {
+        upsert: true, contentType: file.type,
+      });
+      if (error) { toast.error(error.message); return; }
+      const { data } = supabase.storage.from("shop-avatars").getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      toast.success("头像已上传");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const load = async () => {
     if (!user) return;
@@ -348,12 +370,31 @@ function ApplyForm() {
                 ))}
               </div>
             </div>
-            <Input
-              className="mt-2"
-              placeholder="或粘贴自定义头像图片链接"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleAvatarUpload(f);
+                e.target.value = "";
+              }}
             />
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-2 w-full"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />上传中…</>
+              ) : (
+                <><Upload className="w-4 h-4 mr-2" />上传自定义头像</>
+              )}
+            </Button>
+            <p className="mt-1 text-[11px] text-muted-foreground">支持 JPG / PNG，最大 5MB</p>
           </div>
 
           <div className="text-xs text-muted-foreground">
