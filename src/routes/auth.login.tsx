@@ -110,11 +110,7 @@ function LoginPage() {
     setIframeUrl(url);
   };
 
-  const openPhone = () => {
-    const returnPath = "/login/iframe-bridge";
-    const url = `${HUB_BASE}/oauth/phone/start?client=${encodeURIComponent(HUB_CLIENT)}&return_path=${encodeURIComponent(returnPath)}`;
-    setIframeUrl(url);
-  };
+  // 手机验证码登录现已本地集成，不再走中转站 iframe。
 
   // 登录后角色优先级路由：admin > agent > merchant > 普通用户
   const routeAfterLogin = async () => {
