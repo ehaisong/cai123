@@ -127,17 +127,12 @@ function LoginDonePage() {
           throw new Error(`verifyOtp 失败: ${vErr.message}`);
         }
 
-        console.log("[login-done] verifyOtp ok, redirect", { redirectTo });
+        console.log("[login-done] verifyOtp ok, route by role via /auth/login", { redirectTo });
 
-        const target =
-          redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-            ? redirectTo
-            : "/";
-        if (target !== "/") {
-          router.history.push(target);
-        } else {
-          navigate({ to: "/" });
-        }
+        // 统一回到 /auth/login，由该页 useEffect 按角色（admin>agent>merchant>普通）路由
+        const tab = provider === "phone" ? "staff" : "customer";
+        const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
+        navigate({ to: "/auth/login", search: { tab, redirect: safeRedirect } });
       } catch (e: any) {
         console.error("[login-done] failed", e?.message);
         setError(e?.message ?? "登录失败");
