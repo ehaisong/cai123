@@ -4,7 +4,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Check } from "lucide-react";
+import { toast } from "sonner";
 import heroImage from "@/assets/login-hero.jpg";
 
 const searchSchema = z.object({
@@ -36,6 +37,15 @@ function LoginPage() {
   const [tab, setTab] = useState<TabKey>(search.tab ?? "customer");
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [routing, setRouting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+
+  const requireAgree = (next: () => void) => {
+    if (!agreed) {
+      toast.error("请先阅读并同意《用户服务协议》和《隐私权政策》");
+      return;
+    }
+    next();
+  };
 
   // 已登录时自动按角色路由
   useEffect(() => {
@@ -138,7 +148,7 @@ function LoginPage() {
   return (
     <div className="h5-shell relative flex min-h-screen flex-col bg-background">
       {/* 顶部插画 */}
-      <div className="relative h-[42vh] min-h-[260px] w-full overflow-hidden">
+      <div className="relative h-[36vh] min-h-[220px] max-h-[340px] w-full overflow-hidden">
         <img
           src={heroImage}
           alt="预马当先"
@@ -146,14 +156,14 @@ function LoginPage() {
           width={1024}
           height={768}
         />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-background" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-background" />
       </div>
 
       {/* 登录卡片 */}
-      <div className="relative -mt-10 flex-1 px-6">
+      <div className="relative -mt-8 flex-1 px-6">
         <div className="mx-auto w-full max-w-sm">
           {/* Tab */}
-          <div className="flex items-center justify-center gap-10 pb-2">
+          <div className="flex items-center justify-center gap-12">
             <TabButton active={tab === "customer"} onClick={() => { setTab("customer"); setIframeUrl(null); }}>
               客户登录
             </TabButton>
@@ -161,26 +171,52 @@ function LoginPage() {
               商家登录
             </TabButton>
           </div>
-          <p className="text-center text-[11px] text-muted-foreground">
+
+          {/* 副标题 */}
+          <p className="mt-3 text-center text-xs text-muted-foreground">
             {tab === "customer" ? "微信扫码 · 一键登录" : "管理员 / 商家 / 代理 · 手机验证码"}
           </p>
 
           {/* 内容区 */}
-          <div className="mt-8 space-y-4">
+          <div className="mt-10">
             {iframeUrl ? (
               <IframeCard url={iframeUrl} onClose={() => setIframeUrl(null)} />
             ) : tab === "customer" ? (
-              <CustomerPanel onLogin={openWechat} ref_={search.ref} />
+              <CustomerPanel onLogin={() => requireAgree(openWechat)} ref_={search.ref} />
             ) : (
-              <StaffPanel onLogin={openPhone} />
+              <StaffPanel onLogin={() => requireAgree(openPhone)} />
             )}
           </div>
 
+          {/* 同意协议 */}
+          {!iframeUrl && (
+            <div className="mt-8 flex items-start justify-center gap-2 px-2">
+              <button
+                type="button"
+                onClick={() => setAgreed((v) => !v)}
+                aria-pressed={agreed}
+                aria-label="同意用户协议和隐私政策"
+                className={cn(
+                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                  agreed
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-muted-foreground/40 bg-background",
+                )}
+              >
+                {agreed && <Check className="h-3 w-3" strokeWidth={3} />}
+              </button>
+              <p className="text-[11px] leading-5 text-muted-foreground">
+                阅读并同意
+                <Link to="/terms" className="mx-0.5 text-info">《用户服务协议》</Link>
+                和
+                <Link to="/privacy" className="mx-0.5 text-info">《隐私权政策》</Link>
+              </p>
+            </div>
+          )}
+
           {/* 切换提示 */}
-          <p className="mt-8 text-center text-[11px] text-muted-foreground">
-            {tab === "customer"
-              ? "您是商家或代理？"
-              : "您是普通用户？"}
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            {tab === "customer" ? "您是商家或代理？" : "您是普通用户？"}
             <button
               type="button"
               className="ml-1 text-info"
@@ -190,8 +226,8 @@ function LoginPage() {
             </button>
           </p>
 
-          <p className="mt-3 pb-8 text-center text-[11px] text-muted-foreground">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">返回首页</Link>
+          <p className="mt-4 pb-8 text-center text-xs text-muted-foreground">
+            <Link to="/" className="hover:text-foreground">返回首页</Link>
           </p>
         </div>
       </div>
@@ -231,15 +267,15 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function CustomerPanel({ onLogin, ref_ }: { onLogin: () => void; ref_?: string }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <button
         type="button"
         onClick={onLogin}
-        className="w-full rounded-full bg-success py-3 text-sm font-semibold text-success-foreground shadow-md transition-transform active:scale-[0.98]"
+        className="w-full rounded-full bg-success py-3.5 text-sm font-semibold text-success-foreground shadow-md transition-transform active:scale-[0.98]"
       >
         微信扫码登录
       </button>
-      <p className="text-center text-[11px] text-muted-foreground">
+      <p className="text-center text-xs leading-5 text-muted-foreground">
         点击后将弹出微信授权窗口，扫码即可登录
       </p>
       {ref_ && (
@@ -251,15 +287,15 @@ function CustomerPanel({ onLogin, ref_ }: { onLogin: () => void; ref_?: string }
 
 function StaffPanel({ onLogin }: { onLogin: () => void }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <button
         type="button"
         onClick={onLogin}
-        className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98]"
+        className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98]"
       >
         手机号验证码登录
       </button>
-      <p className="text-center text-[11px] text-muted-foreground">
+      <p className="text-center text-xs leading-5 text-muted-foreground">
         未注册的手机号将自动创建账号
       </p>
     </div>
