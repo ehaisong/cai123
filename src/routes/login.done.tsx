@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,10 +19,22 @@ export const Route = createFileRoute("/login/done")({
   }),
 });
 
-const SUPABASE_URL =
-  (import.meta as any).env?.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
-const SUPABASE_ANON = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+const env = import.meta.env as Record<string, string | undefined>;
+const SUPABASE_URL = env.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
+const SUPABASE_ANON = env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
+
+type ExchangeResponse = {
+  success?: boolean;
+  provider?: string;
+  tokenHash?: string;
+  redirectTo?: string;
+  step?: string;
+  message?: string;
+  errcode?: unknown;
+  errmsg?: unknown;
+  raw?: unknown;
+};
 
 function readTicketFromUrl() {
   if (typeof window === "undefined") return null;
@@ -40,7 +52,6 @@ function safeBusinessRedirect(raw?: string | null) {
 
 function LoginDonePage() {
   const navigate = useNavigate();
-  const router = useRouter();
   const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
@@ -79,7 +90,9 @@ function LoginDonePage() {
           return_path = saved;
           sessionStorage.removeItem("wechat_login_return_path");
         }
-      } catch {}
+      } catch {
+        // 忽略不可用的 sessionStorage
+      }
     }
     return_path = safeBusinessRedirect(return_path);
 
@@ -120,9 +133,9 @@ function LoginDonePage() {
         });
 
         const text = await res.text();
-        let body: any = null;
+        let body: ExchangeResponse | null = null;
         try {
-          body = text ? JSON.parse(text) : null;
+          body = text ? (JSON.parse(text) as ExchangeResponse) : null;
         } catch {
           // 非 JSON
         }
@@ -159,7 +172,7 @@ function LoginDonePage() {
           console.error("[login-done] verifyOtp failed", vErr);
           setDetail({
             step: "verifyOtp",
-            status: (vErr as any).status ?? null,
+            status: (vErr as { status?: number }).status ?? null,
             name: vErr.name,
             message: vErr.message,
           });
@@ -173,12 +186,13 @@ function LoginDonePage() {
         const safeRedirect =
           redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
         navigate({ to: "/auth/login", search: { tab, redirect: safeRedirect } });
-      } catch (e: any) {
-        console.error("[login-done] failed", e?.message);
-        setError(e?.message ?? "登录失败");
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "登录失败";
+        console.error("[login-done] failed", message);
+        setError(message);
       }
     })();
-  }, [search.ticket, search.provider, search.return_path, navigate, router]);
+  }, [search.ticket, search.provider, search.return_path, navigate]);
 
   if (error) {
     return (
