@@ -8,6 +8,7 @@ import { Loader2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import heroImage from "@/assets/login-hero.jpg";
 import { resolveLoginDestination } from "@/lib/route-after-login";
+import { sendSmsCode, verifySmsCode } from "@/server/sms.functions";
 
 const searchSchema = z.object({
   ref: z.string().optional(),
