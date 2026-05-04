@@ -267,15 +267,15 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function CustomerPanel({ onLogin, ref_ }: { onLogin: () => void; ref_?: string }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <button
         type="button"
         onClick={onLogin}
-        className="w-full rounded-full bg-success py-3 text-sm font-semibold text-success-foreground shadow-md transition-transform active:scale-[0.98]"
+        className="w-full rounded-full bg-success py-3.5 text-sm font-semibold text-success-foreground shadow-md transition-transform active:scale-[0.98]"
       >
         微信扫码登录
       </button>
-      <p className="text-center text-[11px] text-muted-foreground">
+      <p className="text-center text-xs leading-5 text-muted-foreground">
         点击后将弹出微信授权窗口，扫码即可登录
       </p>
       {ref_ && (
@@ -287,15 +287,15 @@ function CustomerPanel({ onLogin, ref_ }: { onLogin: () => void; ref_?: string }
 
 function StaffPanel({ onLogin }: { onLogin: () => void }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <button
         type="button"
         onClick={onLogin}
-        className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98]"
+        className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98]"
       >
         手机号验证码登录
       </button>
-      <p className="text-center text-[11px] text-muted-foreground">
+      <p className="text-center text-xs leading-5 text-muted-foreground">
         未注册的手机号将自动创建账号
       </p>
     </div>
