@@ -24,6 +24,12 @@ const SUPABASE_ANON =
   (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
 
+function readTicketFromUrl() {
+  if (typeof window === "undefined") return null;
+  const match = window.location.href.match(/[?&]ticket=([^&#]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
 function LoginDonePage() {
   const navigate = useNavigate();
   const router = useRouter();
@@ -49,8 +55,8 @@ function LoginDonePage() {
       }
     }
 
-    const ticket = search.ticket;
-    const provider = search.provider;
+    const ticket = search.ticket ?? readTicketFromUrl();
+    const provider = search.provider ?? (ticket ? "wechat" : undefined);
     let return_path = search.return_path ?? "/";
     // 微信内浏览器场景：业务回跳路径在 openWechat 时存到 sessionStorage
     if ((!search.return_path || search.return_path === "/") && typeof window !== "undefined") {
