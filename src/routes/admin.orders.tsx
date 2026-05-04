@@ -95,7 +95,7 @@ function Inner() {
           onChange={(e) => {
             const v = e.target.value;
             setFilterMerchant(v);
-            navigate({ search: (prev) => ({ ...prev, merchant_id: v || undefined }) });
+            navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, merchant_id: v || undefined }) });
           }}
         >
           <option value="">全部商家</option>
