@@ -215,20 +215,7 @@ function LoginPage() {
           )}
 
           {/* 切换提示 */}
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            {tab === "customer" ? "您是商家或代理？" : "您是普通用户？"}
-            <button
-              type="button"
-              className="ml-1 text-info"
-              onClick={() => { setTab(tab === "customer" ? "staff" : "customer"); setIframeUrl(null); }}
-            >
-              切换到{tab === "customer" ? "商家登录" : "客户登录"}
-            </button>
-          </p>
-
-          <p className="mt-4 pb-8 text-center text-xs text-muted-foreground">
-            <Link to="/" className="hover:text-foreground">返回首页</Link>
-          </p>
+          <div className="pb-8" />
         </div>
       </div>
 
