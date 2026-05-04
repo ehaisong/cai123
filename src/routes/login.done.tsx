@@ -37,6 +37,18 @@ function LoginDonePage() {
     if (ranRef.current) return;
     ranRef.current = true;
 
+    // 若意外被加载在 iframe 内（例如直接命中本页），把参数转给父页处理，避免重复交换
+    if (typeof window !== "undefined" && window.parent && window.parent !== window) {
+      try {
+        const payload: Record<string, string> = {};
+        new URL(window.location.href).searchParams.forEach((v, k) => { payload[k] = v; });
+        window.parent.postMessage({ type: "lovable-login-bridge", payload }, window.location.origin);
+        return;
+      } catch {
+        // 同源失败则继续在本窗口处理
+      }
+    }
+
     const ticket = search.ticket;
     const provider = search.provider;
     const return_path = search.return_path ?? "/";
