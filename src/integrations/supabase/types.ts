@@ -522,6 +522,39 @@ export type Database = {
           },
         ]
       }
+      package_subscriptions: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          merchant_id: string
+          order_id: string | null
+          package_id: string
+          starts_at: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          merchant_id: string
+          order_id?: string | null
+          package_id: string
+          starts_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          merchant_id?: string
+          order_id?: string | null
+          package_id?: string
+          starts_at?: string
+        }
+        Relationships: []
+      }
       payment_channels: {
         Row: {
           code: string
@@ -655,65 +688,155 @@ export type Database = {
           },
         ]
       }
+      product_packages: {
+        Row: {
+          created_at: string
+          duration_days: number
+          id: string
+          intro: string | null
+          intro_images: string[]
+          logo_url: string | null
+          merchant_id: string
+          price: number
+          sales_count: number
+          show_in_zone: boolean
+          show_on_home: boolean
+          status: string
+          title: string
+          types: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days?: number
+          id?: string
+          intro?: string | null
+          intro_images?: string[]
+          logo_url?: string | null
+          merchant_id: string
+          price?: number
+          sales_count?: number
+          show_in_zone?: boolean
+          show_on_home?: boolean
+          status?: string
+          title: string
+          types?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          id?: string
+          intro?: string | null
+          intro_images?: string[]
+          logo_url?: string | null
+          merchant_id?: string
+          price?: number
+          sales_count?: number
+          show_in_zone?: boolean
+          show_on_home?: boolean
+          status?: string
+          title?: string
+          types?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string
           created_at: string
           disclaimer: string | null
+          has_self_issue: boolean
           id: string
+          intro: string | null
+          intro_images: string[]
+          is_presale: boolean
           is_recommended: boolean
           issue_no: string
+          kind: string
           merchant_id: string
+          no_win_refund: boolean
           paid_content: string | null
+          paid_images: string[]
           price: number
           publish_at: string
           result: Database["public"]["Enums"]["product_result"]
           result_note: string | null
           reveal_at: string | null
           sales_count: number
+          share_unlock: boolean
+          show_in_zone: boolean
           status: Database["public"]["Enums"]["product_status"]
+          streak: number
           subtitle: string | null
+          tags: string[]
           title: string
+          types: string[]
           updated_at: string
         }
         Insert: {
           category_id: string
           created_at?: string
           disclaimer?: string | null
+          has_self_issue?: boolean
           id?: string
+          intro?: string | null
+          intro_images?: string[]
+          is_presale?: boolean
           is_recommended?: boolean
           issue_no: string
+          kind?: string
           merchant_id: string
+          no_win_refund?: boolean
           paid_content?: string | null
+          paid_images?: string[]
           price?: number
           publish_at?: string
           result?: Database["public"]["Enums"]["product_result"]
           result_note?: string | null
           reveal_at?: string | null
           sales_count?: number
+          share_unlock?: boolean
+          show_in_zone?: boolean
           status?: Database["public"]["Enums"]["product_status"]
+          streak?: number
           subtitle?: string | null
+          tags?: string[]
           title: string
+          types?: string[]
           updated_at?: string
         }
         Update: {
           category_id?: string
           created_at?: string
           disclaimer?: string | null
+          has_self_issue?: boolean
           id?: string
+          intro?: string | null
+          intro_images?: string[]
+          is_presale?: boolean
           is_recommended?: boolean
           issue_no?: string
+          kind?: string
           merchant_id?: string
+          no_win_refund?: boolean
           paid_content?: string | null
+          paid_images?: string[]
           price?: number
           publish_at?: string
           result?: Database["public"]["Enums"]["product_result"]
           result_note?: string | null
           reveal_at?: string | null
           sales_count?: number
+          share_unlock?: boolean
+          show_in_zone?: boolean
           status?: Database["public"]["Enums"]["product_status"]
+          streak?: number
           subtitle?: string | null
+          tags?: string[]
           title?: string
+          types?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -961,6 +1084,7 @@ export type Database = {
       }
       is_user_disabled: { Args: { _user_id: string }; Returns: boolean }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
+      purchase_package: { Args: { _package_id: string }; Returns: string }
       purchase_product:
         | { Args: { _product_id: string }; Returns: string }
         | { Args: { _issue_id?: string; _product_id: string }; Returns: string }
