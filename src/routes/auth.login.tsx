@@ -263,15 +263,115 @@ function CustomerPanel({ onLogin, ref_ }: { onLogin: () => void; ref_?: string }
   );
 }
 
-function StaffPanel({ onLogin }: { onLogin: () => void }) {
+function StaffPanel({
+  requireAgree,
+  onSuccess,
+}: {
+  requireAgree: (next: () => void) => void;
+  onSuccess: () => void;
+}) {
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const phoneValid = /^1\d{10}$/.test(phone.replace(/\D/g, ""));
+
+  const handleSend = () => {
+    if (!phoneValid) {
+      toast.error("请输入正确的手机号");
+      return;
+    }
+    requireAgree(async () => {
+      setSending(true);
+      try {
+        const res = await sendSmsCode({ data: { phone } });
+        if (!res.ok) {
+          toast.error(res.message);
+          return;
+        }
+        toast.success("验证码已发送");
+        setCooldown(60);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "发送失败");
+      } finally {
+        setSending(false);
+      }
+    });
+  };
+
+  const handleVerify = () => {
+    if (!phoneValid) { toast.error("请输入正确的手机号"); return; }
+    if (!/^\d{6}$/.test(code)) { toast.error("请输入 6 位验证码"); return; }
+    requireAgree(async () => {
+      setVerifying(true);
+      try {
+        const res = await verifySmsCode({ data: { phone, code } });
+        if (!res.ok) {
+          toast.error(res.message);
+          return;
+        }
+        const { error } = await supabase.auth.verifyOtp({
+          type: "email",
+          token_hash: res.tokenHash!,
+        });
+        if (error) {
+          toast.error(`登录失败: ${error.message}`);
+          return;
+        }
+        onSuccess();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "登录失败");
+      } finally {
+        setVerifying(false);
+      }
+    });
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      <input
+        type="tel"
+        inputMode="numeric"
+        autoComplete="tel"
+        placeholder="请输入手机号"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          placeholder="6 位验证码"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+        />
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sending || cooldown > 0 || !phoneValid}
+          className="shrink-0 rounded-xl border border-primary px-3 text-xs font-medium text-primary disabled:opacity-50"
+        >
+          {sending ? "发送中…" : cooldown > 0 ? `${cooldown}s 后重发` : "获取验证码"}
+        </button>
+      </div>
       <button
         type="button"
-        onClick={onLogin}
-        className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98]"
+        onClick={handleVerify}
+        disabled={verifying || !phoneValid || code.length !== 6}
+        className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98] disabled:opacity-60"
       >
-        手机号验证码登录
+        {verifying ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "登录 / 注册"}
       </button>
       <p className="text-center text-xs leading-5 text-muted-foreground">
         未注册的手机号将自动创建账号
