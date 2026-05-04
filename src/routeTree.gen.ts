@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OrdersRouteImport } from './routes/orders'
@@ -62,6 +63,11 @@ import { Route as MerchantProductsProductIdIssuesIssueIdEditRouteImport } from '
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/terms': typeof TermsRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/terms': typeof TermsRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -423,6 +431,7 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/terms': typeof TermsRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -476,6 +485,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/privacy'
     | '/profile'
+    | '/terms'
     | '/wallet'
     | '/admin/agents'
     | '/admin/announcements'
@@ -527,6 +537,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/privacy'
     | '/profile'
+    | '/terms'
     | '/wallet'
     | '/admin/agents'
     | '/admin/announcements'
@@ -578,6 +589,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/privacy'
     | '/profile'
+    | '/terms'
     | '/wallet'
     | '/admin/agents'
     | '/admin/announcements'
@@ -630,6 +642,7 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
+  TermsRoute: typeof TermsRoute
   WalletRoute: typeof WalletRouteWithChildren
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -1050,6 +1070,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
+  TermsRoute: TermsRoute,
   WalletRoute: WalletRouteWithChildren,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
