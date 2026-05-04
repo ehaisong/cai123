@@ -30,6 +30,13 @@ function readTicketFromUrl() {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
+function safeBusinessRedirect(raw?: string | null) {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  const path = raw.split("?")[0];
+  if (path === "/login/done" || path === "/login/iframe-bridge" || path === "/auth/login") return "/";
+  return raw;
+}
+
 function LoginDonePage() {
   const navigate = useNavigate();
   const router = useRouter();
@@ -68,6 +75,7 @@ function LoginDonePage() {
         }
       } catch {}
     }
+    return_path = safeBusinessRedirect(return_path);
 
     if (provider === "phone") setHint("正在完成短信登录，请稍候…");
     else if (provider === "wechat") setHint("正在完成微信登录，请稍候…");
@@ -84,7 +92,9 @@ function LoginDonePage() {
         if (!ticket) {
           const { data } = await supabase.auth.getSession();
           if (data.session) {
-            console.log("[login-done] no ticket but session exists, continue routing", { return_path });
+            console.log("[login-done] no ticket but session exists, continue routing", {
+              return_path,
+            });
             navigate({ to: "/auth/login", search: { tab: "customer", redirect: return_path } });
             return;
           }
