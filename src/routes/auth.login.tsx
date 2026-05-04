@@ -172,7 +172,10 @@ function LoginPage() {
             ) : tab === "customer" ? (
               <CustomerPanel onLogin={() => requireAgree(openWechat)} ref_={search.ref} />
             ) : (
-              <StaffPanel onLogin={() => requireAgree(openPhone)} />
+              <StaffPanel
+                requireAgree={requireAgree}
+                onSuccess={() => { void routeAfterLogin(); }}
+              />
             )}
           </div>
 
