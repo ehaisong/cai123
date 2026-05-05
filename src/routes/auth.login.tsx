@@ -40,6 +40,7 @@ function LoginPage() {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [routing, setRouting] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [wechatLoading, setWechatLoading] = useState(false);
 
   const requireAgree = (next: () => void) => {
     if (!agreed) {
@@ -99,6 +100,7 @@ function LoginPage() {
     if (isWechatBrowser()) {
       // 微信内：必须整页跳转中转站，由中转站走公众号网页授权（snsapi_userinfo）实现无感一键登录
       // 中转站完成授权后会 302 回 /login/done?ticket=...
+      setWechatLoading(true);
       const returnPath = "/login/done";
       window.location.href = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
       return;
@@ -134,6 +136,13 @@ function LoginPage() {
 
   return (
     <div className="h5-shell relative flex min-h-screen flex-col bg-background">
+      {wechatLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-foreground">正在通过微信登录…</p>
+          <p className="text-xs text-muted-foreground">请在微信授权页完成确认</p>
+        </div>
+      )}
       {/* 顶部插画 */}
       <div className="relative h-[36vh] min-h-[220px] max-h-[340px] w-full overflow-hidden">
         <img
