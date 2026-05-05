@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtDate, fmtMoney } from "@/lib/format";
 
-export const Route = createFileRoute("/wallet/transactions")({
+export const Route = createFileRoute("/wallet_/transactions")({
   component: TxPage,
 });
 

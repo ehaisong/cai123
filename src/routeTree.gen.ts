@@ -23,12 +23,12 @@ import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as WalletTransactionsRouteImport } from './routes/wallet.transactions'
+import { Route as WalletTransactionsRouteImport } from './routes/wallet_.transactions'
 import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
-import { Route as OrdersOrderIdRouteImport } from './routes/orders.$orderId'
+import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
@@ -133,9 +133,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const WalletTransactionsRoute = WalletTransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
-  getParentRoute: () => WalletRoute,
+  id: '/wallet_/transactions',
+  path: '/wallet/transactions',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ShopMeRoute = ShopMeRouteImport.update({
   id: '/shop/me',
@@ -158,9 +158,9 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
-  id: '/$orderId',
-  path: '/$orderId',
-  getParentRoute: () => OrdersRoute,
+  id: '/orders_/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantWalletRoute = MerchantWalletRouteImport.update({
   id: '/merchant/wallet',
@@ -335,11 +335,11 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
-  '/orders': typeof OrdersRouteWithChildren
+  '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
-  '/wallet': typeof WalletRouteWithChildren
+  '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
@@ -389,11 +389,11 @@ export interface FileRoutesByTo {
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
-  '/orders': typeof OrdersRouteWithChildren
+  '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
-  '/wallet': typeof WalletRouteWithChildren
+  '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
@@ -444,11 +444,11 @@ export interface FileRoutesById {
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
-  '/orders': typeof OrdersRouteWithChildren
+  '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
-  '/wallet': typeof WalletRouteWithChildren
+  '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
@@ -475,12 +475,12 @@ export interface FileRoutesById {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/orders_/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
-  '/wallet/transactions': typeof WalletTransactionsRoute
+  '/wallet_/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
@@ -639,12 +639,12 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
-    | '/orders/$orderId'
+    | '/orders_/$orderId'
     | '/product/$productId'
     | '/profile_/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
-    | '/wallet/transactions'
+    | '/wallet_/transactions'
     | '/admin/'
     | '/merchant/'
     | '/merchant/products/new'
@@ -663,11 +663,11 @@ export interface RootRouteChildren {
   FeedbackRoute: typeof FeedbackRoute
   MerchantsRoute: typeof MerchantsRoute
   MessagesRoute: typeof MessagesRoute
-  OrdersRoute: typeof OrdersRouteWithChildren
+  OrdersRoute: typeof OrdersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   TermsRoute: typeof TermsRoute
-  WalletRoute: typeof WalletRouteWithChildren
+  WalletRoute: typeof WalletRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
@@ -694,10 +694,12 @@ export interface RootRouteChildren {
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
   MerchantWalletRoute: typeof MerchantWalletRoute
+  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ProfileBindPhoneRoute: typeof ProfileBindPhoneRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
   ShopMeRoute: typeof ShopMeRoute
+  WalletTransactionsRoute: typeof WalletTransactionsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
@@ -808,12 +810,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/wallet/transactions': {
-      id: '/wallet/transactions'
-      path: '/transactions'
+    '/wallet_/transactions': {
+      id: '/wallet_/transactions'
+      path: '/wallet/transactions'
       fullPath: '/wallet/transactions'
       preLoaderRoute: typeof WalletTransactionsRouteImport
-      parentRoute: typeof WalletRoute
+      parentRoute: typeof rootRouteImport
     }
     '/shop/me': {
       id: '/shop/me'
@@ -843,12 +845,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orders/$orderId': {
-      id: '/orders/$orderId'
-      path: '/$orderId'
+    '/orders_/$orderId': {
+      id: '/orders_/$orderId'
+      path: '/orders/$orderId'
       fullPath: '/orders/$orderId'
       preLoaderRoute: typeof OrdersOrderIdRouteImport
-      parentRoute: typeof OrdersRoute
+      parentRoute: typeof rootRouteImport
     }
     '/merchant/wallet': {
       id: '/merchant/wallet'
@@ -1077,28 +1079,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface OrdersRouteChildren {
-  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
-}
-
-const OrdersRouteChildren: OrdersRouteChildren = {
-  OrdersOrderIdRoute: OrdersOrderIdRoute,
-}
-
-const OrdersRouteWithChildren =
-  OrdersRoute._addFileChildren(OrdersRouteChildren)
-
-interface WalletRouteChildren {
-  WalletTransactionsRoute: typeof WalletTransactionsRoute
-}
-
-const WalletRouteChildren: WalletRouteChildren = {
-  WalletTransactionsRoute: WalletTransactionsRoute,
-}
-
-const WalletRouteWithChildren =
-  WalletRoute._addFileChildren(WalletRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentRoute: AgentRoute,
@@ -1107,11 +1087,11 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackRoute: FeedbackRoute,
   MerchantsRoute: MerchantsRoute,
   MessagesRoute: MessagesRoute,
-  OrdersRoute: OrdersRouteWithChildren,
+  OrdersRoute: OrdersRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   TermsRoute: TermsRoute,
-  WalletRoute: WalletRouteWithChildren,
+  WalletRoute: WalletRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
@@ -1138,10 +1118,12 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,
   MerchantWalletRoute: MerchantWalletRoute,
+  OrdersOrderIdRoute: OrdersOrderIdRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ProfileBindPhoneRoute: ProfileBindPhoneRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
   ShopMeRoute: ShopMeRoute,
+  WalletTransactionsRoute: WalletTransactionsRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
@@ -1158,3 +1140,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/h5/page-header";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/orders/$orderId")({
+export const Route = createFileRoute("/orders_/$orderId")({
   component: OrderDetailPage,
 });
 
