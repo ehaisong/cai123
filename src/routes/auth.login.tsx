@@ -136,6 +136,13 @@ function LoginPage() {
 
   return (
     <div className="h5-shell relative flex min-h-screen flex-col bg-background">
+      {wechatLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-foreground">正在通过微信登录…</p>
+          <p className="text-xs text-muted-foreground">请在微信授权页完成确认</p>
+        </div>
+      )}
       {/* 顶部插画 */}
       <div className="relative h-[36vh] min-h-[220px] max-h-[340px] w-full overflow-hidden">
         <img
