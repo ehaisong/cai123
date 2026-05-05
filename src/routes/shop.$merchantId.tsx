@@ -274,6 +274,41 @@ function ShopPage() {
           </Link>
         ))}
       </main>
+
+      {/* 推广二维码 Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-[340px]">
+          <DialogHeader>
+            <DialogTitle>推广二维码</DialogTitle>
+            <DialogDescription>
+              扫码或复制链接分享给好友，注册并购买后您将获得分成
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="bg-white p-3 rounded-xl border border-border">
+              <QRCodeSVG value={`${origin}/?ref=${agentCode}`} size={220} level="M" />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              推广码：<span className="font-mono">{agentCode || "—"}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try { await navigator.clipboard.writeText(`${origin}/?ref=${agentCode}`); toast.success("已复制链接"); }
+                  catch { toast.error("复制失败"); }
+                }}
+              >
+                <Copy className="h-4 w-4 mr-1" /> 复制链接
+              </Button>
+              <Button onClick={() => router.navigate({ to: "/agent/share" })}>
+                更多分享方式
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
