@@ -9,7 +9,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { Users, ShoppingBag, Wallet, Share2 } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 
-export const Route = createFileRoute("/agent/invitees")({
+export const Route = createFileRoute("/agent_/invitees")({
   component: InviteesGuarded,
 });
 

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Copy, Share2, Download, Store, Users, ArrowRightLeft } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 
-export const Route = createFileRoute("/agent/share")({
+export const Route = createFileRoute("/agent_/share")({
   component: SharePageGuarded,
 });
 

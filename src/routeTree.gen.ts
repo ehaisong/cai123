@@ -40,8 +40,8 @@ import { Route as LoginIframeBridgeRouteImport } from './routes/login.iframe-bri
 import { Route as LoginDoneRouteImport } from './routes/login.done'
 import { Route as AuthStaffLoginRouteImport } from './routes/auth.staff-login'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
-import { Route as AgentShareRouteImport } from './routes/agent.share'
-import { Route as AgentInviteesRouteImport } from './routes/agent.invitees'
+import { Route as AgentShareRouteImport } from './routes/agent_.share'
+import { Route as AgentInviteesRouteImport } from './routes/agent_.invitees'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
 import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -218,14 +218,14 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentShareRoute = AgentShareRouteImport.update({
-  id: '/share',
-  path: '/share',
-  getParentRoute: () => AgentRoute,
+  id: '/agent_/share',
+  path: '/agent/share',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AgentInviteesRoute = AgentInviteesRouteImport.update({
-  id: '/invitees',
-  path: '/invitees',
-  getParentRoute: () => AgentRoute,
+  id: '/agent_/invitees',
+  path: '/agent/invitees',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   id: '/admin/withdrawals',
@@ -329,7 +329,7 @@ const MerchantProductsProductIdIssuesIssueIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRouteWithChildren
+  '/agent': typeof AgentRoute
   '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
@@ -383,7 +383,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRouteWithChildren
+  '/agent': typeof AgentRoute
   '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
@@ -438,7 +438,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/agent': typeof AgentRouteWithChildren
+  '/agent': typeof AgentRoute
   '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
@@ -462,8 +462,8 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
-  '/agent/invitees': typeof AgentInviteesRoute
-  '/agent/share': typeof AgentShareRoute
+  '/agent_/invitees': typeof AgentInviteesRoute
+  '/agent_/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
   '/login/done': typeof LoginDoneRoute
@@ -626,8 +626,8 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
-    | '/agent/invitees'
-    | '/agent/share'
+    | '/agent_/invitees'
+    | '/agent_/share'
     | '/auth/login'
     | '/auth/staff-login'
     | '/login/done'
@@ -657,7 +657,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AgentRoute: typeof AgentRouteWithChildren
+  AgentRoute: typeof AgentRoute
   ApplyRoute: typeof ApplyRoute
   ContactRoute: typeof ContactRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -681,6 +681,8 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWechatRoute: typeof AdminWechatRoute
   AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
+  AgentInviteesRoute: typeof AgentInviteesRoute
+  AgentShareRoute: typeof AgentShareRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthStaffLoginRoute: typeof AuthStaffLoginRoute
   LoginDoneRoute: typeof LoginDoneRoute
@@ -925,19 +927,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agent/share': {
-      id: '/agent/share'
-      path: '/share'
+    '/agent_/share': {
+      id: '/agent_/share'
+      path: '/agent/share'
       fullPath: '/agent/share'
       preLoaderRoute: typeof AgentShareRouteImport
-      parentRoute: typeof AgentRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/agent/invitees': {
-      id: '/agent/invitees'
-      path: '/invitees'
+    '/agent_/invitees': {
+      id: '/agent_/invitees'
+      path: '/agent/invitees'
       fullPath: '/agent/invitees'
       preLoaderRoute: typeof AgentInviteesRouteImport
-      parentRoute: typeof AgentRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/withdrawals': {
       id: '/admin/withdrawals'
@@ -1075,18 +1077,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AgentRouteChildren {
-  AgentInviteesRoute: typeof AgentInviteesRoute
-  AgentShareRoute: typeof AgentShareRoute
-}
-
-const AgentRouteChildren: AgentRouteChildren = {
-  AgentInviteesRoute: AgentInviteesRoute,
-  AgentShareRoute: AgentShareRoute,
-}
-
-const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
-
 interface OrdersRouteChildren {
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
 }
@@ -1111,7 +1101,7 @@ const WalletRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AgentRoute: AgentRouteWithChildren,
+  AgentRoute: AgentRoute,
   ApplyRoute: ApplyRoute,
   ContactRoute: ContactRoute,
   FeedbackRoute: FeedbackRoute,
@@ -1135,6 +1125,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminWechatRoute: AdminWechatRoute,
   AdminWithdrawalsRoute: AdminWithdrawalsRoute,
+  AgentInviteesRoute: AgentInviteesRoute,
+  AgentShareRoute: AgentShareRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthStaffLoginRoute: AuthStaffLoginRoute,
   LoginDoneRoute: LoginDoneRoute,
