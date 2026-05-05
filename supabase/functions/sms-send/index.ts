@@ -54,6 +54,17 @@ function gen6Code() {
   return String(100000 + (arr[0] % 900000));
 }
 
+function normalizeSmsSignName(value: string | undefined | null) {
+  return (value ?? "")
+    .trim()
+    .replace(/^【(.+)】$/, "$1")
+    .trim();
+}
+
+function normalizeTemplateCode(value: string | undefined | null) {
+  return (value ?? "").trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") {
@@ -108,11 +119,19 @@ Deno.serve(async (req) => {
 
     const accessKeyId = Deno.env.get("ALIYUN_SMS_ACCESS_KEY_ID");
     const accessKeySecret = Deno.env.get("ALIYUN_SMS_ACCESS_KEY_SECRET");
-    const signName = Deno.env.get("ALIYUN_SMS_SIGN_NAME");
-    const templateCode = Deno.env.get("ALIYUN_SMS_TEMPLATE_CODE");
+    const rawSignName = Deno.env.get("ALIYUN_SMS_SIGN_NAME");
+    const rawTemplateCode = Deno.env.get("ALIYUN_SMS_TEMPLATE_CODE");
+    const signName = normalizeSmsSignName(rawSignName);
+    const templateCode = normalizeTemplateCode(rawTemplateCode);
     if (!accessKeyId || !accessKeySecret || !signName || !templateCode) {
       return new Response(JSON.stringify({ ok: false, message: "短信服务未配置完整凭据" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (rawSignName && rawSignName !== signName) {
+      console.warn("[sms-send] normalized sign name formatting", {
+        rawLength: rawSignName.length,
+        normalizedLength: signName.length,
+      });
     }
 
     const params: Record<string, string> = {
@@ -142,8 +161,17 @@ Deno.serve(async (req) => {
     let json: any = null;
     try { json = text ? JSON.parse(text) : null; } catch { /* ignore */ }
     if (!res.ok || !json || json.Code !== "OK") {
-      console.error("[sms-send] aliyun fail", { status: res.status, body: text.slice(0, 300) });
-      return new Response(JSON.stringify({ ok: false, message: json?.Message ?? `发送失败 (${res.status})` }),
+      console.error("[sms-send] aliyun fail", {
+        status: res.status,
+        code: json?.Code,
+        message: json?.Message,
+        signNameLength: signName.length,
+        templateCodePrefix: templateCode.slice(0, 4),
+      });
+      const message = json?.Code === "isv.SMS_SIGNATURE_ILLEGAL"
+        ? "短信签名与当前阿里云账号不匹配，请确认签名属于该 AccessKey 所在账号且已审核通过"
+        : (json?.Message ?? `发送失败 (${res.status})`);
+      return new Response(JSON.stringify({ ok: false, message }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     return new Response(JSON.stringify({ ok: true }),
