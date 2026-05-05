@@ -64,7 +64,6 @@ function RootComponent() {
   return (
     <AuthProvider>
       <Outlet />
-      <GlobalLogout />
       <Toaster position="top-center" richColors />
     </AuthProvider>
   );
