@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2, Percent } from "lucide-react";
+import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2, Percent, LogOut } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
+import { useLogout } from "@/lib/use-logout";
 
 export const Route = createFileRoute("/merchant/")({
   component: MerchantHome,
@@ -21,6 +22,7 @@ function MerchantHome() {
 
 function MerchantHomeInner() {
   const { user } = useAuth();
+  const logout = useLogout();
   const [merchant, setMerchant] = useState<any>(null);
   const [stats, setStats] = useState({ products: 0, orders: 0, balance: 0, monthSales: 0 });
 
@@ -84,16 +86,29 @@ function MerchantHomeInner() {
         <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
         <Cell icon={<Users className="w-6 h-6 text-info" />} label="代理管理" to="/merchant/agents" />
         <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
+        <Cell icon={<LogOut className="w-6 h-6 text-destructive" />} label="退出登录" onClick={() => { void logout(); }} />
       </div>
     </div>
   );
 }
 
-function Cell({ icon, label, to }: { icon: React.ReactNode; label: string; to: string }) {
-  return (
-    <Link to={to} className="flex flex-col items-center gap-2">
+function Cell({ icon, label, to, onClick }: { icon: React.ReactNode; label: string; to?: string; onClick?: () => void }) {
+  const inner = (
+    <>
       <div className="w-12 h-12 rounded-full bg-accent/40 flex items-center justify-center">{icon}</div>
       <span className="text-xs">{label}</span>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className="flex flex-col items-center gap-2">
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <Link to={to!} className="flex flex-col items-center gap-2">
+      {inner}
     </Link>
   );
 }
