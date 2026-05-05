@@ -100,6 +100,7 @@ function LoginPage() {
     if (isWechatBrowser()) {
       // 微信内：必须整页跳转中转站，由中转站走公众号网页授权（snsapi_userinfo）实现无感一键登录
       // 中转站完成授权后会 302 回 /login/done?ticket=...
+      setWechatLoading(true);
       const returnPath = "/login/done";
       window.location.href = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
       return;
