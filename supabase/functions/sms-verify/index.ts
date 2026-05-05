@@ -95,7 +95,13 @@ Deno.serve(async (req) => {
       }
 
       const updates: any = { phone: normalized, phone_confirm: true };
-      if (password && password.length >= 6) updates.password = password;
+      if (password && password.length >= 6) {
+        updates.password = password;
+        updates.user_metadata = {
+          ...(userData.user.user_metadata ?? {}),
+          has_password: true,
+        };
+      }
       const { error: upErr } = await supabase.auth.admin.updateUserById(currentUid, updates);
       if (upErr) {
         console.error("[sms-verify] bind updateUserById", upErr);
