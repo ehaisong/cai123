@@ -55,8 +55,8 @@ function OrdersPage() {
         {list.map((o) => (
           <Link
             key={o.id}
-            to="/product/$productId"
-            params={{ productId: o.product_id }}
+            to="/orders/$orderId"
+            params={{ orderId: o.id }}
             className="block bg-card rounded-md p-3"
           >
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">

@@ -27,6 +27,7 @@ import { Route as WalletTransactionsRouteImport } from './routes/wallet.transact
 import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as OrdersOrderIdRouteImport } from './routes/orders.$orderId'
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
@@ -149,6 +150,11 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
   path: '/product/$productId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const MerchantWalletRoute = MerchantWalletRouteImport.update({
   id: '/merchant/wallet',
@@ -323,7 +329,7 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -354,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
@@ -375,7 +382,7 @@ export interface FileRoutesByTo {
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
@@ -428,7 +436,7 @@ export interface FileRoutesById {
   '/feedback': typeof FeedbackRoute
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -459,6 +467,7 @@ export interface FileRoutesById {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
@@ -513,6 +522,7 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
+    | '/orders/$orderId'
     | '/product/$productId'
     | '/shop/$merchantId'
     | '/shop/me'
@@ -565,6 +575,7 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
+    | '/orders/$orderId'
     | '/product/$productId'
     | '/shop/$merchantId'
     | '/shop/me'
@@ -617,6 +628,7 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/merchant/wallet'
+    | '/orders/$orderId'
     | '/product/$productId'
     | '/shop/$merchantId'
     | '/shop/me'
@@ -639,7 +651,7 @@ export interface RootRouteChildren {
   FeedbackRoute: typeof FeedbackRoute
   MerchantsRoute: typeof MerchantsRoute
   MessagesRoute: typeof MessagesRoute
-  OrdersRoute: typeof OrdersRoute
+  OrdersRoute: typeof OrdersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   TermsRoute: typeof TermsRoute
@@ -808,6 +820,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/product/$productId'
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/orders/$orderId': {
+      id: '/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof OrdersOrderIdRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/merchant/wallet': {
       id: '/merchant/wallet'
@@ -1048,6 +1067,17 @@ const AgentRouteChildren: AgentRouteChildren = {
 
 const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
 
+interface OrdersRouteChildren {
+  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
+}
+
+const OrdersRouteChildren: OrdersRouteChildren = {
+  OrdersOrderIdRoute: OrdersOrderIdRoute,
+}
+
+const OrdersRouteWithChildren =
+  OrdersRoute._addFileChildren(OrdersRouteChildren)
+
 interface WalletRouteChildren {
   WalletTransactionsRoute: typeof WalletTransactionsRoute
 }
@@ -1067,7 +1097,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackRoute: FeedbackRoute,
   MerchantsRoute: MerchantsRoute,
   MessagesRoute: MessagesRoute,
-  OrdersRoute: OrdersRoute,
+  OrdersRoute: OrdersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   TermsRoute: TermsRoute,
