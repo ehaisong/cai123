@@ -25,7 +25,7 @@ interface OrderDetail {
 }
 
 function OrderDetailPage() {
-  const { orderId } = useParams({ from: "/orders/$orderId" });
+  const { orderId } = useParams({ from: "/orders_/$orderId" });
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [order, setOrder] = useState<OrderDetail | null>(null);
