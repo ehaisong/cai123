@@ -58,12 +58,12 @@ function ShopPage() {
 
   const loadAgent = async () => {
     if (!user) {
-      setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null);
+      setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null); setAgentCode("");
       return;
     }
     const { data: ar } = await supabase
       .from("agent_relations")
-      .select("is_agent, bound_merchant_id")
+      .select("is_agent, bound_merchant_id, agent_code")
       .eq("user_id", user.id)
       .maybeSingle();
     setAgentInfo(ar ?? { is_agent: false, bound_merchant_id: null });
@@ -75,6 +75,13 @@ function ShopPage() {
     } else {
       setBoundMerchantName(null);
     }
+
+    let code = (ar as any)?.agent_code ?? "";
+    if (!code) {
+      const { data: p } = await supabase.from("profiles").select("user_code").eq("user_id", user.id).maybeSingle();
+      code = p?.user_code ?? "";
+    }
+    setAgentCode(code);
 
     const { data: m } = await supabase
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
