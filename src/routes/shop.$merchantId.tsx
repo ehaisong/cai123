@@ -9,9 +9,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
+import { Share2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/shop/$merchantId")({
   component: ShopPage,
