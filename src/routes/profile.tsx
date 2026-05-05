@@ -102,6 +102,7 @@ function ProfilePage() {
         {(isAgent || isMerchant) && (
           <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="资金明细" to="/wallet/transactions" />
         )}
+        <MenuItem icon={<Smartphone className="w-6 h-6 text-success" />} label="手机绑定" to="/profile/bind-phone" />
         <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
         <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="隐私协议" to="/privacy" />
         <MenuItem icon={<Handshake className="w-6 h-6 text-success" />} label="代理中心" to="/agent" />
