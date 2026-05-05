@@ -89,6 +89,7 @@ function ShopPage() {
   };
 
   useEffect(() => {
+    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
     supabase.from("products").select("id, title, is_recommended, price, publish_at, category_id").eq("merchant_id", merchantId).eq("status", "published").order("is_recommended", { ascending: false }).order("publish_at", { ascending: false }).then(({ data }) => setProducts(data ?? []));
