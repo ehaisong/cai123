@@ -278,8 +278,10 @@ function StaffPanel({
   requireAgree: (next: () => void) => void;
   onSuccess: () => void;
 }) {
+  const [mode, setMode] = useState<"otp" | "password">("password");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -293,26 +295,18 @@ function StaffPanel({
   const phoneValid = /^1\d{10}$/.test(phone.replace(/\D/g, ""));
 
   const handleSend = () => {
-    if (!phoneValid) {
-      toast.error("请输入正确的手机号");
-      return;
-    }
+    if (!phoneValid) { toast.error("请输入正确的手机号"); return; }
     requireAgree(async () => {
       setSending(true);
       try {
         const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string }>("sms-send", { body: { phone } });
         if (fnErr || !res) { toast.error(fnErr?.message ?? "发送失败"); return; }
-        if (!res.ok) {
-          toast.error(res.message);
-          return;
-        }
+        if (!res.ok) { toast.error(res.message); return; }
         toast.success("验证码已发送");
         setCooldown(60);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "发送失败");
-      } finally {
-        setSending(false);
-      }
+      } finally { setSending(false); }
     });
   };
 
@@ -324,68 +318,95 @@ function StaffPanel({
       try {
         const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; tokenHash?: string; email?: string }>("sms-verify", { body: { phone, code } });
         if (fnErr || !res) { toast.error(fnErr?.message ?? "登录失败"); return; }
-        if (!res.ok) {
-          toast.error(res.message);
-          return;
-        }
-        const { error } = await supabase.auth.verifyOtp({
-          type: "email",
-          token_hash: res.tokenHash!,
-        });
-        if (error) {
-          toast.error(`登录失败: ${error.message}`);
-          return;
-        }
+        if (!res.ok) { toast.error(res.message); return; }
+        const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: res.tokenHash! });
+        if (error) { toast.error(`登录失败: ${error.message}`); return; }
         onSuccess();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "登录失败");
-      } finally {
-        setVerifying(false);
-      }
+      } finally { setVerifying(false); }
+    });
+  };
+
+  const handlePasswordLogin = () => {
+    if (!phoneValid) { toast.error("请输入正确的手机号"); return; }
+    if (password.length < 6) { toast.error("密码至少 6 位"); return; }
+    requireAgree(async () => {
+      setVerifying(true);
+      try {
+        // 先尝试裸号登录，失败再尝试 +86 前缀
+        let { error } = await supabase.auth.signInWithPassword({ phone, password });
+        if (error) {
+          const r2 = await supabase.auth.signInWithPassword({ phone: `+86${phone}`, password });
+          error = r2.error;
+        }
+        if (error) { toast.error(`登录失败: ${error.message}`); return; }
+        onSuccess();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "登录失败");
+      } finally { setVerifying(false); }
     });
   };
 
   return (
     <div className="space-y-3">
+      {/* 子模式切换 */}
+      <div className="flex items-center justify-center gap-1 rounded-full bg-muted p-1 text-xs">
+        <button type="button" onClick={() => setMode("password")}
+          className={cn("flex-1 rounded-full py-1.5 transition", mode === "password" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground")}>
+          密码登录
+        </button>
+        <button type="button" onClick={() => setMode("otp")}
+          className={cn("flex-1 rounded-full py-1.5 transition", mode === "otp" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground")}>
+          验证码登录
+        </button>
+      </div>
+
       <input
-        type="tel"
-        inputMode="numeric"
-        autoComplete="tel"
-        placeholder="请输入手机号"
+        type="tel" inputMode="numeric" autoComplete="tel" placeholder="请输入手机号"
         value={phone}
         onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
         className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
       />
-      <div className="flex gap-2">
-        <input
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="6 位验证码"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
-        />
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={sending || cooldown > 0 || !phoneValid}
-          className="shrink-0 rounded-xl border border-primary px-3 text-xs font-medium text-primary disabled:opacity-50"
-        >
-          {sending ? "发送中…" : cooldown > 0 ? `${cooldown}s 后重发` : "获取验证码"}
-        </button>
-      </div>
-      <button
-        type="button"
-        onClick={handleVerify}
-        disabled={verifying || !phoneValid || code.length !== 6}
-        className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98] disabled:opacity-60"
-      >
-        {verifying ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "登录 / 注册"}
-      </button>
-      <p className="text-center text-xs leading-5 text-muted-foreground">
-        未注册的手机号将自动创建账号
-      </p>
+
+      {mode === "otp" ? (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="6 位验证码"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+            />
+            <button type="button" onClick={handleSend}
+              disabled={sending || cooldown > 0 || !phoneValid}
+              className="shrink-0 rounded-xl border border-primary px-3 text-xs font-medium text-primary disabled:opacity-50">
+              {sending ? "发送中…" : cooldown > 0 ? `${cooldown}s 后重发` : "获取验证码"}
+            </button>
+          </div>
+          <button type="button" onClick={handleVerify}
+            disabled={verifying || !phoneValid || code.length !== 6}
+            className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98] disabled:opacity-60">
+            {verifying ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "登录 / 注册"}
+          </button>
+          <p className="text-center text-xs leading-5 text-muted-foreground">未注册的手机号将自动创建账号</p>
+        </>
+      ) : (
+        <>
+          <input
+            type="password" autoComplete="current-password" placeholder="请输入密码（≥ 6 位）"
+            value={password}
+            onChange={(e) => setPassword(e.target.value.slice(0, 64))}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+          />
+          <button type="button" onClick={handlePasswordLogin}
+            disabled={verifying || !phoneValid || password.length < 6}
+            className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98] disabled:opacity-60">
+            {verifying ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "登录"}
+          </button>
+          <p className="text-center text-xs leading-5 text-muted-foreground">仅限已注册商家。新商家请使用「验证码登录」</p>
+        </>
+      )}
     </div>
   );
 }
