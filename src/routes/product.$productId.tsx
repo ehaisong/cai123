@@ -75,11 +75,8 @@ function ProductDetailPage() {
       return;
     }
     toast.success("购买成功，已解锁内容");
-    if (orderId && typeof orderId === "string") {
-      navigate({ to: "/orders/$orderId", params: { orderId } });
-    } else {
-      load();
-    }
+    void orderId;
+    load();
   };
 
   if (!product) {
