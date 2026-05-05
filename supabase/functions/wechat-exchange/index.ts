@@ -401,6 +401,11 @@ Deno.serve(async (req) => {
       ? return_path
       : "/";
 
+  // 后台 profile 回填不阻塞响应
+  if (sideEffects.length) {
+    void Promise.allSettled(sideEffects);
+  }
+
   log("done", {
     provider,
     userId,
@@ -412,7 +417,7 @@ Deno.serve(async (req) => {
     success: true,
     provider,
     tokenHash: linkData.properties.hashed_token,
-    email: usedEmailForLink,
+    email,
     redirectTo: safeRedirect,
   });
 });
