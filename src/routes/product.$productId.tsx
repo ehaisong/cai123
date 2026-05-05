@@ -63,7 +63,7 @@ function ProductDetailPage() {
     if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
     if (!current) return;
     setBuying(true);
-    const { error } = await supabase.rpc("purchase_product", { _product_id: productId, _issue_id: current.id });
+    const { data: orderId, error } = await supabase.rpc("purchase_product", { _product_id: productId, _issue_id: current.id });
     setBuying(false);
     if (error) {
       if (error.message.includes("余额")) {
@@ -75,7 +75,11 @@ function ProductDetailPage() {
       return;
     }
     toast.success("购买成功，已解锁内容");
-    load();
+    if (orderId && typeof orderId === "string") {
+      navigate({ to: "/orders/$orderId", params: { orderId } });
+    } else {
+      load();
+    }
   };
 
   if (!product) {
