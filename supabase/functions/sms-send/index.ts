@@ -29,12 +29,11 @@ function percentEncode(s: string) {
     .replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/\*/g, "%2A");
 }
 
-function signAliyun(params: Record<string, string>, secret: string) {
+async function signAliyun(params: Record<string, string>, secret: string) {
   const keys = Object.keys(params).sort();
   const canonical = keys.map((k) => `${percentEncode(k)}=${percentEncode(params[k])}`).join("&");
   const stringToSign = `POST&${percentEncode("/")}&${percentEncode(canonical)}`;
-  const sig = hmac("sha1", `${secret}&`, stringToSign, "utf8", "base64");
-  return sig as string;
+  return await hmacSha1Base64(`${secret}&`, stringToSign);
 }
 
 function normalizePhoneCN(input: string): string | null {
