@@ -52,6 +52,9 @@ function ShopPage() {
 
   const [boundMerchantName, setBoundMerchantName] = useState<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [agentCode, setAgentCode] = useState<string>("");
+  const [origin, setOrigin] = useState("");
 
   const loadAgent = async () => {
     if (!user) {
