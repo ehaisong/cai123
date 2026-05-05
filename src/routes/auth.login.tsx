@@ -94,9 +94,16 @@ function LoginPage() {
     if (search.ref) {
       try { localStorage.setItem("pending_referrer", search.ref); } catch {}
     }
-    // 微信内/外都使用 iframe 包裹中转站，实现无感登录
     const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
     try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
+    if (isWechatBrowser()) {
+      // 微信内：必须整页跳转中转站，由中转站走公众号网页授权（snsapi_userinfo）实现无感一键登录
+      // 中转站完成授权后会 302 回 /login/done?ticket=...
+      const returnPath = "/login/done";
+      window.location.href = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
+      return;
+    }
+    // 微信外：使用 iframe 包裹中转站显示二维码扫码登录
     const returnPath = "/login/iframe-bridge";
     const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
     setIframeUrl(url);
