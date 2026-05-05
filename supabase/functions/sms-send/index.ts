@@ -1,13 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const UNIMTX_ENDPOINT = "https://api-cn.unimtx.com/";
+const RELAY = "https://wx.lovclaw.com";
 
 function normalizePhoneCN(input: string): string | null {
   const digits = (input ?? "").replace(/\D/g, "");
@@ -19,6 +17,23 @@ function normalizePhoneCN(input: string): string | null {
 const j = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+async function relay(path: string, body: Record<string, unknown>) {
+  const client = Deno.env.get("SMS_RELAY_CLIENT");
+  const secret = Deno.env.get("SMS_RELAY_CLIENT_SECRET");
+  if (!client || !secret) {
+    return { status: 500, json: { ok: false, error: "relay_not_configured", message: "短信中转站未配置凭据" } };
+  }
+  const r = await fetch(`${RELAY}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client, client_secret: secret, ...body }),
+  });
+  const text = await r.text();
+  let json: any = null;
+  try { json = text ? JSON.parse(text) : null; } catch { /* ignore */ }
+  return { status: r.status, json: json ?? { ok: false, message: text } };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return j({ ok: false, message: "Method not allowed" }, 405);
@@ -26,69 +41,29 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const phone = normalizePhoneCN(String(body.phone ?? ""));
+    let sid: string | undefined = body.sid ? String(body.sid) : undefined;
     if (!phone) return j({ ok: false, message: "请输入正确的手机号" });
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
-    // Rate limit: 60s 1 send, 1h 5 sends
-    const since60s = new Date(Date.now() - 60_000).toISOString();
-    const { count: c1 } = await supabase.from("sms_codes")
-      .select("id", { count: "exact", head: true }).eq("phone", phone).gte("created_at", since60s);
-    if ((c1 ?? 0) > 0) {
-      return j({ ok: false, message: "请 60 秒后再获取验证码" });
-    }
-    const since1h = new Date(Date.now() - 3600_000).toISOString();
-    const { count: c2 } = await supabase.from("sms_codes")
-      .select("id", { count: "exact", head: true }).eq("phone", phone).gte("created_at", since1h);
-    if ((c2 ?? 0) >= 5) {
-      return j({ ok: false, message: "1 小时内验证码请求过多，请稍后再试" });
+    // 申请 sid（若客户端未带）
+    if (!sid) {
+      const start = await relay("/api/public/sms/start", { return_path: "/" });
+      if (!start.json?.ok || !start.json?.sid) {
+        console.error("[sms-send] start fail", start);
+        return j({ ok: false, message: start.json?.message ?? "无法创建会话" }, start.status);
+      }
+      sid = start.json.sid as string;
     }
 
-    const accessKeyId = Deno.env.get("UNIMTX_ACCESS_KEY_ID");
-    const signature = (Deno.env.get("UNIMTX_SIGNATURE") ?? "").trim();
-    if (!accessKeyId || !signature) {
-      return j({ ok: false, message: "短信服务未配置完整凭据" });
+    const send = await relay("/api/public/sms/send", { sid, phone });
+    if (!send.json?.ok) {
+      console.error("[sms-send] send fail", send);
+      const msg = send.json?.error === "rate_limited"
+        ? `请 ${send.json?.retry_after ?? 60} 秒后重试`
+        : (send.json?.message ?? send.json?.error ?? "发送失败");
+      return j({ ok: false, message: msg, sid }, send.status);
     }
 
-    const url = `${UNIMTX_ENDPOINT}?action=otp.send&accessKeyId=${encodeURIComponent(accessKeyId)}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: `+86${phone}`,
-        signature,
-        intent: "login",
-      }),
-    });
-    const text = await res.text();
-    let json: any = null;
-    try { json = text ? JSON.parse(text) : null; } catch { /* ignore */ }
-
-    if (!res.ok || !json || String(json.code) !== "0") {
-      console.error("[sms-send] unimtx fail", {
-        status: res.status,
-        code: json?.code,
-        message: json?.message,
-      });
-      return j({ ok: false, message: json?.message ?? `发送失败 (${res.status})` });
-    }
-
-    const ip = req.headers.get("cf-connecting-ip")
-      ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-
-    // Record send for rate limiting (code stored remotely by Unimatrix)
-    const { error: insErr } = await supabase.from("sms_codes").insert({
-      phone,
-      code_hash: "unimtx",
-      expires_at: new Date(Date.now() + 5 * 60_000).toISOString(),
-      ip,
-    });
-    if (insErr) console.error("[sms-send] rate-record insert", insErr);
-
-    return j({ ok: true });
+    return j({ ok: true, sid, cooldown: send.json?.cooldown ?? 60 });
   } catch (e) {
     console.error("[sms-send] exception", e);
     return j({ ok: false, message: e instanceof Error ? e.message : "服务异常" }, 500);
