@@ -337,12 +337,10 @@ function StaffPanel({
     requireAgree(async () => {
       setVerifying(true);
       try {
-        // 先尝试裸号登录，失败再尝试 +86 前缀
-        let { error } = await supabase.auth.signInWithPassword({ phone, password });
-        if (error) {
-          const r2 = await supabase.auth.signInWithPassword({ phone: `+86${phone}`, password });
-          error = r2.error;
-        }
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; access_token?: string; refresh_token?: string }>("phone-password-login", { body: { phone, password } });
+        if (fnErr || !res) { toast.error(fnErr?.message ?? "登录失败"); return; }
+        if (!res.ok || !res.access_token || !res.refresh_token) { toast.error(res.message ?? "登录失败"); return; }
+        const { error } = await supabase.auth.setSession({ access_token: res.access_token, refresh_token: res.refresh_token });
         if (error) { toast.error(`登录失败: ${error.message}`); return; }
         onSuccess();
       } catch (e) {
