@@ -22,6 +22,7 @@ function MerchantHome() {
 
 function MerchantHomeInner() {
   const { user } = useAuth();
+  const logout = useLogout();
   const [merchant, setMerchant] = useState<any>(null);
   const [stats, setStats] = useState({ products: 0, orders: 0, balance: 0, monthSales: 0 });
 
