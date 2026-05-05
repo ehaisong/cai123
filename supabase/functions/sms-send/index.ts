@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
       Timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
       Version: ALIYUN_VERSION,
     };
-    const signature = signAliyun(params, accessKeySecret);
+    const signature = await signAliyun(params, accessKeySecret);
     const formBody = new URLSearchParams({ ...params, Signature: signature }).toString();
 
     const res = await fetch(ALIYUN_ENDPOINT, {
