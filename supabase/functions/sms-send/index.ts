@@ -1,6 +1,17 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
+
+async function hmacSha1Base64(key: string, msg: string): Promise<string> {
+  const k = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(key),
+    { name: "HMAC", hash: "SHA-1" }, false, ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(msg));
+  let bin = "";
+  const bytes = new Uint8Array(sig);
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,12 +29,11 @@ function percentEncode(s: string) {
     .replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/\*/g, "%2A");
 }
 
-function signAliyun(params: Record<string, string>, secret: string) {
+async function signAliyun(params: Record<string, string>, secret: string) {
   const keys = Object.keys(params).sort();
   const canonical = keys.map((k) => `${percentEncode(k)}=${percentEncode(params[k])}`).join("&");
   const stringToSign = `POST&${percentEncode("/")}&${percentEncode(canonical)}`;
-  const sig = hmac("sha1", `${secret}&`, stringToSign, "utf8", "base64");
-  return sig as string;
+  return await hmacSha1Base64(`${secret}&`, stringToSign);
 }
 
 function normalizePhoneCN(input: string): string | null {
@@ -120,7 +130,7 @@ Deno.serve(async (req) => {
       Timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
       Version: ALIYUN_VERSION,
     };
-    const signature = signAliyun(params, accessKeySecret);
+    const signature = await signAliyun(params, accessKeySecret);
     const formBody = new URLSearchParams({ ...params, Signature: signature }).toString();
 
     const res = await fetch(ALIYUN_ENDPOINT, {
