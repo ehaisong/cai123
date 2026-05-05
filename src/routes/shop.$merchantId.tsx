@@ -9,9 +9,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
+import { Share2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/shop/$merchantId")({
   component: ShopPage,
@@ -47,15 +52,18 @@ function ShopPage() {
 
   const [boundMerchantName, setBoundMerchantName] = useState<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [agentCode, setAgentCode] = useState<string>("");
+  const [origin, setOrigin] = useState("");
 
   const loadAgent = async () => {
     if (!user) {
-      setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null);
+      setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null); setAgentCode("");
       return;
     }
     const { data: ar } = await supabase
       .from("agent_relations")
-      .select("is_agent, bound_merchant_id")
+      .select("is_agent, bound_merchant_id, agent_code")
       .eq("user_id", user.id)
       .maybeSingle();
     setAgentInfo(ar ?? { is_agent: false, bound_merchant_id: null });
@@ -68,12 +76,20 @@ function ShopPage() {
       setBoundMerchantName(null);
     }
 
+    let code = (ar as any)?.agent_code ?? "";
+    if (!code) {
+      const { data: p } = await supabase.from("profiles").select("user_code").eq("user_id", user.id).maybeSingle();
+      code = p?.user_code ?? "";
+    }
+    setAgentCode(code);
+
     const { data: m } = await supabase
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
     setIsShopOwner(!!m);
   };
 
   useEffect(() => {
+    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
     supabase.from("products").select("id, title, is_recommended, price, publish_at, category_id").eq("merchant_id", merchantId).eq("status", "published").order("is_recommended", { ascending: false }).order("publish_at", { ascending: false }).then(({ data }) => setProducts(data ?? []));
@@ -205,10 +221,21 @@ function ShopPage() {
         />
       </div>
 
-      {/* 全部文章 / 默认排序 */}
+      {/* 全部文章 / 默认排序 / 分享 */}
       <div className="bg-card mx-3 mt-2 rounded-md p-3 flex items-center justify-between text-sm">
         <span>全部文章 ▾</span>
-        <span className="text-muted-foreground">默认排序 ▾</span>
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground">默认排序 ▾</span>
+          {agentInfo?.is_agent && agentInfo.bound_merchant_id === merchantId && (
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium"
+            >
+              <Share2 className="h-3.5 w-3.5" /> 分享
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 平台公告项 */}
@@ -247,6 +274,41 @@ function ShopPage() {
           </Link>
         ))}
       </main>
+
+      {/* 推广二维码 Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-[340px]">
+          <DialogHeader>
+            <DialogTitle>推广二维码</DialogTitle>
+            <DialogDescription>
+              扫码或复制链接分享给好友，注册并购买后您将获得分成
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="bg-white p-3 rounded-xl border border-border">
+              <QRCodeSVG value={`${origin}/?ref=${agentCode}`} size={220} level="M" />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              推广码：<span className="font-mono">{agentCode || "—"}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try { await navigator.clipboard.writeText(`${origin}/?ref=${agentCode}`); toast.success("已复制链接"); }
+                  catch { toast.error("复制失败"); }
+                }}
+              >
+                <Copy className="h-4 w-4 mr-1" /> 复制链接
+              </Button>
+              <Button onClick={() => router.navigate({ to: "/agent/share" })}>
+                更多分享方式
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
