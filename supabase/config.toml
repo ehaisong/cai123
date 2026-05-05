@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.seed-demo-merchant]
 verify_jwt = false
+
+[functions.phone-password-login]
+verify_jwt = false
