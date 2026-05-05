@@ -282,6 +282,7 @@ function StaffPanel({
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
+  const [sid, setSid] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -299,9 +300,10 @@ function StaffPanel({
     requireAgree(async () => {
       setSending(true);
       try {
-        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string }>("sms-send", { body: { phone } });
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; sid?: string }>("sms-send", { body: { phone, sid } });
         if (fnErr || !res) { toast.error(fnErr?.message ?? "发送失败"); return; }
         if (!res.ok) { toast.error(res.message); return; }
+        if (res.sid) setSid(res.sid);
         toast.success("验证码已发送");
         setCooldown(60);
       } catch (e) {
@@ -313,10 +315,11 @@ function StaffPanel({
   const handleVerify = () => {
     if (!phoneValid) { toast.error("请输入正确的手机号"); return; }
     if (!/^\d{6}$/.test(code)) { toast.error("请输入 6 位验证码"); return; }
+    if (!sid) { toast.error("请先获取验证码"); return; }
     requireAgree(async () => {
       setVerifying(true);
       try {
-        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; tokenHash?: string; email?: string }>("sms-verify", { body: { phone, code } });
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; tokenHash?: string; email?: string }>("sms-verify", { body: { phone, code, sid } });
         if (fnErr || !res) { toast.error(fnErr?.message ?? "登录失败"); return; }
         if (!res.ok) { toast.error(res.message); return; }
         const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: res.tokenHash! });

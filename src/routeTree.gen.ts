@@ -26,6 +26,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WalletTransactionsRouteImport } from './routes/wallet.transactions'
 import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
+import { Route as ProfileBindPhoneRouteImport } from './routes/profile.bind-phone'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders.$orderId'
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
@@ -145,6 +146,11 @@ const ShopMerchantIdRoute = ShopMerchantIdRouteImport.update({
   id: '/shop/$merchantId',
   path: '/shop/$merchantId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileBindPhoneRoute = ProfileBindPhoneRouteImport.update({
+  id: '/bind-phone',
+  path: '/bind-phone',
+  getParentRoute: () => ProfileRoute,
 } as any)
 const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
@@ -331,7 +337,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRouteWithChildren
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
@@ -384,7 +391,7 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRouteWithChildren
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
@@ -415,6 +422,7 @@ export interface FileRoutesByTo {
   '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
@@ -438,7 +446,7 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRouteWithChildren
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRouteWithChildren
   '/admin/agents': typeof AdminAgentsRoute
@@ -469,6 +477,7 @@ export interface FileRoutesById {
   '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
@@ -524,6 +533,7 @@ export interface FileRouteTypes {
     | '/merchant/wallet'
     | '/orders/$orderId'
     | '/product/$productId'
+    | '/profile/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
     | '/wallet/transactions'
@@ -577,6 +587,7 @@ export interface FileRouteTypes {
     | '/merchant/wallet'
     | '/orders/$orderId'
     | '/product/$productId'
+    | '/profile/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
     | '/wallet/transactions'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/merchant/wallet'
     | '/orders/$orderId'
     | '/product/$productId'
+    | '/profile/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
     | '/wallet/transactions'
@@ -653,7 +665,7 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   OrdersRoute: typeof OrdersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
-  ProfileRoute: typeof ProfileRoute
+  ProfileRoute: typeof ProfileRouteWithChildren
   TermsRoute: typeof TermsRoute
   WalletRoute: typeof WalletRouteWithChildren
   AdminAgentsRoute: typeof AdminAgentsRoute
@@ -813,6 +825,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/$merchantId'
       preLoaderRoute: typeof ShopMerchantIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/profile/bind-phone': {
+      id: '/profile/bind-phone'
+      path: '/bind-phone'
+      fullPath: '/profile/bind-phone'
+      preLoaderRoute: typeof ProfileBindPhoneRouteImport
+      parentRoute: typeof ProfileRoute
     }
     '/product/$productId': {
       id: '/product/$productId'
@@ -1078,6 +1097,17 @@ const OrdersRouteChildren: OrdersRouteChildren = {
 const OrdersRouteWithChildren =
   OrdersRoute._addFileChildren(OrdersRouteChildren)
 
+interface ProfileRouteChildren {
+  ProfileBindPhoneRoute: typeof ProfileBindPhoneRoute
+}
+
+const ProfileRouteChildren: ProfileRouteChildren = {
+  ProfileBindPhoneRoute: ProfileBindPhoneRoute,
+}
+
+const ProfileRouteWithChildren =
+  ProfileRoute._addFileChildren(ProfileRouteChildren)
+
 interface WalletRouteChildren {
   WalletTransactionsRoute: typeof WalletTransactionsRoute
 }
@@ -1099,7 +1129,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   OrdersRoute: OrdersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
-  ProfileRoute: ProfileRoute,
+  ProfileRoute: ProfileRouteWithChildren,
   TermsRoute: TermsRoute,
   WalletRoute: WalletRouteWithChildren,
   AdminAgentsRoute: AdminAgentsRoute,
