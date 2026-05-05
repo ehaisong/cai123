@@ -206,8 +206,7 @@ function SharePage() {
         <div id="agent-share-qr" className="bg-white p-3 rounded-xl border border-border">
           <QRCodeSVG value={url || agentUrl} size={220} level="M" />
         </div>
-        <div className="mt-3 text-[11px] text-muted-foreground break-all text-center px-2">{url}</div>
-        <div className="mt-2 text-xs text-muted-foreground">
+        <div className="mt-3 text-xs text-muted-foreground">
           {mode === "agent" ? <>推广码：<span className="font-mono">{code}</span></> : <>店铺码：<span className="font-mono">M_{merchant?.id.slice(0, 8)}…</span></>}
         </div>
 
