@@ -42,7 +42,6 @@ function MerchantQRInner() {
         <div className="bg-white p-4 rounded-xl border border-border">
           <QRCodeSVG value={url} size={220} level="M" />
         </div>
-        <div className="mt-4 text-xs text-muted-foreground break-all text-center px-4">{url}</div>
       </div>
     </div>
   );
