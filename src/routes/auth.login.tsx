@@ -94,17 +94,9 @@ function LoginPage() {
     if (search.ref) {
       try { localStorage.setItem("pending_referrer", search.ref); } catch {}
     }
-    // 微信内置浏览器：必须整页跳转走 OAuth，iframe 内微信会强制 fallback 到扫码
-    if (isWechatBrowser()) {
-      const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
-      // 把业务回跳路径暂存到 sessionStorage，避免与中转站附加的 ?ticket= 拼接冲突
-      try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
-      // return_path 必须是不带 query 的干净路径；中转站会在其后追加 ?ticket=xxx
-      const returnPath = "/login/done";
-      const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
-      window.location.href = url;
-      return;
-    }
+    // 微信内/外都使用 iframe 包裹中转站，实现无感登录
+    const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
+    try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
     const returnPath = "/login/iframe-bridge";
     const url = `${HUB_BASE}/oauth/wechat/start?client=${HUB_CLIENT}&return_path=${encodeURIComponent(returnPath)}`;
     setIframeUrl(url);
