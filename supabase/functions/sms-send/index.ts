@@ -1,6 +1,17 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
+
+async function hmacSha1Base64(key: string, msg: string): Promise<string> {
+  const k = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(key),
+    { name: "HMAC", hash: "SHA-1" }, false, ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(msg));
+  let bin = "";
+  const bytes = new Uint8Array(sig);
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
