@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.sms-verify]
 verify_jwt = false
+
+[functions.seed-demo-merchant]
+verify_jwt = false
