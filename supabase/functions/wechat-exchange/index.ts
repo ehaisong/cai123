@@ -183,7 +183,9 @@ Deno.serve(async (req) => {
   });
 
   let userId: string | null = null;
-  let usedEmailForLink: string | null = null;
+  let knownEmail: string | null = null;
+  // 后台任务（profile 回填等），不阻塞登录
+  const sideEffects: Promise<unknown>[] = [];
 
   if (provider === "wechat") {
     const wx = data as {
@@ -249,29 +251,32 @@ Deno.serve(async (req) => {
         });
       }
       userId = created.user.id;
+      knownEmail = syntheticEmail;
       log("auth.created.wechat", { openidTail, userId });
     }
 
-    // 3) 回填 profile（不阻塞登录）
-    const { error: bindErr } = await supabaseAdmin.rpc(
-      "bind_wechat_to_profile",
-      {
-        _user_id: userId,
-        _openid: wx.openid,
-        _unionid: wx.unionid ?? "",
-        _nickname: wx.nickname ?? "",
-        _avatar: wx.avatar ?? "",
-      } as any,
+    // 3) 回填 profile（并行，不阻塞登录）
+    sideEffects.push(
+      supabaseAdmin
+        .rpc("bind_wechat_to_profile", {
+          _user_id: userId,
+          _openid: wx.openid,
+          _unionid: wx.unionid ?? "",
+          _nickname: wx.nickname ?? "",
+          _avatar: wx.avatar ?? "",
+        } as any)
+        .then(({ error }) => {
+          if (error) {
+            logErr("rpc.bind_wechat_to_profile", {
+              userId,
+              openidTail,
+              message: error.message,
+            });
+          } else {
+            log("profile.bound", { userId, openidTail });
+          }
+        }),
     );
-    if (bindErr) {
-      logErr("rpc.bind_wechat_to_profile", {
-        userId,
-        openidTail,
-        message: bindErr.message,
-      });
-    } else {
-      log("profile.bound", { userId, openidTail });
-    }
   } else if (provider === "phone") {
     const rawPhone: string = String(data?.phone ?? "").trim();
     if (!rawPhone || !/^\+?\d{8,15}$/.test(rawPhone.replace(/\s|-/g, ""))) {
@@ -321,28 +326,21 @@ Deno.serve(async (req) => {
       }
       userId = created.user.id;
       log("auth.created.phone", { phoneMasked, userId });
-    } else {
-      // 已存在用户但可能没绑 phone（极少见），尝试补一下
-      const { data: gu } = await supabaseAdmin.auth.admin.getUserById(userId);
-      if (gu?.user && !gu.user.phone) {
-        await supabaseAdmin.auth.admin.updateUserById(userId, {
-          phone: normPhone,
-          phone_confirm: true,
-        });
-      }
     }
 
-    // 3) 回填 profile.phone
-    try {
-      await supabaseAdmin
+    // 回填 profile.phone（并行，不阻塞登录）
+    sideEffects.push(
+      supabaseAdmin
         .from("profiles")
         .update({ phone: rawPhone })
         .eq("user_id", userId)
-        .is("phone", null);
-    } catch (e) {
-      // 不阻塞
-      log("profile.phone.update.skip", { userId, msg: String(e?.message ?? e) });
-    }
+        .is("phone", null)
+        .then(({ error }) => {
+          if (error) {
+            log("profile.phone.update.skip", { userId, msg: error.message });
+          }
+        }),
+    );
   } else {
     logErr("hub.provider.unknown", { provider, ticketTail, payload: hubBody });
     return jsonResponse(400, {
@@ -352,38 +350,38 @@ Deno.serve(async (req) => {
     });
   }
 
-  // 4. 拿到 userId 后，统一通过该用户的 email 签发 magiclink 给前端 verifyOtp
-  //    （Supabase 的 magiclink 需要 email；createUser 时若没给 email，会自动生成内部 placeholder——
-  //     若没有，我们这里就给手机号用户补一个合成 email）
-  const { data: userInfo, error: getErr } =
-    await supabaseAdmin.auth.admin.getUserById(userId!);
-  if (getErr || !userInfo.user) {
-    logErr("auth.getUserById", { userId, message: getErr?.message });
-    return jsonResponse(500, {
-      step: "auth.getUserById",
-      message: `无法读取用户信息: ${getErr?.message ?? "unknown"}`,
-    });
-  }
-
-  let email = userInfo.user.email ?? null;
+  // 4. 拿到 userId 后，签发 magiclink token_hash 给前端 verifyOtp。
+  //    若已知 email（刚创建的用户）则直接用，省一次 getUserById RTT。
+  let email = knownEmail;
   if (!email) {
-    // 给纯手机号用户补一个合成 email（仅用于签发 magiclink）
-    const syntheticEmail = `phone_${userId}@phone.local`;
-    const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
-      userId!,
-      { email: syntheticEmail, email_confirm: true },
-    );
-    if (updErr) {
-      logErr("auth.attachSyntheticEmail", { userId, message: updErr.message });
+    const { data: userInfo, error: getErr } =
+      await supabaseAdmin.auth.admin.getUserById(userId!);
+    if (getErr || !userInfo.user) {
+      logErr("auth.getUserById", { userId, message: getErr?.message });
       return jsonResponse(500, {
-        step: "auth.attachSyntheticEmail",
-        message: `补全用户邮箱失败: ${updErr.message}`,
+        step: "auth.getUserById",
+        message: `无法读取用户信息: ${getErr?.message ?? "unknown"}`,
       });
     }
-    email = syntheticEmail;
-    log("auth.email.synthesized", { userId });
+    email = userInfo.user.email ?? null;
+    if (!email) {
+      // 纯手机号用户补合成 email（仅用于签发 magiclink）
+      const syntheticEmail = `phone_${userId}@phone.local`;
+      const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
+        userId!,
+        { email: syntheticEmail, email_confirm: true },
+      );
+      if (updErr) {
+        logErr("auth.attachSyntheticEmail", { userId, message: updErr.message });
+        return jsonResponse(500, {
+          step: "auth.attachSyntheticEmail",
+          message: `补全用户邮箱失败: ${updErr.message}`,
+        });
+      }
+      email = syntheticEmail;
+      log("auth.email.synthesized", { userId });
+    }
   }
-  usedEmailForLink = email;
 
   const { data: linkData, error: linkErr } =
     await supabaseAdmin.auth.admin.generateLink({
