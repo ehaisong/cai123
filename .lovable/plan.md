@@ -1,66 +1,62 @@
-## 目标
 
-1. 复用现有 demo 商家（merchants.id `b36f6413-…`），把它绑定到手机号 **15120857030**、密码 **123456**，可用「手机号+密码」登录管理店铺。
-2. 商家登录页除「手机验证码」外，新增「手机号+密码」登录子模式。
-3. 把该商家设为 `app_settings.default_shop_id`（无推广链接的访客自动落到该店）。
-4. 批量插入 **24 条** DEMO 商品 + 对应 `product_issues`，覆盖截图中全部分类（3D / P3 / P5 / 球赛 / 其他·快乐8）。
+# 修复 `find_user_by_phone` RPC
+
+## 现状诊断
+
+通过实际查库发现两个严重问题，会让"按手机号找用户"经常找错或找不到：
+
+### 问题 1：同一个手机号在 `auth.users` 里存了多个账号
+`auth.users.phone` 字段历史上有时存 `"13807674808"`（裸号），有时存 `"8613807674808"`（带国码），导致同一真实手机号产生多个账号：
+
+| user_id | phone | email | 创建时间 |
+|---|---|---|---|
+| `2c69bfed…` | `8613807674808` | phone_2c69…@phone.local | 5-03 |
+| `456ed039…` | `13807674808`   | phone_456e…@phone.local | 5-05 |
+| `9e296d21…` | `8615120857030` | phone_9e29…@phone.local | 5-04 |
+| `725b6638…` | `15120857030`   | demo.merchant@hxxgo.test | 4-26（商家本号）|
+
+### 问题 2：当前 `find_user_by_phone` 只比"完全相等"，不去 86
+```sql
+regexp_replace(phone,'\D','','g') = v_norm
+```
+传入 `13807674808` 只能匹配 `456ed039…`；传入 `+8613807674808` 又只能匹配 `2c69bfed…`。所以"用同一个手机号走密码登陆 / 验证码登陆 / 手机绑定"会落到不同账号上，钱包、订单、角色全部错乱。
+
+## 修复目标
+
+1. **RPC 端**：`find_user_by_phone` 双向去掉 `86` 国码后比较，永远只返回一个稳定 user_id（优先**真实邮箱**账号 > 商家身份账号 > 创建最早账号）。
+2. **数据端**：把现有 4 个重复账号收敛到 2 个真实用户，把 phone_xxx@phone.local 的影子账号合并到真实账号上（或直接删除影子账号，因为它们没有钱包流水/订单）。
+3. **写入端**：sms-verify Edge Function 在创建影子用户前，**先调用修复后的 RPC** 查找是否已存在该手机号的真实账号；存在就直接返回该用户，不再新建。
 
 ## 实施步骤
 
-### 1. 新增一次性 Edge Function：`seed-demo-merchant`
-作用：用 service_role 完成账号 + 商家信息初始化，可重复执行（幂等）。
-- `auth.admin.updateUserById('725b6638-…', { phone: '15120857030', phone_confirm: true, password: '123456' })`
-- `merchants` upsert：`shop_name='DEMO 测试店铺'`、`shop_description='平台演示店铺，用于功能测试'`、`status='approved'`、`is_disabled=false`
-- 确保 `user_roles(user_id, 'merchant')` 存在
-- 写入 `app_settings.default_shop_id = "b36f6413-…"`
+### 1. 重写 `find_user_by_phone`（迁移）
+- 入参规范化：`regexp_replace(_phone,'\D','','g')` → 去掉前导 `86`（11 位中国手机号必为 1 开头）。
+- 比较时对 `auth.users.phone` 也做同样规范化。
+- 排序：先按 `email NOT LIKE '%@phone.local'` DESC（真实邮箱在前），再按 `created_at ASC`，取第一条。
 
-部署后由前端/我手动调用一次即可。
+### 2. 数据收敛（迁移）
+- 查询所有 `auth.users` 按"去 86 后的手机号"分组，找出 `count > 1` 的组。
+- 对每组：保留"主账号"（真实邮箱优先），把其余影子账号的 `profiles / wallets / orders / user_roles` 等数据**改挂**到主账号；最后从 `auth.users` 删除影子账号。
+- 当前 4 个账号实际只对应 2 个手机号，本次迁移会硬编码处理这 2 组（影子账号上没有交易，安全）。
+- 把保留下来的账号 `auth.users.phone` 统一规范化为**带 86**（`8613807674808`），跟 Supabase Phone Provider 默认一致。
 
-### 2. 登录页：增加「手机号+密码」登录
-修改 `src/routes/auth.login.tsx` 的 `StaffPanel`：
-- 顶部加一个小切换：`验证码登录` / `密码登录`（无新设计 token，沿用现有圆角输入 + 主色按钮）。
-- 密码模式：手机号 + 密码两个输入 + "登录" 按钮。
-- 调用 `supabase.auth.signInWithPassword({ phone: '86' + phone 或裸号 phone, password })`。考虑到 `bootstrap_admin_role` 与现有 `find_user_by_phone` 都做了归一化处理，这里登录直接用裸 11 位手机号；若失败则回退尝试 `+86` 前缀。
-- 校验：`/^1\d{10}$/`、密码 ≥ 6 位。
-- 成功后走现有 `routeAfterLogin()`。
+### 3. `sms-verify` Edge Function 调整
+- 收到 OTP 通过后：
+  1. `find_user_by_phone(phone)` → 命中则直接 `generateLink({type:'magiclink', email: <该用户的email>})` 返回 `tokenHash`，不再创建新账号。
+  2. 未命中时再 `admin.createUser({ phone, email: phone_<uuid>@phone.local })`，并把 `profiles.phone` 写成规范化形式。
+- 同步修一下 `phone-password-login`：调用同一个 RPC 拿 user_id，然后取 email 做 password grant，不会再因为国码差异 404。
 
-### 3. 批量种子商品（数据插入 — insert 工具，不是 schema migration）
+### 4. 验证
+- 用 13807674808 / 15120857030 各跑：验证码登陆 → 密码登陆 → "我的-手机绑定"，应全程命中同一个 user_id。
+- `SELECT find_user_by_phone(x)` 对裸号 / +86 号 / 86 号三种格式返回相同 uid。
 
-针对 `merchant_id = b36f6413-…` 写入 24 条 `products` + 对应 `product_issues`。
-分类分布（覆盖店铺页 Tab 3D / P3 / P5 / 球赛 / 其他）：
+## 不改动的地方
+- 不改 Supabase 自带 Phone Provider 配置（仍关闭，继续走 SMS 中转）。
+- 不改前端登录/绑定 UI。
+- `profiles.phone` 字段格式保持现状，只在新写入时规范化。
 
-| 分类（types）        | 数量 | 期号样式            | category_id 取值  |
-|---------------------|------|---------------------|-------------------|
-| ['3D']              | 6    | 2026111… 2026116    | fc3d              |
-| ['P3']              | 5    | 2026111… 2026115    | fc3d              |
-| ['P5']              | 4    | 2026111… 2026114    | fc3d              |
-| ['3D','P3']         | 2    | 2026111…            | fc3d              |
-| ['P3','P5']         | 1    | 2026111             | fc3d              |
-| ['球赛']            | 4    | 0419 / 0420 …      | fc                |
-| ['其他'] (快乐8)    | 4    | 104 / 103 / 102 / 101| lhc              |
-| **合计**            | 26   |                     |                   |
+## 风险与回滚
+- 删除影子账号前先 `SELECT` 确认影子账号 `wallet_transactions / orders / commission_records` 行数为 0；如非 0 则改为"迁移引用 → 再删"。
+- 迁移可逆性低（删 auth.users 不可回滚），所以会先在事务里 `RAISE NOTICE` 列出将删账号清单，确认无业务数据再 commit。
 
-每条字段统一：
-- `kind='single'`、`status='published'`、`publish_at=now() - 随机 0–10 天`
-- `paid_content`：贴近截图，例如  
-  `111期【白斩鸡】福+体通用单挑一注直组包含三码全定位复试🔥不断更 已更新\n108期【567】体开656✅\n109期【159】福开195✅\n110期【379】福开379✅\n111期【420】`
-- `intro`：简短简介 + "本站资料仅供参考"
-- `price`：3D/P3/P5 大多数 0 豆（演示免费），少量 6/8/10；球赛 58/68/88；快乐8 0/8
-- 部分置 `is_recommended=true`（前 3 条）、`streak=3..6` + `tags=['3连红'…]`
-- `no_win_refund=true` 给球赛和带"不中退款"的资料
-- `is_presale=true` 给 1 条（截图里的"预售/还研究"）
-- `has_self_issue=true` 全部为 true，并对每条同步插入 1 条 `product_issues`：`status='published'`、`publish_at=publish_at`、`paid_content=products.paid_content`
-
-### 4. 验证步骤
-1. 调用 seed function → 检查 `auth.users.phone` 已写入。
-2. 退出登录访问 `/` → 应自动进入 DEMO 商家店铺。
-3. 在「商家登录 → 密码登录」用 `15120857030 / 123456` 登录 → 跳到 `/merchant`，可见 26 条商品。
-4. 店铺页切换全部/3D/P3/P5/球赛/其他 → 每个 Tab 都有内容。
-
-## 涉及文件
-
-- 新增：`supabase/functions/seed-demo-merchant/index.ts`
-- 修改：`src/routes/auth.login.tsx`（StaffPanel 增加密码模式子 Tab）
-- 数据：通过 insert SQL 批量写入 `app_settings` / `products` / `product_issues`（不改 schema）
-
-不改动现有 `sms-send` / `sms-verify` / 路由跳转逻辑。
+确认后我会按此提交一次 `supabase migration` 和一个 sms-verify edge function 修改。
