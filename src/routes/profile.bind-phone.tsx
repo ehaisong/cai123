@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/profile.bind-phone")({
+export const Route = createFileRoute("/profile/bind-phone")({
   component: BindPhonePage,
 });
 
@@ -113,5 +113,5 @@ function BindPhonePage() {
         </Button>
       </div>
     </div>
-  );
+  )
 }
