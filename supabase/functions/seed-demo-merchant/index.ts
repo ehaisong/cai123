@@ -123,12 +123,17 @@ Deno.serve(async (req) => {
       { onConflict: "key" },
     );
 
-    // 6. Wipe + reseed products
+    // 6. Wipe demo products that have NO orders (preserve any with purchase history)
     const { data: existing } = await admin.from("products").select("id").eq("merchant_id", MERCHANT_ID);
     if (existing?.length) {
-      const ids = existing.map((r: any) => r.id);
-      await admin.from("product_issues").delete().in("product_id", ids);
-      await admin.from("products").delete().in("id", ids);
+      const allIds = existing.map((r: any) => r.id);
+      const { data: ordered } = await admin.from("orders").select("product_id").in("product_id", allIds);
+      const orderedIds = new Set((ordered ?? []).map((r: any) => r.product_id));
+      const removable = allIds.filter((id: string) => !orderedIds.has(id));
+      if (removable.length) {
+        await admin.from("product_issues").delete().in("product_id", removable);
+        await admin.from("products").delete().in("id", removable);
+      }
     }
 
     const now = Date.now();
