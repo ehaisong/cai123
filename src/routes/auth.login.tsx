@@ -40,6 +40,7 @@ function LoginPage() {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [routing, setRouting] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [wechatLoading, setWechatLoading] = useState(false);
 
   const requireAgree = (next: () => void) => {
     if (!agreed) {
