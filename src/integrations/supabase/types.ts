@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           id: string
           is_agent: boolean
+          l1_rate: number | null
           upline_id: string | null
           upline_l2_id: string | null
           user_id: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_agent?: boolean
+          l1_rate?: number | null
           upline_id?: string | null
           upline_l2_id?: string | null
           user_id: string
@@ -41,6 +43,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_agent?: boolean
+          l1_rate?: number | null
           upline_id?: string | null
           upline_l2_id?: string | null
           user_id?: string
@@ -379,6 +382,7 @@ export type Database = {
           fans_count: number | null
           id: string
           is_disabled: boolean
+          l1_max_rate: number
           l1_rate: number
           l2_enabled: boolean
           l2_rate: number
@@ -401,6 +405,7 @@ export type Database = {
           fans_count?: number | null
           id?: string
           is_disabled?: boolean
+          l1_max_rate?: number
           l1_rate?: number
           l2_enabled?: boolean
           l2_rate?: number
@@ -423,6 +428,7 @@ export type Database = {
           fans_count?: number | null
           id?: string
           is_disabled?: boolean
+          l1_max_rate?: number
           l1_rate?: number
           l2_enabled?: boolean
           l2_rate?: number
@@ -1176,6 +1182,10 @@ export type Database = {
       merchant_send_message: {
         Args: { _content: string; _title: string; _user_id: string }
         Returns: string
+      }
+      merchant_set_agent_rate: {
+        Args: { _rate: number; _user_id: string }
+        Returns: undefined
       }
       purchase_package: { Args: { _package_id: string }; Returns: string }
       purchase_product:

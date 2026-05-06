@@ -32,6 +32,8 @@ type Merchant = {
   fans_count: number | null;
   wechat_id: string | null;
   created_at: string;
+  l1_rate: number;
+  l1_max_rate: number;
 };
 
 function Inner() {
@@ -39,12 +41,14 @@ function Inner() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Merchant | null>(null);
+  const [rate, setRate] = useState("");
+  const [maxRate, setMaxRate] = useState("");
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("merchants")
-      .select("id, user_id, shop_name, real_name, status, is_disabled, disabled_reason, disabled_at, total_sales, fans_count, wechat_id, created_at")
+      .select("id, user_id, shop_name, real_name, status, is_disabled, disabled_reason, disabled_at, total_sales, fans_count, wechat_id, created_at, l1_rate, l1_max_rate")
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) { reportRpcError(error, { op: "merchants.select", scope: "AdminMerchants" }); return; }
@@ -73,6 +77,26 @@ function Inner() {
     setSelected(null);
   };
 
+  const openEdit = (m: Merchant) => {
+    setSelected(m);
+    setRate((Number(m.l1_rate) * 100).toString());
+    setMaxRate((Number(m.l1_max_rate) * 100).toString());
+  };
+
+  const saveRate = async () => {
+    if (!selected) return;
+    const r = Number(rate), mx = Number(maxRate);
+    if (!Number.isFinite(r) || !Number.isFinite(mx) || r < 0 || mx < 0 || mx > 92) { toast.error("分成上限不能超过 92%"); return; }
+    if (r > mx) { toast.error("默认分成不能超过上限"); return; }
+    const { error } = await supabase.from("merchants").update({
+      l1_rate: r / 100, l1_max_rate: mx / 100, l2_enabled: false, l2_rate: 0,
+    }).eq("id", selected.id);
+    if (error) { reportRpcError(error, { op: "merchants.update_rate", scope: "AdminMerchants" }); toast.error(error.message); return; }
+    toast.success("已保存分成");
+    load();
+    setSelected(null);
+  };
+
   return (
     <div className="h5-shell flex min-h-screen flex-col">
       <PageHeader title="商家管理" />
@@ -84,9 +108,12 @@ function Inner() {
         {loading && <p className="text-center py-4 text-sm text-muted-foreground">加载中…</p>}
         {!loading && filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无商家</p>}
         {filtered.map((m) => (
-          <button key={m.id} onClick={() => setSelected(m)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
+          <button key={m.id} onClick={() => openEdit(m)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium truncate">{m.shop_name}</div>
+              <span className="text-xs text-primary">分成 {(Number(m.l1_rate) * 100).toFixed(0)}% / 上限 {(Number(m.l1_max_rate) * 100).toFixed(0)}%</span>
+            </div>
+            <div className="mt-1">
               <span className={`text-xs px-2 py-0.5 rounded ${m.is_disabled ? "bg-destructive/10 text-destructive" : m.status === "approved" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
                 {m.is_disabled ? "已禁用" : m.status === "approved" ? "正常" : m.status}
               </span>
@@ -113,6 +140,20 @@ function Inner() {
               <div>累计销售：{fmtMoney(selected.total_sales)}</div>
               <div>状态：{selected.is_disabled ? "已禁用" : selected.status}</div>
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
+            </div>
+            <div className="bg-muted/40 rounded-md p-3 space-y-2">
+              <div className="text-sm font-medium">分成设置（一级，最高 92%）</div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs w-20 text-muted-foreground">默认分成</span>
+                <Input type="number" step="0.5" value={rate} onChange={(e) => setRate(e.target.value)} />
+                <span className="text-xs">%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs w-20 text-muted-foreground">分成上限</span>
+                <Input type="number" step="0.5" max={92} value={maxRate} onChange={(e) => setMaxRate(e.target.value)} />
+                <span className="text-xs">%</span>
+              </div>
+              <Button className="w-full" size="sm" onClick={saveRate}>保存分成</Button>
             </div>
             <DisableHistory isDisabled={selected.is_disabled} reason={selected.disabled_reason} at={selected.disabled_at} />
             <AdminUserDetailExtras
