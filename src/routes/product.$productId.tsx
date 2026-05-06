@@ -24,6 +24,7 @@ interface Issue {
 
 function ProductDetailPage() {
   const { productId } = useParams({ from: "/product/$productId" });
+  const { from } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
