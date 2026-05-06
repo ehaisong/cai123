@@ -1175,6 +1175,21 @@ export type Database = {
       }
       is_user_disabled: { Args: { _user_id: string }; Returns: boolean }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
+      merchant_agent_detail: { Args: { _user_id: string }; Returns: Json }
+      merchant_agents_with_stats: {
+        Args: never
+        Returns: {
+          agent_code: string
+          created_at: string
+          customer_count: number
+          l1_rate: number
+          nickname: string
+          phone: string
+          user_code: string
+          user_id: string
+          yesterday_income: number
+        }[]
+      }
       merchant_broadcast: {
         Args: { _audience?: string; _content: string; _title: string }
         Returns: number
