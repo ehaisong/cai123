@@ -30,6 +30,8 @@ interface Product {
   price: number;
   publish_at: string;
   category_id: string;
+  merchant_id: string;
+  is_affiliated?: boolean;
 }
 interface Category { id: string; name: string; code: string; }
 interface Merchant {
