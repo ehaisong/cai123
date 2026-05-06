@@ -37,7 +37,7 @@ interface Category { id: string; name: string; code: string; }
 interface Merchant {
   id: string; shop_name: string; shop_avatar_url: string | null; shop_description: string | null;
 }
-interface Announcement { id: string; title: string; content: string | null; created_at: string; }
+interface InboxMsg { id: string; title: string; content: string | null; created_at: string; category: string; }
 
 function ShopPage() {
   const { merchantId } = useParams({ from: "/shop/$merchantId" });
@@ -48,7 +48,7 @@ function ShopPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [keyword, setKeyword] = useState("");
-  const [ann, setAnn] = useState<Announcement | null>(null);
+  const [ann, setAnn] = useState<InboxMsg | null>(null);
   const [agentInfo, setAgentInfo] = useState<{ is_agent: boolean; bound_merchant_id: string | null } | null>(null);
   const [isShopOwner, setIsShopOwner] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -105,7 +105,15 @@ function ShopPage() {
         .order("publish_at", { ascending: false });
       setProducts((data ?? []).map(p => ({ ...p, is_affiliated: p.merchant_id !== merchantId })));
     })();
-    supabase.from("announcements").select("id, title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(1).then(({ data }) => setAnn(data?.[0] ?? null));
+    if (user) {
+      supabase.from("notifications")
+        .select("id, title, content, created_at, category")
+        .eq("user_id", user.id).eq("is_read", false)
+        .order("created_at", { ascending: false }).limit(1)
+        .then(({ data }) => setAnn((data?.[0] as InboxMsg | undefined) ?? null));
+    } else {
+      setAnn(null);
+    }
     loadAgent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [merchantId, user?.id]);
@@ -195,17 +203,21 @@ function ShopPage() {
       </AlertDialog>
 
 
-      {/* 公告广告位 */}
+      {/* 最新未读消息置顶条 */}
       {ann && (
-        <div className="mx-3 mt-3 rounded-xl p-3 text-white" style={{ background: "var(--gradient-orange)" }}>
-          <div className="text-xs opacity-90 mb-1">★ 数据分析师实名入驻 ★</div>
-          <p className="text-xs leading-snug opacity-95 line-clamp-3">{ann.content}</p>
-          <div className="flex gap-2 mt-2">
-            <button className="bg-white/20 px-3 py-1 rounded text-xs">公众号</button>
-            <button className="bg-white/20 px-3 py-1 rounded text-xs">微信</button>
-            <button className="bg-white/20 px-3 py-1 rounded text-xs">反馈</button>
+        <Link
+          to="/messages"
+          className="mx-3 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 p-3"
+        >
+          <span className="shrink-0 text-[10px] bg-primary text-primary-foreground rounded px-1.5 py-0.5">
+            {ann.category === "announcement" ? "公告" : ann.category === "admin_message" ? "平台" : ann.category === "merchant_message" ? "商家" : "消息"}
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate">{ann.title}</div>
+            {ann.content && <div className="text-xs text-muted-foreground truncate">{ann.content}</div>}
           </div>
-        </div>
+          <span className="text-primary text-lg leading-none">›</span>
+        </Link>
       )}
 
       {/* 栏目筛选 */}
