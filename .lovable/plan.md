@@ -1,62 +1,72 @@
+## 功能概述
 
-# 修复 `find_user_by_phone` RPC
+在商家后台增加"挂靠"功能：商家 A 可申请挂靠到商家 B，审核通过后，A 的店铺会即时同步显示 B 的商品；买家在 A 的店铺下单时，订单归属 A，销售收入归 A。
 
-## 现状诊断
+## UI 设计（参考截图）
 
-通过实际查库发现两个严重问题，会让"按手机号找用户"经常找错或找不到：
+新增页面 `/merchant/affiliations`（挂靠服务）：
 
-### 问题 1：同一个手机号在 `auth.users` 里存了多个账号
-`auth.users.phone` 字段历史上有时存 `"13807674808"`（裸号），有时存 `"8613807674808"`（带国码），导致同一真实手机号产生多个账号：
+- 顶部红色 PageHeader「挂靠服务」
+- 搜索商家输入框（按店铺名搜索可挂靠商家）+ 备注文本框 + 红色「提交申请」按钮
+- 4 个 Tab（与截图一致）：
+  1. **申请记录** — 我提交的申请（待审核 / 已通过 / 已拒绝），可撤销待审核项
+  2. **已挂靠商家** — 我已挂靠的其他商家列表，可「取消挂靠」
+  3. **审核挂靠申请** — 别人申请挂靠到我，可「通过 / 拒绝」
+  4. **挂靠我的商家** — 已挂靠到我名下的商家列表，可「解除」
+- Tab 内空态使用现有的暂无数据样式
 
-| user_id | phone | email | 创建时间 |
-|---|---|---|---|
-| `2c69bfed…` | `8613807674808` | phone_2c69…@phone.local | 5-03 |
-| `456ed039…` | `13807674808`   | phone_456e…@phone.local | 5-05 |
-| `9e296d21…` | `8615120857030` | phone_9e29…@phone.local | 5-04 |
-| `725b6638…` | `15120857030`   | demo.merchant@hxxgo.test | 4-26（商家本号）|
+入口：在 `src/routes/merchant.index.tsx` 的功能宫格中新增一个「挂靠商家」按钮（图标 Link2 / Network），跳转到 `/merchant/affiliations`。
 
-### 问题 2：当前 `find_user_by_phone` 只比"完全相等"，不去 86
-```sql
-regexp_replace(phone,'\D','','g') = v_norm
-```
-传入 `13807674808` 只能匹配 `456ed039…`；传入 `+8613807674808` 又只能匹配 `2c69bfed…`。所以"用同一个手机号走密码登陆 / 验证码登陆 / 手机绑定"会落到不同账号上，钱包、订单、角色全部错乱。
+## 数据库改动
 
-## 修复目标
+新增表 `merchant_affiliations`：
+- `affiliate_merchant_id`（申请方/挂靠方，商品销售归此商家）
+- `host_merchant_id`（被挂靠方，商品来源）
+- `status`：`pending` / `approved` / `rejected` / `cancelled`
+- `note`（申请备注）
+- `reviewed_at`、`reviewed_by`
+- 唯一约束：`(affiliate_merchant_id, host_merchant_id)`（同一对挂靠关系唯一活动记录，已取消/拒绝可重新申请）
 
-1. **RPC 端**：`find_user_by_phone` 双向去掉 `86` 国码后比较，永远只返回一个稳定 user_id（优先**真实邮箱**账号 > 商家身份账号 > 创建最早账号）。
-2. **数据端**：把现有 4 个重复账号收敛到 2 个真实用户，把 phone_xxx@phone.local 的影子账号合并到真实账号上（或直接删除影子账号，因为它们没有钱包流水/订单）。
-3. **写入端**：sms-verify Edge Function 在创建影子用户前，**先调用修复后的 RPC** 查找是否已存在该手机号的真实账号；存在就直接返回该用户，不再新建。
+RLS 策略：
+- 双方商家可以查看与自己相关的记录
+- 申请方可创建 / 取消自己的 pending 申请
+- 被挂靠方可审核（通过 / 拒绝）发给自己的申请
+- 双方均可解除已通过的关系
+- 管理员可查看全部
+
+新增 SECURITY DEFINER 函数：
+- `apply_affiliation(_host_merchant_id)` — 当前用户的商家身份申请挂靠
+- `review_affiliation(_id, _approve)` — 被挂靠方审核
+- `cancel_affiliation(_id)` — 双方任一方解除/撤销
+
+## 商品同步逻辑
+
+挂靠是"展示层"的同步，不复制商品数据：
+
+- 修改 `shop.$merchantId.tsx` 商品查询：除查询本店 `merchant_id = X` 的商品外，再查询所有 `host_merchant_id` 在该商家的 approved 挂靠列表中的 host 商家的 `published` 商品，合并展示，并在卡片上标「挂靠」小标签以区分。
+- 商品详情页 `product.$productId.tsx` 保留商品原始 merchant 信息显示（来源），但**下单时把 `orders.merchant_id` 写为"当前店铺商家"而不是商品原 merchant**，确保收入归挂靠方。
+- 订单创建逻辑需要传入"店铺上下文 merchantId"。在商品详情页通过 query string `?from=<shopMerchantId>` 携带，下单 RPC / insert 时使用此值。若无 from 参数则默认使用商品原 merchant。
+- 分成（commission）继续按订单 merchant 的代理关系结算，符合"销售收入归本商家"的语义。
+
+## 技术细节
+
+- 新增路由文件：`src/routes/merchant.affiliations.tsx`（受 `RouteGuard roles={['merchant']}` 保护）
+- 新增 `merchant-bottom-nav` 不变；功能宫格新增入口
+- 商品卡片在合并列表时携带 `source_merchant_id`，用于判断是否显示「挂靠」标签
+- 商品详情入口改造：从店铺进入时附带 `?from=<merchantId>`，下单使用该 from 作为订单 merchant
+- 现有 RLS：products 表只允许 published 商品被公开读取，无需改动；orders 表 merchant_id 写入挂靠方需要确认 RLS 允许（通常允许买家创建订单并指定任意 merchant_id，需复核策略）
 
 ## 实施步骤
 
-### 1. 重写 `find_user_by_phone`（迁移）
-- 入参规范化：`regexp_replace(_phone,'\D','','g')` → 去掉前导 `86`（11 位中国手机号必为 1 开头）。
-- 比较时对 `auth.users.phone` 也做同样规范化。
-- 排序：先按 `email NOT LIKE '%@phone.local'` DESC（真实邮箱在前），再按 `created_at ASC`，取第一条。
+1. 创建 `merchant_affiliations` 表 + RLS + RPC 函数（migration）
+2. 新增 `src/routes/merchant.affiliations.tsx`（4 个 Tab 的挂靠管理页）
+3. 在 `src/routes/merchant.index.tsx` 功能宫格添加「挂靠商家」入口
+4. 修改 `src/routes/shop.$merchantId.tsx` 合并展示挂靠商品，标识来源
+5. 修改商品详情 / 下单流程，使用 `?from=` 上下文写入 `orders.merchant_id`
+6. 复核 orders 的 RLS 与代理分成是否按新归属正常工作
 
-### 2. 数据收敛（迁移）
-- 查询所有 `auth.users` 按"去 86 后的手机号"分组，找出 `count > 1` 的组。
-- 对每组：保留"主账号"（真实邮箱优先），把其余影子账号的 `profiles / wallets / orders / user_roles` 等数据**改挂**到主账号；最后从 `auth.users` 删除影子账号。
-- 当前 4 个账号实际只对应 2 个手机号，本次迁移会硬编码处理这 2 组（影子账号上没有交易，安全）。
-- 把保留下来的账号 `auth.users.phone` 统一规范化为**带 86**（`8613807674808`），跟 Supabase Phone Provider 默认一致。
+## 待确认
 
-### 3. `sms-verify` Edge Function 调整
-- 收到 OTP 通过后：
-  1. `find_user_by_phone(phone)` → 命中则直接 `generateLink({type:'magiclink', email: <该用户的email>})` 返回 `tokenHash`，不再创建新账号。
-  2. 未命中时再 `admin.createUser({ phone, email: phone_<uuid>@phone.local })`，并把 `profiles.phone` 写成规范化形式。
-- 同步修一下 `phone-password-login`：调用同一个 RPC 拿 user_id，然后取 email 做 password grant，不会再因为国码差异 404。
-
-### 4. 验证
-- 用 13807674808 / 15120857030 各跑：验证码登陆 → 密码登陆 → "我的-手机绑定"，应全程命中同一个 user_id。
-- `SELECT find_user_by_phone(x)` 对裸号 / +86 号 / 86 号三种格式返回相同 uid。
-
-## 不改动的地方
-- 不改 Supabase 自带 Phone Provider 配置（仍关闭，继续走 SMS 中转）。
-- 不改前端登录/绑定 UI。
-- `profiles.phone` 字段格式保持现状，只在新写入时规范化。
-
-## 风险与回滚
-- 删除影子账号前先 `SELECT` 确认影子账号 `wallet_transactions / orders / commission_records` 行数为 0；如非 0 则改为"迁移引用 → 再删"。
-- 迁移可逆性低（删 auth.users 不可回滚），所以会先在事务里 `RAISE NOTICE` 列出将删账号清单，确认无业务数据再 commit。
-
-确认后我会按此提交一次 `supabase migration` 和一个 sms-verify edge function 修改。
+- 挂靠是否需要管理员二次审核？当前方案为仅被挂靠方审核
+- 一个商家同时挂靠的上限？默认不限制
+- 挂靠商品的价格是否允许挂靠方覆盖？默认沿用原价（实现最简单，符合"即时同步"）
