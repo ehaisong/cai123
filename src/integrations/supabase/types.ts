@@ -278,6 +278,42 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_affiliations: {
+        Row: {
+          affiliate_merchant_id: string
+          created_at: string
+          host_merchant_id: string
+          id: string
+          note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["affiliation_status"]
+          updated_at: string
+        }
+        Insert: {
+          affiliate_merchant_id: string
+          created_at?: string
+          host_merchant_id: string
+          id?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["affiliation_status"]
+          updated_at?: string
+        }
+        Update: {
+          affiliate_merchant_id?: string
+          created_at?: string
+          host_merchant_id?: string
+          id?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["affiliation_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       merchant_applications: {
         Row: {
           created_at: string
@@ -1083,6 +1119,10 @@ export type Database = {
         Args: { _amount: number; _note?: string; _user_id: string }
         Returns: string
       }
+      apply_affiliation: {
+        Args: { _host_merchant_id: string; _note?: string }
+        Returns: string
+      }
       become_agent: { Args: never; Returns: string }
       become_agent_for_merchant: {
         Args: { _merchant_id: string }
@@ -1100,6 +1140,7 @@ export type Database = {
         Returns: undefined
       }
       bootstrap_admin_role: { Args: never; Returns: boolean }
+      cancel_affiliation: { Args: { _id: string }; Returns: undefined }
       find_user_by_phone: { Args: { _phone: string }; Returns: string }
       find_user_by_wechat: {
         Args: { _openid: string; _unionid: string }
@@ -1117,8 +1158,23 @@ export type Database = {
       purchase_package: { Args: { _package_id: string }; Returns: string }
       purchase_product:
         | { Args: { _product_id: string }; Returns: string }
-        | { Args: { _issue_id?: string; _product_id: string }; Returns: string }
+        | {
+            Args: {
+              _issue_id?: string
+              _product_id: string
+              _shop_merchant_id?: string
+            }
+            Returns: string
+          }
       resolve_ref_to_merchant: { Args: { _ref: string }; Returns: string }
+      review_affiliation: {
+        Args: { _approve: boolean; _id: string }
+        Returns: undefined
+      }
+      shop_source_merchant_ids: {
+        Args: { _merchant_id: string }
+        Returns: string[]
+      }
       submit_withdraw: {
         Args: { _account_info: string; _amount: number; _channel: string }
         Returns: string
@@ -1129,6 +1185,7 @@ export type Database = {
       }
     }
     Enums: {
+      affiliation_status: "pending" | "approved" | "rejected" | "cancelled"
       app_role: "buyer" | "agent" | "merchant" | "admin"
       merchant_status: "pending" | "approved" | "rejected" | "suspended"
       order_status: "pending" | "paid" | "refunded" | "cancelled"
@@ -1269,6 +1326,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      affiliation_status: ["pending", "approved", "rejected", "cancelled"],
       app_role: ["buyer", "agent", "merchant", "admin"],
       merchant_status: ["pending", "approved", "rejected", "suspended"],
       order_status: ["pending", "paid", "refunded", "cancelled"],
