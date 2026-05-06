@@ -68,7 +68,7 @@ function Inner() {
     if (!editing) return;
     const v = rate.trim() === "" ? null : Number(rate);
     if (v != null && (!Number.isFinite(v) || v < 0 || v > maxPct)) { toast.error(`比例需在 0 - ${maxPct}% 之间，留空表示使用默认`); return; }
-    const { error } = await supabase.rpc("merchant_set_agent_rate", { _user_id: editing.user_id, _rate: v == null ? null : v / 100 });
+    const { error } = await supabase.rpc("merchant_set_agent_rate", { _user_id: editing.user_id, _rate: (v == null ? null : v / 100) as any });
     if (error) { reportRpcError(error, { op: "merchant_set_agent_rate", scope: "MerchantAgents" }); toast.error(error.message); return; }
     toast.success("已保存");
     setEditing(null);
