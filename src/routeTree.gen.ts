@@ -59,6 +59,7 @@ import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcem
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
+import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
 import { Route as MerchantProductsProductIdIssuesBulkImportRouteImport } from './routes/merchant.products.$productId.issues.bulk-import'
@@ -314,6 +315,11 @@ const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
   path: '/merchant/products/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantAgentsUserIdRoute = MerchantAgentsUserIdRouteImport.update({
+  id: '/$userId',
+  path: '/$userId',
+  getParentRoute: () => MerchantAgentsRoute,
+} as any)
 const MerchantProductsProductIdIssuesIndexRoute =
   MerchantProductsProductIdIssuesIndexRouteImport.update({
     id: '/merchant/products/$productId/issues/',
@@ -373,7 +379,7 @@ export interface FileRoutesByFullPath {
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/affiliations': typeof MerchantAffiliationsRoute
-  '/merchant/agents': typeof MerchantAgentsRoute
+  '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/messages': typeof MerchantMessagesRoute
@@ -388,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
@@ -429,7 +436,7 @@ export interface FileRoutesByTo {
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/affiliations': typeof MerchantAffiliationsRoute
-  '/merchant/agents': typeof MerchantAgentsRoute
+  '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/messages': typeof MerchantMessagesRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByTo {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
+  '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
@@ -486,7 +494,7 @@ export interface FileRoutesById {
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/affiliations': typeof MerchantAffiliationsRoute
-  '/merchant/agents': typeof MerchantAgentsRoute
+  '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/messages': typeof MerchantMessagesRoute
@@ -501,6 +509,7 @@ export interface FileRoutesById {
   '/wallet_/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
@@ -559,6 +568,7 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
     | '/merchant/products/$productId/issues/bulk-import'
@@ -615,6 +625,7 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin'
     | '/merchant'
+    | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products'
     | '/merchant/products/$productId/issues/bulk-import'
@@ -671,6 +682,7 @@ export interface FileRouteTypes {
     | '/wallet_/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
     | '/merchant/products/$productId/issues/bulk-import'
@@ -713,7 +725,7 @@ export interface RootRouteChildren {
   LoginIframeBridgeRoute: typeof LoginIframeBridgeRoute
   LoginWechatDoneRoute: typeof LoginWechatDoneRoute
   MerchantAffiliationsRoute: typeof MerchantAffiliationsRoute
-  MerchantAgentsRoute: typeof MerchantAgentsRoute
+  MerchantAgentsRoute: typeof MerchantAgentsRouteWithChildren
   MerchantApplyRoute: typeof MerchantApplyRoute
   MerchantCommissionRoute: typeof MerchantCommissionRoute
   MerchantMessagesRoute: typeof MerchantMessagesRoute
@@ -1088,6 +1100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantProductsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/agents/$userId': {
+      id: '/merchant/agents/$userId'
+      path: '/$userId'
+      fullPath: '/merchant/agents/$userId'
+      preLoaderRoute: typeof MerchantAgentsUserIdRouteImport
+      parentRoute: typeof MerchantAgentsRoute
+    }
     '/merchant/products/$productId/issues/': {
       id: '/merchant/products/$productId/issues/'
       path: '/merchant/products/$productId/issues'
@@ -1118,6 +1137,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface MerchantAgentsRouteChildren {
+  MerchantAgentsUserIdRoute: typeof MerchantAgentsUserIdRoute
+}
+
+const MerchantAgentsRouteChildren: MerchantAgentsRouteChildren = {
+  MerchantAgentsUserIdRoute: MerchantAgentsUserIdRoute,
+}
+
+const MerchantAgentsRouteWithChildren = MerchantAgentsRoute._addFileChildren(
+  MerchantAgentsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1153,7 +1184,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginIframeBridgeRoute: LoginIframeBridgeRoute,
   LoginWechatDoneRoute: LoginWechatDoneRoute,
   MerchantAffiliationsRoute: MerchantAffiliationsRoute,
-  MerchantAgentsRoute: MerchantAgentsRoute,
+  MerchantAgentsRoute: MerchantAgentsRouteWithChildren,
   MerchantApplyRoute: MerchantApplyRoute,
   MerchantCommissionRoute: MerchantCommissionRoute,
   MerchantMessagesRoute: MerchantMessagesRoute,
