@@ -58,36 +58,13 @@ function HomeRouter() {
         if (user) {
           await supabase.rpc("bind_referrer", { _agent_code: search.ref });
         }
-        if (search.ref.startsWith("M_")) {
-          target = search.ref.substring(2);
-        } else {
-          const { data: p } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .eq("user_code", search.ref)
-            .maybeSingle();
-          if (p?.user_id) {
-            const { data: ar } = await supabase
-              .from("agent_relations")
-              .select("bound_merchant_id")
-              .eq("user_id", p.user_id)
-              .maybeSingle();
-            target = ar?.bound_merchant_id ?? null;
-          }
-        }
+        // 通过 SECURITY DEFINER 函数解析推广码，避免 RLS 限制（未登录或非本人时无法读取 agent_relations）
+        const { data: resolved } = await supabase.rpc("resolve_ref_to_merchant", { _ref: search.ref });
+        target = (resolved as string | null) ?? null;
 
-        // 校验 ref 解析出的商家有效（存在且已审核）
         if (target) {
-          const { data: m } = await supabase
-            .from("merchants")
-            .select("id")
-            .eq("id", target)
-            .eq("status", "approved")
-            .maybeSingle();
-          if (m?.id) {
-            setState({ kind: "shop", merchantId: m.id });
-            return;
-          }
+          setState({ kind: "shop", merchantId: target });
+          return;
         }
 
         // ref 无法解析为有效商家 → 显示兜底页（带默认店铺入口）
