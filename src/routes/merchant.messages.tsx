@@ -48,7 +48,7 @@ function BroadcastPanel() {
   const send = async () => {
     if (!title.trim()) { toast.error("请填写标题"); return; }
     setBusy(true);
-    const { data, error } = await supabase.rpc("merchant_broadcast", { _title: title.trim(), _content: content.trim() || null, _audience: audience });
+    const { data, error } = await supabase.rpc("merchant_broadcast", { _title: title.trim(), _content: content.trim(), _audience: audience });
     setBusy(false);
     if (error) { reportRpcError(error, { op: "rpc:merchant_broadcast", scope: "MerchantBroadcast" }); toast.error(error.message); return; }
     toast.success(`已发送给 ${data} 个用户`);
@@ -108,7 +108,7 @@ function DMPanel() {
     if (!picked) { toast.error("请选择收件人"); return; }
     if (!title.trim()) { toast.error("请填写标题"); return; }
     setBusy(true);
-    const { error } = await supabase.rpc("merchant_send_message", { _user_id: picked.user_id, _title: title.trim(), _content: content.trim() || null });
+    const { error } = await supabase.rpc("merchant_send_message", { _user_id: picked.user_id, _title: title.trim(), _content: content.trim() });
     setBusy(false);
     if (error) { reportRpcError(error, { op: "rpc:merchant_send_message", scope: "MerchantDM" }); toast.error(error.message); return; }
     toast.success("已发送");
