@@ -77,6 +77,26 @@ function Inner() {
     setSelected(null);
   };
 
+  const openEdit = (m: Merchant) => {
+    setSelected(m);
+    setRate((Number(m.l1_rate) * 100).toString());
+    setMaxRate((Number(m.l1_max_rate) * 100).toString());
+  };
+
+  const saveRate = async () => {
+    if (!selected) return;
+    const r = Number(rate), mx = Number(maxRate);
+    if (!Number.isFinite(r) || !Number.isFinite(mx) || r < 0 || mx < 0 || mx > 92) { toast.error("分成上限不能超过 92%"); return; }
+    if (r > mx) { toast.error("默认分成不能超过上限"); return; }
+    const { error } = await supabase.from("merchants").update({
+      l1_rate: r / 100, l1_max_rate: mx / 100, l2_enabled: false, l2_rate: 0,
+    }).eq("id", selected.id);
+    if (error) { reportRpcError(error, { op: "merchants.update_rate", scope: "AdminMerchants" }); toast.error(error.message); return; }
+    toast.success("已保存分成");
+    load();
+    setSelected(null);
+  };
+
   return (
     <div className="h5-shell flex min-h-screen flex-col">
       <PageHeader title="商家管理" />
