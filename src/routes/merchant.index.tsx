@@ -51,22 +51,7 @@ function MerchantHomeInner() {
     <div className="h5-shell flex min-h-screen flex-col">
       <PageHeader title="商家后台" />
 
-      {/* 审核通过提示 + 店铺信息入口 */}
-      {merchant.status === "approved" && (
-        <Link
-          to="/merchant/shop"
-          className="mx-3 mt-3 flex items-center gap-3 rounded-2xl bg-success/10 p-3"
-        >
-          <div className="w-9 h-9 rounded-full bg-success/20 flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5 text-success" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-success">店铺审核已通过</div>
-            <div className="text-xs text-muted-foreground truncate">点击查看 / 编辑「{merchant.shop_name}」店铺信息</div>
-          </div>
-          <span className="text-success text-lg leading-none">›</span>
-        </Link>
-      )}
+
 
       <div className="m-3 rounded-2xl p-5 text-white" style={{ background: "var(--gradient-orange)" }}>
         <div className="text-sm opacity-90">{merchant.shop_name}</div>
