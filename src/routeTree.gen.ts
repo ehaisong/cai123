@@ -35,6 +35,7 @@ import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantCommissionRouteImport } from './routes/merchant.commission'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
+import { Route as MerchantAffiliationsRouteImport } from './routes/merchant.affiliations'
 import { Route as LoginWechatDoneRouteImport } from './routes/login.wechat-done'
 import { Route as LoginIframeBridgeRouteImport } from './routes/login.iframe-bridge'
 import { Route as LoginDoneRouteImport } from './routes/login.done'
@@ -190,6 +191,11 @@ const MerchantApplyRoute = MerchantApplyRouteImport.update({
 const MerchantAgentsRoute = MerchantAgentsRouteImport.update({
   id: '/merchant/agents',
   path: '/merchant/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantAffiliationsRoute = MerchantAffiliationsRouteImport.update({
+  id: '/merchant/affiliations',
+  path: '/merchant/affiliations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginWechatDoneRoute = LoginWechatDoneRouteImport.update({
@@ -360,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/login/done': typeof LoginDoneRoute
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
+  '/merchant/affiliations': typeof MerchantAffiliationsRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
@@ -414,6 +421,7 @@ export interface FileRoutesByTo {
   '/login/done': typeof LoginDoneRoute
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
+  '/merchant/affiliations': typeof MerchantAffiliationsRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
@@ -469,6 +477,7 @@ export interface FileRoutesById {
   '/login/done': typeof LoginDoneRoute
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
+  '/merchant/affiliations': typeof MerchantAffiliationsRoute
   '/merchant/agents': typeof MerchantAgentsRoute
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
@@ -525,6 +534,7 @@ export interface FileRouteTypes {
     | '/login/done'
     | '/login/iframe-bridge'
     | '/login/wechat-done'
+    | '/merchant/affiliations'
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
@@ -579,6 +589,7 @@ export interface FileRouteTypes {
     | '/login/done'
     | '/login/iframe-bridge'
     | '/login/wechat-done'
+    | '/merchant/affiliations'
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
@@ -633,6 +644,7 @@ export interface FileRouteTypes {
     | '/login/done'
     | '/login/iframe-bridge'
     | '/login/wechat-done'
+    | '/merchant/affiliations'
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
@@ -688,6 +700,7 @@ export interface RootRouteChildren {
   LoginDoneRoute: typeof LoginDoneRoute
   LoginIframeBridgeRoute: typeof LoginIframeBridgeRoute
   LoginWechatDoneRoute: typeof LoginWechatDoneRoute
+  MerchantAffiliationsRoute: typeof MerchantAffiliationsRoute
   MerchantAgentsRoute: typeof MerchantAgentsRoute
   MerchantApplyRoute: typeof MerchantApplyRoute
   MerchantCommissionRoute: typeof MerchantCommissionRoute
@@ -892,6 +905,13 @@ declare module '@tanstack/react-router' {
       path: '/merchant/agents'
       fullPath: '/merchant/agents'
       preLoaderRoute: typeof MerchantAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/affiliations': {
+      id: '/merchant/affiliations'
+      path: '/merchant/affiliations'
+      fullPath: '/merchant/affiliations'
+      preLoaderRoute: typeof MerchantAffiliationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/wechat-done': {
@@ -1112,6 +1132,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginDoneRoute: LoginDoneRoute,
   LoginIframeBridgeRoute: LoginIframeBridgeRoute,
   LoginWechatDoneRoute: LoginWechatDoneRoute,
+  MerchantAffiliationsRoute: MerchantAffiliationsRoute,
   MerchantAgentsRoute: MerchantAgentsRoute,
   MerchantApplyRoute: MerchantApplyRoute,
   MerchantCommissionRoute: MerchantCommissionRoute,

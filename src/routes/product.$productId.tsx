@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/product/$productId")({
+  validateSearch: (s: Record<string, unknown>) => ({ from: typeof s.from === "string" ? s.from : undefined }),
   component: ProductDetailPage,
 });
 
@@ -23,6 +24,7 @@ interface Issue {
 
 function ProductDetailPage() {
   const { productId } = useParams({ from: "/product/$productId" });
+  const { from } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
@@ -63,7 +65,7 @@ function ProductDetailPage() {
     if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
     if (!current) return;
     setBuying(true);
-    const { data: orderId, error } = await supabase.rpc("purchase_product", { _product_id: productId, _issue_id: current.id });
+    const { data: orderId, error } = await supabase.rpc("purchase_product", { _product_id: productId, _issue_id: current.id, _shop_merchant_id: from ?? undefined });
     setBuying(false);
     if (error) {
       if (error.message.includes("余额")) {
