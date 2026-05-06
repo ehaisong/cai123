@@ -108,9 +108,11 @@ function Inner() {
         {loading && <p className="text-center py-4 text-sm text-muted-foreground">加载中…</p>}
         {!loading && filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无商家</p>}
         {filtered.map((m) => (
-          <button key={m.id} onClick={() => setSelected(m)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
+          <button key={m.id} onClick={() => openEdit(m)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium truncate">{m.shop_name}</div>
+              <span className="text-xs text-primary">分成 {(Number(m.l1_rate) * 100).toFixed(0)}% / 上限 {(Number(m.l1_max_rate) * 100).toFixed(0)}%</span>
+            </div>
               <span className={`text-xs px-2 py-0.5 rounded ${m.is_disabled ? "bg-destructive/10 text-destructive" : m.status === "approved" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
                 {m.is_disabled ? "已禁用" : m.status === "approved" ? "正常" : m.status}
               </span>
