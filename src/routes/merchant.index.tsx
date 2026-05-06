@@ -7,6 +7,7 @@ import { fmtMoney } from "@/lib/format";
 import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2, Percent, LogOut } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
+import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
 
 export const Route = createFileRoute("/merchant/")({
   component: MerchantHome,
