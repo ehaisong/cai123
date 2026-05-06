@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RouteGuard } from "@/components/route-guard";
 import { reportRpcError } from "@/lib/error-logger";
-import { fmtDate } from "@/lib/format";
-import { Search } from "lucide-react";
+import { fmtDate, fmtMoney } from "@/lib/format";
+import { Search, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/merchant/agents")({
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/merchant/agents")({
 
 function Inner() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [merchant, setMerchant] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [keyword, setKeyword] = useState("");
@@ -32,34 +33,24 @@ function Inner() {
     const { data: m } = await supabase.from("merchants").select("id, l1_rate, l1_max_rate").eq("user_id", user.id).maybeSingle();
     setMerchant(m);
     if (!m) return;
-    const { data: ar, error } = await supabase
-      .from("agent_relations")
-      .select("user_id, agent_code, l1_rate, created_at")
-      .eq("bound_merchant_id", m.id)
-      .eq("is_agent", true)
-      .order("created_at", { ascending: false });
-    if (error) { reportRpcError(error, { op: "agent_relations.select", scope: "MerchantAgents" }); return; }
-    const ids = (ar ?? []).map((a: any) => a.user_id);
-    let pmap: Record<string, any> = {};
-    if (ids.length) {
-      const { data: ps } = await supabase.from("profiles").select("user_id, nickname, phone, user_code").in("user_id", ids);
-      pmap = Object.fromEntries((ps ?? []).map((p: any) => [p.user_id, p]));
-    }
-    setRows((ar ?? []).map((a: any) => ({ ...a, profile: pmap[a.user_id] })));
+    const { data, error } = await supabase.rpc("merchant_agents_with_stats" as any);
+    if (error) { reportRpcError(error, { op: "merchant_agents_with_stats", scope: "MerchantAgents" }); return; }
+    setRows((data as any[]) ?? []);
   };
   useEffect(() => { load(); }, [user?.id]);
 
   const filtered = useMemo(() => rows.filter((r) =>
     !keyword.trim() ||
-    r.profile?.nickname?.toLowerCase().includes(keyword.toLowerCase()) ||
+    r.nickname?.toLowerCase().includes(keyword.toLowerCase()) ||
     r.agent_code?.toLowerCase().includes(keyword.toLowerCase()) ||
-    r.profile?.phone?.includes(keyword),
+    r.phone?.includes(keyword),
   ), [rows, keyword]);
 
   const maxPct = merchant ? Number(merchant.l1_max_rate) * 100 : 0;
   const defaultPct = merchant ? Number(merchant.l1_rate) * 100 : 0;
 
-  const openEdit = (r: any) => {
+  const openEdit = (e: React.MouseEvent, r: any) => {
+    e.stopPropagation();
     setEditing(r);
     setRate(r.l1_rate != null ? (Number(r.l1_rate) * 100).toString() : "");
   };
@@ -92,14 +83,34 @@ function Inner() {
         {filtered.map((r) => {
           const pct = r.l1_rate != null ? (Number(r.l1_rate) * 100).toFixed(2).replace(/\.?0+$/, "") + "%" : `默认 ${defaultPct}%`;
           return (
-            <button key={r.user_id} onClick={() => openEdit(r)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
+            <div
+              key={r.user_id}
+              onClick={() => navigate({ to: "/merchant/agents/$userId", params: { userId: r.user_id } })}
+              className="w-full text-left bg-card rounded-md p-3 hover:bg-accent cursor-pointer"
+            >
               <div className="flex items-center justify-between">
-                <div className="text-sm font-medium truncate">{r.profile?.nickname ?? "未命名"}</div>
+                <div className="text-sm font-medium truncate flex items-center gap-1">
+                  {r.nickname ?? "未命名"}
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                </div>
                 <span className="text-xs text-primary">{pct}</span>
               </div>
-              <div className="text-xs text-muted-foreground mt-1">代理码 {r.agent_code ?? "-"} · {r.profile?.phone ?? "-"}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">加入：{fmtDate(r.created_at)}</div>
-            </button>
+              <div className="text-xs text-muted-foreground mt-1">代理码 {r.agent_code ?? "-"} · {r.phone ?? "-"}</div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="text-xs">
+                  <span className="text-muted-foreground">引流客户：</span>
+                  <span className="text-foreground font-medium">{Number(r.customer_count ?? 0)} 人</span>
+                </div>
+                <div className="text-xs">
+                  <span className="text-muted-foreground">昨日收入：</span>
+                  <span className="text-success font-medium">{fmtMoney(r.yesterday_income)}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="text-xs text-muted-foreground">加入：{fmtDate(r.created_at)}</div>
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => openEdit(e, r)}>修改比例</Button>
+              </div>
+            </div>
           );
         })}
       </main>
@@ -108,7 +119,7 @@ function Inner() {
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end" onClick={() => setEditing(null)}>
           <div className="w-full bg-card rounded-t-2xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-medium">设置分成 · {editing.profile?.nickname ?? "代理"}</h3>
+              <h3 className="text-base font-medium">设置分成 · {editing.nickname ?? "代理"}</h3>
               <button onClick={() => setEditing(null)} className="text-sm text-muted-foreground">关闭</button>
             </div>
             <p className="text-xs text-muted-foreground">留空使用商家默认分成 {defaultPct}%；上限 {maxPct}%</p>
