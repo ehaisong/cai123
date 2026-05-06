@@ -310,7 +310,7 @@ function ShopPage() {
         </DialogContent>
       </Dialog>
 
-      <BottomNav />
+      {isShopOwner ? <MerchantBottomNav /> : <BottomNav />}
     </div>
   );
 }
