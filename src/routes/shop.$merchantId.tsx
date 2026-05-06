@@ -95,7 +95,16 @@ function ShopPage() {
     setOrigin(typeof window !== "undefined" ? window.location.origin : "");
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
-    supabase.from("products").select("id, title, is_recommended, price, publish_at, category_id").eq("merchant_id", merchantId).eq("status", "published").order("is_recommended", { ascending: false }).order("publish_at", { ascending: false }).then(({ data }) => setProducts(data ?? []));
+    (async () => {
+      const { data: srcIds } = await supabase.rpc("shop_source_merchant_ids", { _merchant_id: merchantId });
+      const ids = ((srcIds as unknown as string[]) ?? [merchantId]);
+      const { data } = await supabase.from("products")
+        .select("id, title, is_recommended, price, publish_at, category_id, merchant_id")
+        .in("merchant_id", ids).eq("status", "published")
+        .order("is_recommended", { ascending: false })
+        .order("publish_at", { ascending: false });
+      setProducts((data ?? []).map(p => ({ ...p, is_affiliated: p.merchant_id !== merchantId })));
+    })();
     supabase.from("announcements").select("id, title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(1).then(({ data }) => setAnn(data?.[0] ?? null));
     loadAgent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
