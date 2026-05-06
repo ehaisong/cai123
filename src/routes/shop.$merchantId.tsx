@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { BottomNav } from "@/components/h5/bottom-nav";
+import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -309,7 +310,7 @@ function ShopPage() {
         </DialogContent>
       </Dialog>
 
-      <BottomNav />
+      {isShopOwner ? <MerchantBottomNav /> : <BottomNav />}
     </div>
   );
 }
