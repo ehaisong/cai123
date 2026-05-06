@@ -1118,6 +1118,7 @@ export type Database = {
       purchase_product:
         | { Args: { _product_id: string }; Returns: string }
         | { Args: { _issue_id?: string; _product_id: string }; Returns: string }
+      resolve_ref_to_merchant: { Args: { _ref: string }; Returns: string }
       submit_withdraw: {
         Args: { _account_info: string; _amount: number; _channel: string }
         Returns: string
