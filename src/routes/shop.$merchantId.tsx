@@ -268,17 +268,21 @@ function ShopPage() {
             key={p.id}
             to="/product/$productId"
             params={{ productId: p.id }}
+            search={{ from: merchantId } as any}
             className="block bg-card rounded-md p-3 border-l-2 border-primary"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-2">{p.title}</h3>
               <span className="text-primary font-semibold text-sm">{fmtMoney(p.price)}</span>
             </div>
-            {p.is_recommended && (
-              <div className="mt-1.5">
+            <div className="mt-1.5 flex items-center gap-1.5">
+              {p.is_recommended && (
                 <span className="inline-block text-[10px] text-primary-foreground bg-primary px-2 py-0.5 rounded">★ 强烈推荐 ★</span>
-              </div>
-            )}
+              )}
+              {p.is_affiliated && (
+                <span className="inline-block text-[10px] text-info bg-info/10 px-2 py-0.5 rounded">挂靠</span>
+              )}
+            </div>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span>发布时间</span>
               <span>{fmtDate(p.publish_at)}</span>
