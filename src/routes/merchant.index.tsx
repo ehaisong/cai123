@@ -7,6 +7,7 @@ import { fmtMoney } from "@/lib/format";
 import { Plus, Package, Wallet, QrCode, Users, Store, CheckCircle2, Percent, LogOut } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
+import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
 
 export const Route = createFileRoute("/merchant/")({
   component: MerchantHome,
@@ -44,7 +45,7 @@ function MerchantHomeInner() {
     })();
   }, [user?.id]);
 
-  if (!merchant) return <div className="h5-shell"><PageHeader title="商家后台" /><div className="p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div></div>;
+  if (!merchant) return <div className="h5-shell flex min-h-screen flex-col"><PageHeader title="商家后台" /><div className="flex-1 p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div><MerchantBottomNav /></div>;
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
@@ -88,6 +89,8 @@ function MerchantHomeInner() {
         <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
         <Cell icon={<LogOut className="w-6 h-6 text-destructive" />} label="退出登录" onClick={() => { void logout(); }} />
       </div>
+      <div className="flex-1" />
+      <MerchantBottomNav />
     </div>
   );
 }
