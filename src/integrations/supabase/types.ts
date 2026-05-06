@@ -457,6 +457,8 @@ export type Database = {
           is_read: boolean
           read_at: string | null
           reference_id: string | null
+          sender_id: string | null
+          sender_role: string | null
           title: string
           user_id: string
         }
@@ -468,6 +470,8 @@ export type Database = {
           is_read?: boolean
           read_at?: string | null
           reference_id?: string | null
+          sender_id?: string | null
+          sender_role?: string | null
           title: string
           user_id: string
         }
@@ -479,6 +483,8 @@ export type Database = {
           is_read?: boolean
           read_at?: string | null
           reference_id?: string | null
+          sender_id?: string | null
+          sender_role?: string | null
           title?: string
           user_id?: string
         }
@@ -1115,8 +1121,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_broadcast: {
+        Args: { _audience?: string; _content: string; _title: string }
+        Returns: number
+      }
       admin_recharge_user: {
         Args: { _amount: number; _note?: string; _user_id: string }
+        Returns: string
+      }
+      admin_send_message: {
+        Args: { _content: string; _title: string; _user_id: string }
         Returns: string
       }
       apply_affiliation: {
@@ -1155,6 +1169,14 @@ export type Database = {
       }
       is_user_disabled: { Args: { _user_id: string }; Returns: boolean }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
+      merchant_broadcast: {
+        Args: { _audience?: string; _content: string; _title: string }
+        Returns: number
+      }
+      merchant_send_message: {
+        Args: { _content: string; _title: string; _user_id: string }
+        Returns: string
+      }
       purchase_package: { Args: { _package_id: string }; Returns: string }
       purchase_product:
         | { Args: { _product_id: string }; Returns: string }
