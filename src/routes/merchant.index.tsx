@@ -45,7 +45,7 @@ function MerchantHomeInner() {
     })();
   }, [user?.id]);
 
-  if (!merchant) return <div className="h5-shell"><PageHeader title="商家后台" /><div className="p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div></div>;
+  if (!merchant) return <div className="h5-shell flex min-h-screen flex-col"><PageHeader title="商家后台" /><div className="flex-1 p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div><MerchantBottomNav /></div>;
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
