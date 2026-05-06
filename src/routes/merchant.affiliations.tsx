@@ -102,7 +102,7 @@ function Inner() {
   const submit = async () => {
     if (!picked) { toast.error("请先选择要挂靠的商家"); return; }
     setSubmitting(true);
-    const { error } = await supabase.rpc("apply_affiliation", { _host_merchant_id: picked.id, _note: note || null });
+    const { error } = await supabase.rpc("apply_affiliation", { _host_merchant_id: picked.id, _note: note || undefined });
     setSubmitting(false);
     if (error) { toast.error(error.message ?? "申请失败"); return; }
     toast.success("申请已提交");
