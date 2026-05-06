@@ -89,6 +89,8 @@ function MerchantHomeInner() {
         <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
         <Cell icon={<LogOut className="w-6 h-6 text-destructive" />} label="退出登录" onClick={() => { void logout(); }} />
       </div>
+      <div className="flex-1" />
+      <MerchantBottomNav />
     </div>
   );
 }
