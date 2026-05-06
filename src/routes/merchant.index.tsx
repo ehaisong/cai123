@@ -74,6 +74,7 @@ function MerchantHomeInner() {
         <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
         <Cell icon={<Link2 className="w-6 h-6 text-info" />} label="挂靠商家" to="/merchant/affiliations" />
         <Cell icon={<Send className="w-6 h-6 text-primary" />} label="消息群发" to="/merchant/messages" />
+        <Cell icon={<Settings className="w-6 h-6 text-muted-foreground" />} label="设置" to="/profile/bind-phone" />
         <Cell icon={<LogOut className="w-6 h-6 text-destructive" />} label="退出登录" onClick={() => { void logout(); }} />
       </div>
       <div className="flex-1" />
