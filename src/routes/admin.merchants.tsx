@@ -113,6 +113,7 @@ function Inner() {
               <div className="text-sm font-medium truncate">{m.shop_name}</div>
               <span className="text-xs text-primary">分成 {(Number(m.l1_rate) * 100).toFixed(0)}% / 上限 {(Number(m.l1_max_rate) * 100).toFixed(0)}%</span>
             </div>
+            <div className="mt-1">
               <span className={`text-xs px-2 py-0.5 rounded ${m.is_disabled ? "bg-destructive/10 text-destructive" : m.status === "approved" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
                 {m.is_disabled ? "已禁用" : m.status === "approved" ? "正常" : m.status}
               </span>
