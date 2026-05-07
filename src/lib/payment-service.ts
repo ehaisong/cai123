@@ -46,13 +46,9 @@ export const PaymentService = {
   },
 
   async getClientIp(): Promise<string> {
-    try {
-      const res = await fetch("https://api.ipify.org?format=json");
-      const data = await res.json();
-      return data.ip || "127.0.0.1";
-    } catch {
-      return "127.0.0.1";
-    }
+    // 不再调用外部 IP 服务（ipify 在中国大陆不可达，会导致长时间卡顿）。
+    // 网关侧通常会从请求头自动获取真实 IP。
+    return "127.0.0.1";
   },
 
   buildUrls(orderNo: string) {
