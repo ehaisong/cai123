@@ -62,6 +62,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    PaymentService.checkPendingAlipay();
+  }, []);
   return (
     <AuthProvider>
       <Outlet />
