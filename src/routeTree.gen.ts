@@ -28,6 +28,7 @@ import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
@@ -159,6 +160,11 @@ const ProfileBindPhoneRoute = ProfileBindPhoneRouteImport.update({
 const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
   path: '/product/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaySuccessRoute = PaySuccessRouteImport.update({
+  id: '/pay/success',
+  path: '/pay/success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/pay/success': typeof PaySuccessRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
@@ -451,6 +458,7 @@ export interface FileRoutesByTo {
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/pay/success': typeof PaySuccessRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
@@ -510,6 +518,7 @@ export interface FileRoutesById {
   '/merchant/shop': typeof MerchantShopRoute
   '/merchant/wallet': typeof MerchantWalletRoute
   '/orders_/$orderId': typeof OrdersOrderIdRoute
+  '/pay/success': typeof PaySuccessRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
@@ -570,6 +579,7 @@ export interface FileRouteTypes {
     | '/merchant/shop'
     | '/merchant/wallet'
     | '/orders/$orderId'
+    | '/pay/success'
     | '/product/$productId'
     | '/profile/bind-phone'
     | '/shop/$merchantId'
@@ -628,6 +638,7 @@ export interface FileRouteTypes {
     | '/merchant/shop'
     | '/merchant/wallet'
     | '/orders/$orderId'
+    | '/pay/success'
     | '/product/$productId'
     | '/profile/bind-phone'
     | '/shop/$merchantId'
@@ -686,6 +697,7 @@ export interface FileRouteTypes {
     | '/merchant/shop'
     | '/merchant/wallet'
     | '/orders_/$orderId'
+    | '/pay/success'
     | '/product/$productId'
     | '/profile_/bind-phone'
     | '/shop/$merchantId'
@@ -745,6 +757,7 @@ export interface RootRouteChildren {
   MerchantShopRoute: typeof MerchantShopRoute
   MerchantWalletRoute: typeof MerchantWalletRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
+  PaySuccessRoute: typeof PaySuccessRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ProfileBindPhoneRoute: typeof ProfileBindPhoneRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
@@ -894,6 +907,13 @@ declare module '@tanstack/react-router' {
       path: '/product/$productId'
       fullPath: '/product/$productId'
       preLoaderRoute: typeof ProductProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/success': {
+      id: '/pay/success'
+      path: '/pay/success'
+      fullPath: '/pay/success'
+      preLoaderRoute: typeof PaySuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders_/$orderId': {
@@ -1212,6 +1232,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantShopRoute: MerchantShopRoute,
   MerchantWalletRoute: MerchantWalletRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
+  PaySuccessRoute: PaySuccessRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ProfileBindPhoneRoute: ProfileBindPhoneRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
