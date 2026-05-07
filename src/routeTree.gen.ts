@@ -60,6 +60,7 @@ import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
+import { Route as ApiPublicPayNotifyRouteImport } from './routes/api.public.pay-notify'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
 import { Route as MerchantProductsProductIdIssuesBulkImportRouteImport } from './routes/merchant.products.$productId.issues.bulk-import'
@@ -320,6 +321,11 @@ const MerchantAgentsUserIdRoute = MerchantAgentsUserIdRouteImport.update({
   path: '/$userId',
   getParentRoute: () => MerchantAgentsRoute,
 } as any)
+const ApiPublicPayNotifyRoute = ApiPublicPayNotifyRouteImport.update({
+  id: '/api/public/pay-notify',
+  path: '/api/public/pay-notify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantProductsProductIdIssuesIndexRoute =
   MerchantProductsProductIdIssuesIndexRouteImport.update({
     id: '/merchant/products/$productId/issues/',
@@ -394,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
@@ -451,6 +458,7 @@ export interface FileRoutesByTo {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
+  '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
@@ -509,6 +517,7 @@ export interface FileRoutesById {
   '/wallet_/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
@@ -568,6 +577,7 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
@@ -625,6 +635,7 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin'
     | '/merchant'
+    | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products'
@@ -682,6 +693,7 @@ export interface FileRouteTypes {
     | '/wallet_/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
@@ -740,6 +752,7 @@ export interface RootRouteChildren {
   WalletTransactionsRoute: typeof WalletTransactionsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
+  ApiPublicPayNotifyRoute: typeof ApiPublicPayNotifyRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
   MerchantProductsProductIdIssuesBulkImportRoute: typeof MerchantProductsProductIdIssuesBulkImportRoute
@@ -1107,6 +1120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantAgentsUserIdRouteImport
       parentRoute: typeof MerchantAgentsRoute
     }
+    '/api/public/pay-notify': {
+      id: '/api/public/pay-notify'
+      path: '/api/public/pay-notify'
+      fullPath: '/api/public/pay-notify'
+      preLoaderRoute: typeof ApiPublicPayNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/products/$productId/issues/': {
       id: '/merchant/products/$productId/issues/'
       path: '/merchant/products/$productId/issues'
@@ -1199,6 +1219,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletTransactionsRoute: WalletTransactionsRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
+  ApiPublicPayNotifyRoute: ApiPublicPayNotifyRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
   MerchantProductsProductIdIssuesBulkImportRoute:
