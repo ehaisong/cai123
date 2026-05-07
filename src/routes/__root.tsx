@@ -1,6 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
+import { PaymentService } from "@/lib/payment-service";
 
 import appCss from "../styles.css?url";
 
@@ -60,6 +62,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    PaymentService.checkPendingAlipay();
+  }, []);
   return (
     <AuthProvider>
       <Outlet />

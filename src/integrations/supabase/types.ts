@@ -645,6 +645,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_orders: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json
+          order_no: string
+          paid_at: string | null
+          pay_type: string
+          purpose: string
+          status: string
+          subject: string
+          trade_no: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          order_no: string
+          paid_at?: string | null
+          pay_type: string
+          purpose?: string
+          status?: string
+          subject: string
+          trade_no?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          order_no?: string
+          paid_at?: string | null
+          pay_type?: string
+          purpose?: string
+          status?: string
+          subject?: string
+          trade_no?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_history: {
         Row: {
           content: string
@@ -1161,6 +1209,15 @@ export type Database = {
       }
       bootstrap_admin_role: { Args: never; Returns: boolean }
       cancel_affiliation: { Args: { _id: string }; Returns: undefined }
+      create_payment_order: {
+        Args: {
+          _amount: number
+          _pay_type: string
+          _purpose?: string
+          _subject: string
+        }
+        Returns: string
+      }
       find_user_by_phone: { Args: { _phone: string }; Returns: string }
       find_user_by_wechat: {
         Args: { _openid: string; _unionid: string }
@@ -1175,6 +1232,10 @@ export type Database = {
       }
       is_user_disabled: { Args: { _user_id: string }; Returns: boolean }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
+      mark_payment_paid: {
+        Args: { _amount: number; _order_no: string; _trade_no: string }
+        Returns: boolean
+      }
       merchant_agent_detail: { Args: { _user_id: string }; Returns: Json }
       merchant_agents_with_stats: {
         Args: never
