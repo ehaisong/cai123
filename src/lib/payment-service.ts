@@ -2,7 +2,11 @@
 // Backend notify URL points to our own /api/public/pay-notify route,
 // which validates and updates the order via supabaseAdmin.
 
-const GATEWAY_BASE = "https://pay.ehaisong.workers.dev";
+// 注意: *.workers.dev 在中国大陆被墙，生产环境必须替换为国内可访问的自定义域名。
+// 可通过 VITE_PAY_GATEWAY 环境变量覆盖。
+const GATEWAY_BASE =
+  (import.meta.env.VITE_PAY_GATEWAY as string | undefined) ||
+  "https://pay.ehaisong.workers.dev";
 
 // Use the canonical production domain for callbacks/return URLs so the
 // payment gateway always reaches a stable URL even when previewing.
