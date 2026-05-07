@@ -2,7 +2,11 @@
 // Backend notify URL points to our own /api/public/pay-notify route,
 // which validates and updates the order via supabaseAdmin.
 
-const GATEWAY_BASE = "https://pay.ehaisong.workers.dev";
+// 注意: *.workers.dev 在中国大陆被墙，生产环境必须替换为国内可访问的自定义域名。
+// 可通过 VITE_PAY_GATEWAY 环境变量覆盖。
+const GATEWAY_BASE =
+  (import.meta.env.VITE_PAY_GATEWAY as string | undefined) ||
+  "https://pay.ehaisong.workers.dev";
 
 // Use the canonical production domain for callbacks/return URLs so the
 // payment gateway always reaches a stable URL even when previewing.
@@ -42,13 +46,9 @@ export const PaymentService = {
   },
 
   async getClientIp(): Promise<string> {
-    try {
-      const res = await fetch("https://api.ipify.org?format=json");
-      const data = await res.json();
-      return data.ip || "127.0.0.1";
-    } catch {
-      return "127.0.0.1";
-    }
+    // 不再调用外部 IP 服务（ipify 在中国大陆不可达，会导致长时间卡顿）。
+    // 网关侧通常会从请求头自动获取真实 IP。
+    return "127.0.0.1";
   },
 
   buildUrls(orderNo: string) {
