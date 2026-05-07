@@ -26,7 +26,7 @@ interface CreateOrderRequest {
 interface CreateOrderResponse {
   success: boolean;
   payType?: string;
-  payDataType?: "payUrl" | "qrCode";
+  payDataType?: "payUrl" | "qrCode" | "data";
   payData?: string;
   message?: string;
 }
@@ -119,6 +119,25 @@ export const PaymentService = {
       );
       this.showOpenInBrowserMask();
       return;
+    }
+
+    // 微信 H5：payDataType=data，payData 为含 schemeCode 的 JSON 字符串
+    if (result.payDataType === "data") {
+      let scheme: string | undefined;
+      try {
+        const parsed = JSON.parse(result.payData) as {
+          schemeCode?: string;
+          scheme_url?: string;
+          mweb_url?: string;
+        };
+        scheme = parsed.schemeCode || parsed.scheme_url || parsed.mweb_url;
+      } catch {
+        // 非 JSON，回退当作 URL 处理
+      }
+      if (scheme) {
+        window.location.href = scheme;
+        return;
+      }
     }
 
     window.location.href = result.payData;
