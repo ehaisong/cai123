@@ -30,6 +30,28 @@ export const Route = createFileRoute("/auth/login")({
 const HUB_BASE = "https://wx.lovclaw.com";
 const HUB_CLIENT = "66cai";
 
+const env = import.meta.env as Record<string, string | undefined>;
+const SUPABASE_URL = env.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
+const SUPABASE_ANON = env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
+
+/**
+ * 预热 wechat-exchange 边缘函数，避免冷启动。
+ * 用 OPTIONS 触发 CORS 预检即可启动 isolate；不阻塞、不报错。
+ */
+function warmExchangeFn() {
+  try {
+    void fetch(EXCHANGE_URL, {
+      method: "OPTIONS",
+      headers: { "Access-Control-Request-Method": "POST" },
+      mode: "cors",
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
 type TabKey = "customer" | "staff";
 
 function LoginPage() {
