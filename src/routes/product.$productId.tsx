@@ -146,12 +146,39 @@ function ProductDetailPage() {
             <div className="bg-muted rounded-lg py-8 text-center mb-3">
               <p className="text-muted-foreground text-sm">🔒 内容已加密，购买后查看</p>
             </div>
-            <Button className="w-full bg-primary hover:bg-primary/90" size="lg" onClick={handleBuy} disabled={buying}>
-              {buying ? "处理中…" : `立即购买 ${fmtMoney(product.price)}`}
+            <Button
+              className="w-full bg-primary hover:bg-primary/90"
+              size="lg"
+              onClick={() => {
+                if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
+                setShowPay(true);
+              }}
+              disabled={buying}
+            >
+              {buying ? "处理中…" : `立即购买 ¥${Number(product.price).toFixed(2)}`}
             </Button>
           </div>
         )}
       </div>
+
+      <Sheet open={showPay} onOpenChange={setShowPay}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>选择支付方式</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-3">
+            <div className="text-center text-2xl font-bold text-primary">¥{Number(product.price).toFixed(2)}</div>
+            <div className="text-center text-xs text-muted-foreground">{product.title}</div>
+            <Button className="w-full bg-[#07C160] hover:bg-[#07C160]/90 text-white" size="lg" onClick={() => startPayment("wechat")} disabled={buying}>
+              微信支付
+            </Button>
+            <Button className="w-full bg-[#1677FF] hover:bg-[#1677FF]/90 text-white" size="lg" onClick={() => startPayment("alipay")} disabled={buying}>
+              支付宝支付
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center pt-1">支付完成后将自动解锁内容</p>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* 往期记录 */}
       <div className="bg-card mx-3 mt-3 mb-6 rounded-xl p-4">
