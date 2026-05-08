@@ -24,12 +24,15 @@ interface CreateOrderResponse {
   provider?: string;
   payType?: PayType;
   payMethod?: "jsapi" | "qrcode" | "jump";
+  // 网关有时把 pay_info / pay_type 放在顶层，有时放在 data 中，做兼容
+  pay_info?: string;
+  pay_type?: "qrcode" | "jump";
   data?: {
     pay_type?: "qrcode" | "jump";
     pay_info?: string;
   };
   message?: string;
-  raw?: Record<string, unknown>;
+  raw?: { pay_info?: string; pay_type?: "qrcode" | "jump"; failReason?: string; failCode?: string } & Record<string, unknown>;
 }
 
 function buildReturnUrl(orderNo: string): string {
@@ -312,8 +315,8 @@ export const PaymentService = {
       throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
     }
     const j = (await res.json()) as CreateOrderResponse;
-    const payInfo = j.data?.pay_info;
-    const payTypeResp = j.data?.pay_type;
+    const payInfo = j.data?.pay_info ?? j.pay_info ?? j.raw?.pay_info;
+    const payTypeResp = j.data?.pay_type ?? j.pay_type ?? j.raw?.pay_type;
     const okResp = j.success && !!payInfo;
     logPayment({
       orderNo,
