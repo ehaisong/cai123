@@ -269,6 +269,8 @@ export const PaymentService = {
     };
     if (payType === "wechat" && openId) {
       body.openId = openId;
+      // v2 协议：微信 JSAPI 必填 method
+      body.method = "jsapi";
     }
     const clientIp = await fetchClientIp();
     if (clientIp) body.clientIp = clientIp;
@@ -310,73 +312,69 @@ export const PaymentService = {
       throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
     }
     const j = (await res.json()) as CreateOrderResponse;
+    const payInfo = j.data?.pay_info;
+    const payTypeResp = j.data?.pay_type;
+    const okResp = j.success && !!payInfo;
     logPayment({
       orderNo,
       stage: "create_response",
-      level: j.success && j.payData ? "info" : "error",
-      message: j.success && j.payData ? "网关返回成功" : `网关返回不可支付：${gatewayFailureDetail(j)}`,
+      level: okResp ? "info" : "error",
+      message: okResp ? "网关返回成功" : `网关返回不可支付：${gatewayFailureDetail(j)}`,
       payload: {
         success: j.success,
-        payDataType: j.payDataType,
+        provider: j.provider,
+        payMethod: j.payMethod,
+        payType: j.payType,
+        dataPayType: payTypeResp,
         message: j.message,
         raw: j.raw,
-        payDataPreview:
-          typeof j.payData === "string" ? j.payData.slice(0, 500) : JSON.stringify(j.payData ?? "").slice(0, 500),
+        payInfoPreview: typeof payInfo === "string" ? payInfo.slice(0, 500) : null,
       },
     });
-    if (!j.success || !j.payData) throw new Error(gatewayFailureDetail(j));
+    if (!okResp || !payInfo) throw new Error(gatewayFailureDetail(j));
 
-    // 微信内 + 微信支付 → JSAPI 唤起
-    if (inWechat && payType === "wechat") {
-      try {
-        const params = parseJsApiPayParams(j.payData);
-        clearPendingWxPay();
-        logPayment({
-          orderNo,
-          stage: "jsapi_invoke",
-          message: "调用 WeixinJSBridge.invoke getBrandWCPayRequest",
-          payload: { appId: params.appId, signType: params.signType, hasBridge: typeof window.WeixinJSBridge !== "undefined" },
-        });
-        invokeWxJsApiPay(params, (res) => {
-          logPayment({
-            orderNo,
-            stage: "jsapi_result",
-            level: res?.err_msg === "get_brand_wcpay_request:ok" ? "info" : "warn",
-            message: `JSAPI 回调：${res?.err_msg ?? "unknown"}`,
-            payload: { res },
-          });
-          window.location.href = buildReturnUrl(orderNo);
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        logPayment({
-          orderNo,
-          stage: "error",
-          level: "error",
-          message: `JSAPI 解析/唤起失败：${msg}`,
-          payload: { payData: j.payData },
-        });
-        throw new Error("微信支付参数解析失败");
+    // 跳转支付（13pay JSAPI / H5 / 支付宝 H5 都走此分支）
+    const isJump =
+      j.payMethod === "jsapi" ||
+      j.payMethod === "jump" ||
+      payTypeResp === "jump" ||
+      (inWechat && payType === "wechat");
+
+    if (isJump) {
+      // 微信内 JSAPI 跳转前清理 pending
+      if (inWechat && payType === "wechat") clearPendingWxPay();
+
+      // 微信内点支付宝 → 提示在外部浏览器打开
+      if (inWechat && payType === "alipay") {
+        try {
+          localStorage.setItem(
+            "pending_alipay",
+            JSON.stringify({ orderId: orderNo, payUrl: payInfo, createdAt: Date.now() }),
+          );
+        } catch {
+          // ignore
+        }
+        this.showOpenInBrowserMask();
+        return;
       }
+
+      logPayment({
+        orderNo,
+        stage: "jsapi_invoke",
+        message: "跳转网关返回的支付 URL",
+        payload: { urlPreview: payInfo.slice(0, 200) },
+      });
+      window.location.href = payInfo;
       return;
     }
 
-    // 微信内点支付宝 → 提示在浏览器打开
-    if (inWechat && payType === "alipay") {
-      try {
-        localStorage.setItem(
-          "pending_alipay",
-          JSON.stringify({ orderId: orderNo, payUrl: j.payData, createdAt: Date.now() }),
-        );
-      } catch {
-        // ignore
-      }
-      this.showOpenInBrowserMask();
+    // 二维码支付（PC / 桌面浏览器场景）
+    if (payTypeResp === "qrcode" || j.payMethod === "qrcode") {
+      await showQrCodeMask(payInfo, subject);
       return;
     }
 
-    // 浏览器内 → 直接跳 payUrl
-    window.location.href = j.payData;
+    throw new Error(`不支持的支付响应类型：${payTypeResp || j.payMethod || "unknown"}`);
   },
 
   showOpenInBrowserMask(): void {
