@@ -24,12 +24,15 @@ interface CreateOrderResponse {
   provider?: string;
   payType?: PayType;
   payMethod?: "jsapi" | "qrcode" | "jump";
+  // 网关有时把 pay_info / pay_type 放在顶层，有时放在 data 中，做兼容
+  pay_info?: string;
+  pay_type?: "qrcode" | "jump";
   data?: {
     pay_type?: "qrcode" | "jump";
     pay_info?: string;
   };
   message?: string;
-  raw?: Record<string, unknown>;
+  raw?: { pay_info?: string; pay_type?: "qrcode" | "jump"; failReason?: string; failCode?: string } & Record<string, unknown>;
 }
 
 function buildReturnUrl(orderNo: string): string {
