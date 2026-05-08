@@ -41,6 +41,25 @@ Deno.serve(async (req: Request) => {
 
   console.log("[pay-notify] received", body);
 
+  const merchantOrderNoEarly = String(
+    body.mchOrderNo ?? body.merchantOrderNo ?? body.orderId ?? "",
+  );
+  // 先落库一条 raw 通知日志（不阻塞）
+  try {
+    await supabase.from("payment_logs").insert({
+      order_no: merchantOrderNoEarly || null,
+      source: "gateway-notify",
+      stage: "notify_received",
+      level: "info",
+      message: `tradeStatus=${String(body.tradeStatus ?? body.status ?? "")}`,
+      payload: body as Record<string, unknown>,
+      ip: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
+      user_agent: req.headers.get("user-agent") || null,
+    });
+  } catch (e) {
+    console.error("[pay-notify] log insert failed", e);
+  }
+
   // 文档字段优先，兼容老字段
   const merchantOrderNo = String(
     body.mchOrderNo ?? body.merchantOrderNo ?? body.orderId ?? "",
