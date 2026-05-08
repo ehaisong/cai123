@@ -1,72 +1,77 @@
-## 功能概述
+# 直接对接 3ypay 支付接入计划
 
-在商家后台增加"挂靠"功能：商家 A 可申请挂靠到商家 B，审核通过后，A 的店铺会即时同步显示 B 的商品；买家在 A 的店铺下单时，订单归属 A，销售收入归 A。
+不再依赖中转网关 `gw.nrnc.net`，直接从我们自己的 TanStack Start 服务端调用 3ypay `https://openapi.3ypay.com`，签名/验签都在本站完成。
 
-## UI 设计（参考截图）
+## 一、最终用户流程
 
-新增页面 `/merchant/affiliations`（挂靠服务）：
+### 微信内（JSAPI）
+1. 用户在微信内点"立即购买"。
+2. 前端 → `GET /api/public/pay/wx-start?orderNo=…` ，服务端 302 跳转到微信 OAuth：
+   `https://open.weixin.qq.com/connect/oauth2/authorize?appid={公众号AppId}&redirect_uri={站点}/api/public/pay/wx-callback&response_type=code&scope=snsapi_base&state={orderNo}#wechat_redirect`
+3. 微信回调 `/api/public/pay/wx-callback?code=…&state=orderNo`：
+   - 用 code 换 `openid`（缓存 5 分钟，避免来回扫表）
+   - 用 RSA2 签名调用 3ypay `/openapi/order/pay/create`，参数：
+     `productCode=WeChat-PAY, paySubType=JSAPI, extra:{ subAppId, userId: openid }`
+   - 取响应 `data.payInfo`（含 appId/timeStamp/nonceStr/package/signType/paySign）
+   - 302 跳转到 `/pay/invoke?orderNo=…&payInfo=…`
+4. `/pay/invoke` 页面执行 `WeixinJSBridge.invoke('getBrandWCPayRequest', payInfo)` 唤起微信支付；成功后跳到 `/pay/success?orderNo=…`，前端继续轮询订单状态。
 
-- 顶部红色 PageHeader「挂靠服务」
-- 搜索商家输入框（按店铺名搜索可挂靠商家）+ 备注文本框 + 红色「提交申请」按钮
-- 4 个 Tab（与截图一致）：
-  1. **申请记录** — 我提交的申请（待审核 / 已通过 / 已拒绝），可撤销待审核项
-  2. **已挂靠商家** — 我已挂靠的其他商家列表，可「取消挂靠」
-  3. **审核挂靠申请** — 别人申请挂靠到我，可「通过 / 拒绝」
-  4. **挂靠我的商家** — 已挂靠到我名下的商家列表，可「解除」
-- Tab 内空态使用现有的暂无数据样式
+### 微信外浏览器（支付宝 APP / H5）
+1. 前端 → `POST /api/public/pay/create { orderNo, payType:'alipay' }`。
+2. 服务端签名调用 3ypay：`productCode=Ali-PAY, paySubType=H5`，得到 `payDataType=payUrl, payInfo={alipayUrl}`。
+3. 服务端返回 `{ payUrl }`，前端 `location.href = payUrl` → 自动唤起支付宝 APP（无 APP 时降级到 H5 网页）。
 
-入口：在 `src/routes/merchant.index.tsx` 的功能宫格中新增一个「挂靠商家」按钮（图标 Link2 / Network），跳转到 `/merchant/affiliations`。
+### 异步通知
+- 3ypay → `POST /api/public/pay-notify`：用平台公钥 RSA2 验签 → 校验金额 → 调用现有 `mark_payment_paid` RPC → 返回 `{"code":"SUCCESS"}`。
 
-## 数据库改动
+## 二、需要用户提供的密钥（用 `secrets--add_secret` 收集）
 
-新增表 `merchant_affiliations`：
-- `affiliate_merchant_id`（申请方/挂靠方，商品销售归此商家）
-- `host_merchant_id`（被挂靠方，商品来源）
-- `status`：`pending` / `approved` / `rejected` / `cancelled`
-- `note`（申请备注）
-- `reviewed_at`、`reviewed_by`
-- 唯一约束：`(affiliate_merchant_id, host_merchant_id)`（同一对挂靠关系唯一活动记录，已取消/拒绝可重新申请）
+| 名称 | 用途 | 哪里取 |
+|---|---|---|
+| `THREEYPAY_APP_ID` | 3ypay 应用 ID | 商户后台-应用管理 |
+| `THREEYPAY_MCH_PRIVATE_KEY` | 商户 RSA2 私钥（PKCS#8 PEM） | 自己生成密钥对，公钥上传到 3ypay |
+| `THREEYPAY_PLATFORM_PUBLIC_KEY` | 3ypay 平台 RSA 公钥 | 商户后台-密钥管理 |
+| `WECHAT_OA_APPID` | 微信公众号 AppId（用作 subAppId + OAuth） | 微信公众平台 |
+| `WECHAT_OA_SECRET` | 公众号 AppSecret（换 openid） | 微信公众平台 |
 
-RLS 策略：
-- 双方商家可以查看与自己相关的记录
-- 申请方可创建 / 取消自己的 pending 申请
-- 被挂靠方可审核（通过 / 拒绝）发给自己的申请
-- 双方均可解除已通过的关系
-- 管理员可查看全部
+## 三、要写/改的文件
 
-新增 SECURITY DEFINER 函数：
-- `apply_affiliation(_host_merchant_id)` — 当前用户的商家身份申请挂靠
-- `review_affiliation(_id, _approve)` — 被挂靠方审核
-- `cancel_affiliation(_id)` — 双方任一方解除/撤销
+新增：
+- `src/lib/threeypay.server.ts` — RSA2 签名/验签、`createOrder()`、`queryOrder()`、`exchangeWxOpenid()`
+- `src/routes/api.public.pay.create.ts` — 支付宝 H5 创建订单
+- `src/routes/api.public.pay.wx-start.ts` — 跳转微信 OAuth
+- `src/routes/api.public.pay.wx-callback.ts` — 拿 code → openid → 创建 JSAPI 订单 → 跳 /pay/invoke
+- `src/routes/pay.invoke.tsx` — 执行 `WeixinJSBridge.invoke`
 
-## 商品同步逻辑
+改动：
+- `src/lib/payment-service.ts` — 删除 `gw.nrnc.net` 调用；微信走 `wx-start`，支付宝走 `pay/create`
+- `src/routes/api.public.pay-notify.ts` — 接收 3ypay 通知字段（`mchOrderNo, payOrderNo, state, payAmount, sign`），RSA2 验签，按 state=3 标记 paid
+- `src/routes/pay.test.tsx` — 文案微调（提示直接对接 3ypay）
 
-挂靠是"展示层"的同步，不复制商品数据：
+不动：
+- 数据库（`payment_orders`、`mark_payment_paid` RPC、`create_payment_order`）保持现状
+- `/pay/success` 轮询逻辑保持现状
+- `/product/$productId` 购买逻辑（走钱包余额）保持现状 —— 等测试支付通过后再决定是否改造为"先充值再下单"或"下单直接拉起 3ypay"
 
-- 修改 `shop.$merchantId.tsx` 商品查询：除查询本店 `merchant_id = X` 的商品外，再查询所有 `host_merchant_id` 在该商家的 approved 挂靠列表中的 host 商家的 `published` 商品，合并展示，并在卡片上标「挂靠」小标签以区分。
-- 商品详情页 `product.$productId.tsx` 保留商品原始 merchant 信息显示（来源），但**下单时把 `orders.merchant_id` 写为"当前店铺商家"而不是商品原 merchant**，确保收入归挂靠方。
-- 订单创建逻辑需要传入"店铺上下文 merchantId"。在商品详情页通过 query string `?from=<shopMerchantId>` 携带，下单 RPC / insert 时使用此值。若无 from 参数则默认使用商品原 merchant。
-- 分成（commission）继续按订单 merchant 的代理关系结算，符合"销售收入归本商家"的语义。
+## 四、技术细节
 
-## 技术细节
+- 签名：把 appId/version/timestamp/requestId/signType/charset/bizContent(JSON 字符串) 按字典序拼 `key=value&…`，RSA2(SHA256withRSA) 私钥签名 → base64
+- 验签同理，平台公钥
+- `clientIp`：从 `x-forwarded-for` 取
+- `notifyUrl`：固定为 `https://66cai.site/api/public/pay-notify`
+- WeChat JSAPI subject 不能含特殊字符；保留前 32 字
+- `redirectUrl`：`/pay/success?orderNo=…`
 
-- 新增路由文件：`src/routes/merchant.affiliations.tsx`（受 `RouteGuard roles={['merchant']}` 保护）
-- 新增 `merchant-bottom-nav` 不变；功能宫格新增入口
-- 商品卡片在合并列表时携带 `source_merchant_id`，用于判断是否显示「挂靠」标签
-- 商品详情入口改造：从店铺进入时附带 `?from=<merchantId>`，下单使用该 from 作为订单 merchant
-- 现有 RLS：products 表只允许 published 商品被公开读取，无需改动；orders 表 merchant_id 写入挂靠方需要确认 RLS 允许（通常允许买家创建订单并指定任意 merchant_id，需复核策略）
+## 五、验收
 
-## 实施步骤
+1. 微信内打开 `/pay/test` → 微信支付 → 走完 OAuth → 唤起微信支付窗 → 成功后 /pay/success 显示已支付
+2. 浏览器（非微信）打开 `/pay/test` → 支付宝支付 → 唤起支付宝 APP → 成功后回跳 /pay/success
+3. 服务端日志能看到 3ypay 通知，并且订单在数据库被标记 `paid`
 
-1. 创建 `merchant_affiliations` 表 + RLS + RPC 函数（migration）
-2. 新增 `src/routes/merchant.affiliations.tsx`（4 个 Tab 的挂靠管理页）
-3. 在 `src/routes/merchant.index.tsx` 功能宫格添加「挂靠商家」入口
-4. 修改 `src/routes/shop.$merchantId.tsx` 合并展示挂靠商品，标识来源
-5. 修改商品详情 / 下单流程，使用 `?from=` 上下文写入 `orders.merchant_id`
-6. 复核 orders 的 RLS 与代理分成是否按新归属正常工作
+测试通过后再把同样的 `PaymentService.pay()` 接到 `/product/$productId` 的购买按钮。
 
-## 待确认
+## 六、待你确认
 
-- 挂靠是否需要管理员二次审核？当前方案为仅被挂靠方审核
-- 一个商家同时挂靠的上限？默认不限制
-- 挂靠商品的价格是否允许挂靠方覆盖？默认沿用原价（实现最简单，符合"即时同步"）
+1. 五个密钥（上表）是否都已就绪？我会在你确认计划后用安全表单逐个收集。
+2. 微信公众号 OAuth 回调域名需要在公众号后台"网页授权域名"白名单里加 `66cai.site`（不带协议、不带路径）—— 你那边能配置吗？
+3. 3ypay 后台需要配置授权目录 `https://66cai.site/`，并在商户后台绑定上面那个公众号 AppId 作为 subAppId。
