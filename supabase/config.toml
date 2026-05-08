@@ -17,3 +17,15 @@ verify_jwt = false
 
 [functions.seed-admin]
 verify_jwt = false
+
+[functions.pay-wx-start]
+verify_jwt = false
+
+[functions.pay-wx-callback]
+verify_jwt = false
+
+[functions.pay-create]
+verify_jwt = false
+
+[functions.pay-notify]
+verify_jwt = false
