@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export type PayLogStage =
   | "create_request"
   | "create_response"
@@ -24,19 +22,29 @@ export interface PayLogInput {
 
 /** 异步、不阻塞业务的支付日志埋点 */
 export function logPayment(input: PayLogInput): void {
+  const row = {
+    order_no: input.orderNo ?? null,
+    user_id: null,
+    source: "frontend",
+    stage: input.stage,
+    level: input.level ?? "info",
+    message: input.message ?? null,
+    payload: input.payload ?? {},
+    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+  };
   try {
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
-    void supabase.auth.getUser().then(({ data }) => {
-      void supabase.from("payment_logs" as never).insert({
-        order_no: input.orderNo ?? null,
-        user_id: data.user?.id ?? null,
-        source: "frontend",
-        stage: input.stage,
-        level: input.level ?? "info",
-        message: input.message ?? null,
-        payload: input.payload ?? {},
-        user_agent: ua,
-      } as never);
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/payment_logs`;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    void fetch(url, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        apikey: key,
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+        prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
     });
   } catch {
     // ignore
