@@ -320,6 +320,16 @@ function AgentPage() {
           </div>
         </Link>
         <Link
+          to="/profile/kyc"
+          className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
+        >
+          <ShieldCheck className="h-5 w-5 text-success" />
+          <div>
+            <div className="text-sm font-semibold">实名绑定</div>
+            <div className="text-[11px] text-muted-foreground">提现转账必填</div>
+          </div>
+        </Link>
+        <Link
           to="/apply"
           className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
         >
