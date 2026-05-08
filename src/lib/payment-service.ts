@@ -138,6 +138,29 @@ function gatewayFailureDetail(j: CreateOrderResponse): string {
   return j.message || raw?.failReason || raw?.failCode || "创建支付订单失败";
 }
 
+/** 全屏 Loading 遮罩，避免微信 OAuth 回跳/跳转支付间隙露出原页面 */
+function showLoadingMask(text = "正在拉起微信支付…", subText = "请稍候，不要关闭页面"): void {
+  if (typeof document === "undefined") return;
+  const id = "pay-loading-mask";
+  if (document.getElementById(id)) return;
+  const mask = document.createElement("div");
+  mask.id = id;
+  mask.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;color:#fff;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;";
+  mask.innerHTML = `
+    <div style="width:42px;height:42px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:pay-spin 0.9s linear infinite;margin-bottom:18px"></div>
+    <p style="font-size:16px;font-weight:600;margin:0 0 6px">${text}</p>
+    <p style="font-size:12px;opacity:0.65;margin:0">${subText}</p>
+    <style>@keyframes pay-spin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(mask);
+}
+
+function hideLoadingMask(): void {
+  if (typeof document === "undefined") return;
+  document.getElementById("pay-loading-mask")?.remove();
+}
+
 /** 渲染二维码到全屏遮罩层 */
 async function showQrCodeMask(qrContent: string, subject: string): Promise<void> {
   const dataUrl = await QRCode.toDataURL(qrContent, {
@@ -170,6 +193,10 @@ export const PaymentService = {
   /** App 入口调用：把网关回跳带回的 wx_openid 写入缓存并清理 URL */
   async resumeFromWxOAuthIfAny(): Promise<void> {
     if (typeof window === "undefined") return;
+    // 若 URL 上带有 wx_openid，立即显示 loading，避免露出原页面让用户误判
+    const hasOpenidInUrl =
+      typeof window !== "undefined" && /[?&]wx_openid=/.test(window.location.search);
+    if (hasOpenidInUrl) showLoadingMask("正在拉起微信支付…", "正在恢复支付流程，请稍候");
     const openid = consumeOpenIdFromUrl();
     if (openid) {
       try {
@@ -201,8 +228,15 @@ export const PaymentService = {
             message: `OAuth 回跳后续单失败：${msg}`,
             payload: { pending },
           });
+          hideLoadingMask();
         }
+      } else {
+        // openid 已写入但没有待支付订单，关掉 loading
+        hideLoadingMask();
       }
+    } else if (hasOpenidInUrl) {
+      // 兜底：URL 有 wx_openid 但解析失败
+      hideLoadingMask();
     }
   },
 
@@ -257,10 +291,13 @@ export const PaymentService = {
           message: "微信内未取到 openid，跳网关 OAuth",
           payload: { amountYuan, subject },
         });
+        showLoadingMask("正在准备微信支付…", "正在获取微信授权，请稍候");
         redirectToGatewayOAuth();
         return; // 页面将跳转
       }
     }
+    // 已拿到 openid 或非微信 JSAPI 场景，统一显示 loading，避免接口耗时让用户误判
+    showLoadingMask();
 
     const body: Record<string, unknown> = {
       orderId: orderNo,
@@ -294,6 +331,7 @@ export const PaymentService = {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       logPayment({ orderNo, stage: "create_error", level: "error", message: `网络错误：${msg}` });
+      hideLoadingMask();
       throw new Error(`网关网络错误：${msg}`);
     }
     if (!res.ok) {
@@ -312,6 +350,7 @@ export const PaymentService = {
         message: `网关 HTTP ${res.status}`,
         payload: { status: res.status, body: text.slice(0, 2000) },
       });
+      hideLoadingMask();
       throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
     }
     const j = (await res.json()) as CreateOrderResponse;
@@ -334,7 +373,10 @@ export const PaymentService = {
         payInfoPreview: typeof payInfo === "string" ? payInfo.slice(0, 500) : null,
       },
     });
-    if (!okResp || !payInfo) throw new Error(gatewayFailureDetail(j));
+    if (!okResp || !payInfo) {
+      hideLoadingMask();
+      throw new Error(gatewayFailureDetail(j));
+    }
 
     // 跳转支付（13pay JSAPI / H5 / 支付宝 H5 都走此分支）
     const isJump =
@@ -357,6 +399,7 @@ export const PaymentService = {
         } catch {
           // ignore
         }
+        hideLoadingMask();
         this.showOpenInBrowserMask();
         return;
       }
@@ -373,10 +416,12 @@ export const PaymentService = {
 
     // 二维码支付（PC / 桌面浏览器场景）
     if (payTypeResp === "qrcode" || j.payMethod === "qrcode") {
+      hideLoadingMask();
       await showQrCodeMask(payInfo, subject);
       return;
     }
 
+    hideLoadingMask();
     throw new Error(`不支持的支付响应类型：${payTypeResp || j.payMethod || "unknown"}`);
   },
 
