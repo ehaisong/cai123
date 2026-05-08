@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useLogout } from "@/lib/use-logout";
 import { BottomNav } from "@/components/h5/bottom-nav";
-import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut, UserCircle2, Sparkles, Share2, Smartphone, Wallet as WalletIcon, Coins } from "lucide-react";
+import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Shield, LogOut, UserCircle2, Sparkles, Share2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
@@ -18,13 +18,10 @@ function ProfilePage() {
   const navigate = useNavigate();
   const logout = useLogout();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [balance, setBalance] = useState(0);
-  const [hideBalance, setHideBalance] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("user_code, nickname, avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => setProfile(data));
-    supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle().then(({ data }) => setBalance(Number(data?.balance ?? 0)));
   }, [user?.id]);
 
   if (!user) {
@@ -79,35 +76,17 @@ function ProfilePage() {
           <Settings className="w-5 h-5 text-muted-foreground" />
         </div>
 
-        {/* 积分余额卡 - 所有用户可见 */}
-        <div className="mt-4 rounded-xl p-4 text-white" style={{ background: "var(--gradient-orange)" }}>
-          <div className="flex items-center gap-2 text-sm opacity-90">
-            <Coins className="w-4 h-4" />
-            <span>我的积分余额</span>
-            <button onClick={() => setHideBalance((v) => !v)}><Eye className="w-4 h-4" /></button>
-          </div>
-          <div className="mt-1 text-3xl font-bold">{hideBalance ? "****" : balance.toFixed(2)}</div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => navigate({ to: "/wallet/transactions" })}>
-              积分流水
-            </Button>
-            <Button size="sm" className="bg-white text-foreground hover:bg-white/90" onClick={() => navigate({ to: "/contact" })}>
-              充 值
-            </Button>
-          </div>
-        </div>
-
         {(isAgent || isMerchant) && (
-          <Button className="w-full mt-3 bg-success hover:bg-success/90 text-success-foreground" size="lg" onClick={() => navigate({ to: "/wallet" })}>
-            提 现
+          <Button className="w-full mt-4 bg-success hover:bg-success/90 text-success-foreground" size="lg" onClick={() => navigate({ to: "/wallet" })}>
+            进入钱包 / 提现
           </Button>
         )}
       </div>
 
       {/* 功能格子 */}
       <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
-        <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="积分流水" to="/wallet/transactions" />
-        <MenuItem icon={<WalletIcon className="w-6 h-6 text-primary" />} label="充值" to="/contact" />
+        <MenuItem icon={<Smartphone className="w-6 h-6 text-success" />} label="手机绑定" to="/profile/bind-phone" />
+        <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="我的订单" to="/orders" />
         <MenuItem icon={<Smartphone className="w-6 h-6 text-success" />} label="手机绑定" to="/profile/bind-phone" />
         <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
         <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="隐私协议" to="/privacy" />

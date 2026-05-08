@@ -2,9 +2,11 @@ import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/h5/page-header";
-import { fmtDate, fmtMoney } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { PaymentService, type PayType } from "@/lib/payment-service";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/product/$productId")({
@@ -61,24 +63,33 @@ function ProductDetailPage() {
 
   useEffect(() => { load(); }, [productId, user?.id]);
 
-  const handleBuy = async () => {
+  const [showPay, setShowPay] = useState(false);
+
+  const startPayment = async (payType: PayType) => {
     if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
     if (!current) return;
+    setShowPay(false);
     setBuying(true);
-    const { data: orderId, error } = await supabase.rpc("purchase_product", { _product_id: productId, _issue_id: current.id, _shop_merchant_id: from ?? undefined });
-    setBuying(false);
-    if (error) {
-      if (error.message.includes("余额")) {
-        toast.error(error.message);
-        setTimeout(() => navigate({ to: "/wallet" }), 800);
-        return;
-      }
-      toast.error(error.message);
-      return;
+    try {
+      const { data, error } = await supabase.rpc(
+        "create_product_payment_order" as never,
+        { _product_id: productId, _issue_id: current.id, _pay_type: payType, _shop_merchant_id: from ?? null } as never,
+      );
+      if (error) throw new Error(error.message);
+      const row = Array.isArray(data) ? (data as Array<{ order_no: string; amount: number; subject: string }>)[0] : (data as { order_no: string; amount: number; subject: string });
+      if (!row?.order_no) throw new Error("创建支付订单失败");
+      await PaymentService.pay({
+        orderNo: row.order_no,
+        amountYuan: Number(row.amount),
+        payType,
+        subject: row.subject || product?.title || "付费内容",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg);
+    } finally {
+      setBuying(false);
     }
-    toast.success("购买成功，已解锁内容");
-    void orderId;
-    load();
   };
 
   if (!product) {
@@ -135,12 +146,39 @@ function ProductDetailPage() {
             <div className="bg-muted rounded-lg py-8 text-center mb-3">
               <p className="text-muted-foreground text-sm">🔒 内容已加密，购买后查看</p>
             </div>
-            <Button className="w-full bg-primary hover:bg-primary/90" size="lg" onClick={handleBuy} disabled={buying}>
-              {buying ? "处理中…" : `立即购买 ${fmtMoney(product.price)}`}
+            <Button
+              className="w-full bg-primary hover:bg-primary/90"
+              size="lg"
+              onClick={() => {
+                if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
+                setShowPay(true);
+              }}
+              disabled={buying}
+            >
+              {buying ? "处理中…" : `立即购买 ¥${Number(product.price).toFixed(2)}`}
             </Button>
           </div>
         )}
       </div>
+
+      <Sheet open={showPay} onOpenChange={setShowPay}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>选择支付方式</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-3">
+            <div className="text-center text-2xl font-bold text-primary">¥{Number(product.price).toFixed(2)}</div>
+            <div className="text-center text-xs text-muted-foreground">{product.title}</div>
+            <Button className="w-full bg-[#07C160] hover:bg-[#07C160]/90 text-white" size="lg" onClick={() => startPayment("wechat")} disabled={buying}>
+              微信支付
+            </Button>
+            <Button className="w-full bg-[#1677FF] hover:bg-[#1677FF]/90 text-white" size="lg" onClick={() => startPayment("alipay")} disabled={buying}>
+              支付宝支付
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center pt-1">支付完成后将自动解锁内容</p>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* 往期记录 */}
       <div className="bg-card mx-3 mt-3 mb-6 rounded-xl p-4">

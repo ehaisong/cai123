@@ -1262,6 +1262,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _fulfill_product_purchase: {
+        Args: {
+          _buyer: string
+          _issue_id: string
+          _product_id: string
+          _shop_merchant_id: string
+        }
+        Returns: string
+      }
       admin_broadcast: {
         Args: { _audience?: string; _content: string; _title: string }
         Returns: number
@@ -1340,6 +1349,19 @@ export type Database = {
           _subject: string
         }
         Returns: string
+      }
+      create_product_payment_order: {
+        Args: {
+          _issue_id: string
+          _pay_type: string
+          _product_id: string
+          _shop_merchant_id?: string
+        }
+        Returns: {
+          amount: number
+          order_no: string
+          subject: string
+        }[]
       }
       find_user_by_phone: { Args: { _phone: string }; Returns: string }
       find_user_by_wechat: {
