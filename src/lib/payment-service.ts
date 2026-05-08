@@ -2,6 +2,8 @@
 // 微信内：跳转网关统一 OAuth 中转 → 回跳带 ?wx_openid → JSAPI 唤起
 // 浏览器内：支付宝直跳 payUrl
 // 网关异步回调到 Supabase Edge Function pay-notify 更新订单状态。
+import { logPayment } from "./payment-logger";
+
 const GATEWAY_BASE = "https://gw.nrnc.net";
 
 // 网关异步通知地址（Supabase Edge Function 公开 URL）
