@@ -1,6 +1,7 @@
 // 3ypay 中转网关 (gw.nrnc.net) 异步通知。
 // 网关已代为完成 RSA2 验签，业务端只需校验金额并幂等更新订单。
 // 协议要求：处理完成必须返回纯文本 "success"，否则会重试 20 次。
+// 字段（按文档）：mchOrderNo / payOrderNo / tradeStatus / orderAmount(元)
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
@@ -19,7 +20,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "GET") return new Response("pay-notify endpoint");
   if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
 
-  // 兼容 JSON 与 application/x-www-form-urlencoded 两种格式
+  // 兼容 JSON 与 application/x-www-form-urlencoded
   let body: Record<string, unknown> = {};
   const ct = req.headers.get("content-type") || "";
   try {
@@ -40,15 +41,23 @@ Deno.serve(async (req: Request) => {
 
   console.log("[pay-notify] received", body);
 
+  // 文档字段优先，兼容老字段
   const merchantOrderNo = String(
-    body.merchantOrderNo ?? body.orderId ?? body.mchOrderNo ?? "",
+    body.mchOrderNo ?? body.merchantOrderNo ?? body.orderId ?? "",
   );
-  const tradeStatus = String(body.tradeStatus ?? "");
-  const totalAmountFen = Number(body.totalAmount ?? body.amount ?? 0); // 单位：分
-  const tradeNo = String(body.tradeNo ?? body.payOrderNo ?? "");
+  const tradeStatus = String(body.tradeStatus ?? body.status ?? "");
+  // orderAmount 单位：元；兼容老回调 totalAmount(分)/amount(分)
+  let amountYuan = 0;
+  if (body.orderAmount !== undefined) {
+    amountYuan = Number(body.orderAmount);
+  } else if (body.totalAmount !== undefined) {
+    amountYuan = Number(body.totalAmount) / 100;
+  } else if (body.amount !== undefined) {
+    amountYuan = Number(body.amount) / 100;
+  }
+  const tradeNo = String(body.payOrderNo ?? body.tradeNo ?? "");
 
   if (!merchantOrderNo) {
-    // 缺少订单号，直接返回 success 防止重试堆积
     return ok();
   }
 
@@ -70,20 +79,21 @@ Deno.serve(async (req: Request) => {
     return ok();
   }
 
-  // totalAmount 单位是分，本地 amount 单位是元
-  const expectedFen = Math.round(Number(order.amount) * 100);
-  if (Math.abs(expectedFen - totalAmountFen) > 0) {
+  // 金额比对（元，允许 1 分误差）
+  const expected = Number(order.amount);
+  if (Math.abs(expected - amountYuan) > 0.01) {
     console.error("[pay-notify] amount mismatch", {
       merchantOrderNo,
-      expectedFen,
-      totalAmountFen,
+      expected,
+      received: amountYuan,
+      raw: body,
     });
     return fail("amount mismatch");
   }
 
   const { error } = await supabase.rpc("mark_payment_paid", {
     _order_no: merchantOrderNo,
-    _amount: Number(order.amount),
+    _amount: expected,
     _trade_no: tradeNo,
   });
   if (error) {
