@@ -259,6 +259,12 @@ export const PaymentService = {
       }
       if (!openId) {
         savePendingWxPay({ orderNo, amountYuan, payType: "wechat", subject });
+        logPayment({
+          orderNo,
+          stage: "oauth_redirect",
+          message: "微信内未取到 openid，跳网关 OAuth",
+          payload: { amountYuan, subject },
+        });
         redirectToGatewayOAuth();
         return; // 页面将跳转
       }
@@ -277,12 +283,25 @@ export const PaymentService = {
     }
     const clientIp = await fetchClientIp();
     if (clientIp) body.clientIp = clientIp;
-
-    const res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    logPayment({
+      orderNo,
+      stage: "create_request",
+      message: "调用网关 /api/pay/create",
+      payload: { ...body, openId: openId ? `${openId.slice(0, 6)}***` : undefined },
     });
+
+    let res: Response;
+    try {
+      res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logPayment({ orderNo, stage: "create_error", level: "error", message: `网络错误：${msg}` });
+      throw new Error(`网关网络错误：${msg}`);
+    }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       let detail = text;
@@ -292,9 +311,29 @@ export const PaymentService = {
       } catch {
         // keep raw text
       }
+      logPayment({
+        orderNo,
+        stage: "create_error",
+        level: "error",
+        message: `网关 HTTP ${res.status}`,
+        payload: { status: res.status, body: text.slice(0, 2000) },
+      });
       throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
     }
     const j = (await res.json()) as CreateOrderResponse;
+    logPayment({
+      orderNo,
+      stage: "create_response",
+      level: j.success ? "info" : "error",
+      message: j.success ? "网关返回成功" : `网关返回失败：${j.message ?? ""}`,
+      payload: {
+        success: j.success,
+        payDataType: j.payDataType,
+        message: j.message,
+        payDataPreview:
+          typeof j.payData === "string" ? j.payData.slice(0, 500) : JSON.stringify(j.payData ?? "").slice(0, 500),
+      },
+    });
     if (!j.success || !j.payData) throw new Error(j.message || "创建支付订单失败");
 
     // 微信内 + 微信支付 → JSAPI 唤起
@@ -302,11 +341,31 @@ export const PaymentService = {
       try {
         const params = parseJsApiPayParams(j.payData);
         clearPendingWxPay();
-        invokeWxJsApiPay(params, () => {
+        logPayment({
+          orderNo,
+          stage: "jsapi_invoke",
+          message: "调用 WeixinJSBridge.invoke getBrandWCPayRequest",
+          payload: { appId: params.appId, signType: params.signType, hasBridge: typeof window.WeixinJSBridge !== "undefined" },
+        });
+        invokeWxJsApiPay(params, (res) => {
+          logPayment({
+            orderNo,
+            stage: "jsapi_result",
+            level: res?.err_msg === "get_brand_wcpay_request:ok" ? "info" : "warn",
+            message: `JSAPI 回调：${res?.err_msg ?? "unknown"}`,
+            payload: { res },
+          });
           window.location.href = buildReturnUrl(orderNo);
         });
       } catch (e) {
-        console.error("[wx jsapi] parse/invoke failed", e, j);
+        const msg = e instanceof Error ? e.message : String(e);
+        logPayment({
+          orderNo,
+          stage: "error",
+          level: "error",
+          message: `JSAPI 解析/唤起失败：${msg}`,
+          payload: { payData: j.payData },
+        });
         throw new Error("微信支付参数解析失败");
       }
       return;
