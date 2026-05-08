@@ -18,13 +18,10 @@ function ProfilePage() {
   const navigate = useNavigate();
   const logout = useLogout();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [balance, setBalance] = useState(0);
-  const [hideBalance, setHideBalance] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("user_code, nickname, avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => setProfile(data));
-    supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle().then(({ data }) => setBalance(Number(data?.balance ?? 0)));
   }, [user?.id]);
 
   if (!user) {
