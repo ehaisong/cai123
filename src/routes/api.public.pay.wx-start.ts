@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/pay/wx-start")({
           `&state=${encodeURIComponent(orderNo)}` +
           `#wechat_redirect`;
 
-        throw redirect({ href: wxUrl });
+        return new Response(null, { status: 302, headers: { Location: wxUrl } });
       },
     },
   },
