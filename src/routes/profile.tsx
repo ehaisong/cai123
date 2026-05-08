@@ -4,14 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useLogout } from "@/lib/use-logout";
 import { BottomNav } from "@/components/h5/bottom-nav";
-import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Shield, LogOut, UserCircle2, Sparkles, Share2, Smartphone } from "lucide-react";
+import { ChevronRight, UserCircle2, Sparkles, Store, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
-interface Profile { user_code: string; nickname: string | null; avatar_url: string | null; }
+interface Profile { user_code: string; nickname: string | null; avatar_url: string | null; phone: string | null; }
+
+function maskPhone(p?: string | null) {
+  if (!p) return "未绑定";
+  const s = p.replace(/^\+?86/, "");
+  if (s.length < 7) return s;
+  return s.slice(0, 3) + "****" + s.slice(-4);
+}
 
 function ProfilePage() {
   const { user, roles } = useAuth();
@@ -21,7 +28,11 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("user_code, nickname, avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => setProfile(data));
+    supabase.from("profiles")
+      .select("user_code, nickname, avatar_url, phone")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data as Profile | null));
   }, [user?.id]);
 
   if (!user) {
@@ -32,7 +43,7 @@ function ProfilePage() {
             <UserCircle2 className="w-12 h-12 text-muted-foreground" />
           </div>
           <p className="mb-1 text-base font-medium text-foreground">还未登录</p>
-          <p className="mb-6 text-xs text-muted-foreground">登录后查看余额、订单与代理收益</p>
+          <p className="mb-6 text-xs text-muted-foreground">登录后查看个人信息</p>
           <Button className="w-full max-w-[240px]" size="lg" onClick={() => navigate({ to: "/auth/login" })}>
             去登录 / 注册
           </Button>
@@ -45,9 +56,6 @@ function ProfilePage() {
             <Sparkles className="w-4 h-4 mr-2 text-warning" />
             选择角色体验 Demo
           </Button>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            登录页提供：商城管理 / 商家 / 代理 / 普通用户
-          </p>
         </div>
         <BottomNav />
       </div>
@@ -56,63 +64,38 @@ function ProfilePage() {
 
   const isMerchant = roles.includes("merchant");
   const isAdmin = roles.includes("admin");
-  const isAgent = roles.includes("agent");
 
   return (
-    <div className="h5-shell flex min-h-screen flex-col">
-      {/* 用户卡片 */}
-      <div className="bg-card m-3 rounded-2xl p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-2xl">
-            {profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full rounded-full object-cover" /> : "👤"}
-          </div>
-          <div className="flex-1">
-            <div className="font-bold text-lg">{profile?.nickname ?? "用户"}</div>
-            <div className="mt-1 inline-flex items-center gap-1 text-xs">
-              <span className="bg-info/10 text-info px-1.5 py-0.5 rounded text-[10px]">ID</span>
-              <span className="text-muted-foreground">{profile?.user_code}</span>
-            </div>
-          </div>
-          <Settings className="w-5 h-5 text-muted-foreground" />
-        </div>
-
-        {(isAgent || isMerchant) && (
-          <Button className="w-full mt-4 bg-success hover:bg-success/90 text-success-foreground" size="lg" onClick={() => navigate({ to: "/wallet" })}>
-            进入钱包 / 提现
-          </Button>
-        )}
+    <div className="h5-shell flex min-h-screen flex-col bg-background">
+      {/* 顶部标题（沿用 H5 风格） */}
+      <div className="px-4 pt-4 pb-3 bg-card border-b border-border">
+        <h1 className="text-center text-base font-medium">个人信息</h1>
       </div>
 
-      {/* 功能格子 */}
-      <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
-        <MenuItem icon={<Smartphone className="w-6 h-6 text-success" />} label="手机绑定" to="/profile/bind-phone" />
-        <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="我的订单" to="/orders" />
-        <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="实名绑定" to="/profile/kyc" />
-        {!isMerchant && (
-          <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
-        )}
-        <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="隐私协议" to="/privacy" />
-        <MenuItem icon={<Handshake className="w-6 h-6 text-success" />} label="代理中心" to="/agent" />
-        {isAgent && (
-          <MenuItem icon={<Share2 className="w-6 h-6 text-warning" />} label="推广分享" to="/agent/share" />
-        )}
-        <MenuItem icon={<MessageSquareWarning className="w-6 h-6 text-warning" />} label="反馈建议" to="/feedback" />
-        <MenuItem icon={<HeadphonesIcon className="w-6 h-6 text-info" />} label="联系客服" to="/contact" />
+      {/* 信息列表 */}
+      <div className="bg-card divide-y divide-border">
+        <RowAvatar avatar={profile?.avatar_url ?? null} />
+        <Row label="昵称" value={profile?.nickname ?? "未设置"} />
+        <Row label="登录号码" value={maskPhone(profile?.phone)} to="/profile/bind-phone" />
+        <Row label="实名认证" to="/profile/kyc" />
+        <Row label="用户服务协议" to="/terms" />
+        <Row label="隐私权政策" to="/privacy" />
+        <Row label="注销账号" to="/contact" />
       </div>
 
-      {/* 后台入口 */}
+      {/* 后台入口（仅角色可见） */}
       {(isMerchant || isAdmin) && (
-        <div className="mx-3 mt-3 rounded-2xl bg-card p-4 space-y-2">
+        <div className="mt-3 bg-card divide-y divide-border">
           {isMerchant && (
-            <Link to="/merchant" className="flex items-center justify-between text-sm py-2">
+            <Link to="/merchant" className="flex items-center justify-between px-4 py-4 text-sm">
               <span className="flex items-center gap-2"><Store className="w-4 h-4 text-info" /> 进入商家后台</span>
-              <span className="text-muted-foreground">›</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </Link>
           )}
           {isAdmin && (
-            <Link to="/admin" className="flex items-center justify-between text-sm py-2">
+            <Link to="/admin" className="flex items-center justify-between px-4 py-4 text-sm">
               <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> 进入管理后台</span>
-              <span className="text-muted-foreground">›</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </Link>
           )}
         </div>
@@ -120,9 +103,14 @@ function ProfilePage() {
 
       <div className="flex-1" />
 
-      <div className="px-3 py-4">
-        <Button variant="outline" className="w-full" onClick={() => { void logout(); }}>
-          <LogOut className="w-4 h-4 mr-2" /> 退出登录
+      <div className="px-4 py-6">
+        <Button
+          variant="outline"
+          className="w-full rounded-full border-destructive text-destructive hover:bg-destructive/5 hover:text-destructive"
+          size="lg"
+          onClick={() => { void logout(); }}
+        >
+          退出登录
         </Button>
       </div>
 
@@ -131,11 +119,29 @@ function ProfilePage() {
   );
 }
 
-function MenuItem({ icon, label, to }: { icon: React.ReactNode; label: string; to: string }) {
+function Row({ label, value, to }: { label: string; value?: string; to?: string }) {
+  const content = (
+    <div className="flex items-center justify-between px-4 py-4">
+      <span className="text-sm text-foreground">{label}</span>
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        {value && <span>{value}</span>}
+        {to && <ChevronRight className="w-4 h-4" />}
+      </div>
+    </div>
+  );
+  return to ? <Link to={to}>{content}</Link> : content;
+}
+
+function RowAvatar({ avatar }: { avatar: string | null }) {
   return (
-    <Link to={to} className="flex flex-col items-center gap-2">
-      <div className="w-12 h-12 rounded-full bg-accent/40 flex items-center justify-center">{icon}</div>
-      <span className="text-xs text-foreground">{label}</span>
+    <Link to="/profile/bind-phone" className="flex items-center justify-between px-4 py-3">
+      <span className="text-sm text-foreground">头像</span>
+      <div className="flex items-center gap-1.5">
+        <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center overflow-hidden">
+          {avatar ? <img src={avatar} className="w-full h-full object-cover" /> : <UserCircle2 className="w-7 h-7 text-muted-foreground" />}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      </div>
     </Link>
   );
 }
