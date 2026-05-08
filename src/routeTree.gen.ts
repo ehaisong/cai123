@@ -31,7 +31,6 @@ import { Route as ProductProductIdRouteImport } from './routes/product.$productI
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
-import { Route as MerchantWalletRouteImport } from './routes/merchant.wallet'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantMessagesRouteImport } from './routes/merchant.messages'
@@ -176,11 +175,6 @@ const PaySuccessRoute = PaySuccessRouteImport.update({
 const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   id: '/orders_/$orderId',
   path: '/orders/$orderId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MerchantWalletRoute = MerchantWalletRouteImport.update({
-  id: '/merchant/wallet',
-  path: '/merchant/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantShopRoute = MerchantShopRouteImport.update({
@@ -404,7 +398,6 @@ export interface FileRoutesByFullPath {
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
-  '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
@@ -464,7 +457,6 @@ export interface FileRoutesByTo {
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
-  '/merchant/wallet': typeof MerchantWalletRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
@@ -525,7 +517,6 @@ export interface FileRoutesById {
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
-  '/merchant/wallet': typeof MerchantWalletRoute
   '/orders_/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
@@ -587,7 +578,6 @@ export interface FileRouteTypes {
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
-    | '/merchant/wallet'
     | '/orders/$orderId'
     | '/pay/success'
     | '/pay/test'
@@ -647,7 +637,6 @@ export interface FileRouteTypes {
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
-    | '/merchant/wallet'
     | '/orders/$orderId'
     | '/pay/success'
     | '/pay/test'
@@ -707,7 +696,6 @@ export interface FileRouteTypes {
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
-    | '/merchant/wallet'
     | '/orders_/$orderId'
     | '/pay/success'
     | '/pay/test'
@@ -768,7 +756,6 @@ export interface RootRouteChildren {
   MerchantMessagesRoute: typeof MerchantMessagesRoute
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
-  MerchantWalletRoute: typeof MerchantWalletRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   PaySuccessRoute: typeof PaySuccessRoute
   PayTestRoute: typeof PayTestRoute
@@ -941,13 +928,6 @@ declare module '@tanstack/react-router' {
       path: '/orders/$orderId'
       fullPath: '/orders/$orderId'
       preLoaderRoute: typeof OrdersOrderIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/merchant/wallet': {
-      id: '/merchant/wallet'
-      path: '/merchant/wallet'
-      fullPath: '/merchant/wallet'
-      preLoaderRoute: typeof MerchantWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/merchant/shop': {
@@ -1251,7 +1231,6 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantMessagesRoute: MerchantMessagesRoute,
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,
-  MerchantWalletRoute: MerchantWalletRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
   PaySuccessRoute: PaySuccessRoute,
   PayTestRoute: PayTestRoute,
