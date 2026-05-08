@@ -51,6 +51,7 @@ import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminRechargeRouteImport } from './routes/admin.recharge'
+import { Route as AdminPaymentLogsRouteImport } from './routes/admin.payment-logs'
 import { Route as AdminPaymentRouteImport } from './routes/admin.payment'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
@@ -277,6 +278,11 @@ const AdminRechargeRoute = AdminRechargeRouteImport.update({
   path: '/admin/recharge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPaymentLogsRoute = AdminPaymentLogsRouteImport.update({
+  id: '/admin/payment-logs',
+  path: '/admin/payment-logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPaymentRoute = AdminPaymentRouteImport.update({
   id: '/admin/payment',
   path: '/admin/payment',
@@ -378,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
+  '/admin/payment-logs': typeof AdminPaymentLogsRoute
   '/admin/recharge': typeof AdminRechargeRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -437,6 +444,7 @@ export interface FileRoutesByTo {
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
+  '/admin/payment-logs': typeof AdminPaymentLogsRoute
   '/admin/recharge': typeof AdminRechargeRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -497,6 +505,7 @@ export interface FileRoutesById {
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
+  '/admin/payment-logs': typeof AdminPaymentLogsRoute
   '/admin/recharge': typeof AdminRechargeRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -558,6 +567,7 @@ export interface FileRouteTypes {
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
+    | '/admin/payment-logs'
     | '/admin/recharge'
     | '/admin/settings'
     | '/admin/users'
@@ -617,6 +627,7 @@ export interface FileRouteTypes {
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
+    | '/admin/payment-logs'
     | '/admin/recharge'
     | '/admin/settings'
     | '/admin/users'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/payment'
+    | '/admin/payment-logs'
     | '/admin/recharge'
     | '/admin/settings'
     | '/admin/users'
@@ -736,6 +748,7 @@ export interface RootRouteChildren {
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentRoute: typeof AdminPaymentRoute
+  AdminPaymentLogsRoute: typeof AdminPaymentLogsRoute
   AdminRechargeRoute: typeof AdminRechargeRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1070,6 +1083,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRechargeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/payment-logs': {
+      id: '/admin/payment-logs'
+      path: '/admin/payment-logs'
+      fullPath: '/admin/payment-logs'
+      preLoaderRoute: typeof AdminPaymentLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/payment': {
       id: '/admin/payment'
       path: '/admin/payment'
@@ -1211,6 +1231,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentRoute: AdminPaymentRoute,
+  AdminPaymentLogsRoute: AdminPaymentLogsRoute,
   AdminRechargeRoute: AdminRechargeRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
