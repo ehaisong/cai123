@@ -1,13 +1,8 @@
 // 通过 3ypay 中转支付网关 gw.nrnc.net 发起支付。
-// 微信内：OAuth → openid → JSAPI（WeixinJSBridge.invoke）
+// 微信内：跳转网关统一 OAuth 中转 → 回跳带 ?wx_openid → JSAPI 唤起
 // 浏览器内：支付宝直跳 payUrl
 // 网关异步回调到 Supabase Edge Function pay-notify 更新订单状态。
 const GATEWAY_BASE = "https://gw.nrnc.net";
-
-// 公众号 AppID（用于 OAuth 拿 openid + JSAPI 调起）
-const WECHAT_OA_APPID =
-  (import.meta.env.VITE_WECHAT_OA_APPID as string | undefined) ||
-  "wx0dfc3c6b0b3b259b";
 
 // 网关异步通知地址（Supabase Edge Function 公开 URL）
 const NOTIFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pay-notify`;
@@ -23,7 +18,7 @@ export interface QueryOrderResponse {
 
 interface CreateOrderResponse {
   success: boolean;
-  payDataType?: "payUrl" | "qrCode" | "data" | "jsapi";
+  payDataType?: "payUrl" | "qrCode" | "weChat" | "data" | "jsapi";
   payData?: string;
   message?: string;
 }
@@ -49,61 +44,41 @@ declare global {
   }
 }
 
-async function getClientIp(): Promise<string> {
-  try {
-    const r = await fetch("https://api.ipify.org?format=json");
-    const j = (await r.json()) as { ip?: string };
-    return j.ip || "127.0.0.1";
-  } catch {
-    return "127.0.0.1";
-  }
-}
-
 function buildReturnUrl(orderNo: string): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://66cai.site";
   return `${origin}/pay/success?orderNo=${encodeURIComponent(orderNo)}`;
 }
 
-const OPENID_KEY = "wx_openid_v1";
-const OAUTH_PENDING_KEY = "wx_oauth_pending_order";
+const OPENID_KEY = "wx_openid";
 
-async function exchangeOpenId(code: string): Promise<string> {
-  const r = await fetch(`${GATEWAY_BASE}/api/wx/openid`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ appId: WECHAT_OA_APPID, code }),
-  });
-  if (!r.ok) throw new Error(`openid 换取失败 HTTP ${r.status}`);
-  const j = (await r.json()) as { success?: boolean; openId?: string; openid?: string; message?: string };
-  const openid = j.openId || j.openid;
-  if (!openid) throw new Error(j.message || "openid 换取失败");
+/** 从 URL 读取并清理 wx_openid / wx_oauth_error，返回 openid */
+function consumeOpenIdFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const openid = params.get("wx_openid");
+  const oauthErr = params.get("wx_oauth_error");
+  if (!openid && !oauthErr) return null;
+  params.delete("wx_openid");
+  params.delete("wx_oauth_error");
+  const cleanSearch = params.toString() ? `?${params.toString()}` : "";
+  window.history.replaceState({}, "", window.location.pathname + cleanSearch + window.location.hash);
+  if (oauthErr) {
+    console.error("[wx oauth] gateway error:", decodeURIComponent(oauthErr));
+    return null;
+  }
   return openid;
 }
 
-/** 跳转微信 OAuth；state 用 orderNo 携带回来 */
-function redirectToWxOAuth(orderNo: string): void {
-  try {
-    sessionStorage.setItem(OAUTH_PENDING_KEY, orderNo);
-  } catch {
-    // ignore
-  }
-  const redirect = encodeURIComponent(window.location.origin + window.location.pathname);
-  const url =
-    `https://open.weixin.qq.com/connect/oauth2/authorize` +
-    `?appid=${WECHAT_OA_APPID}` +
-    `&redirect_uri=${redirect}` +
-    `&response_type=code` +
-    `&scope=snsapi_base` +
-    `&state=${encodeURIComponent(orderNo)}` +
-    `#wechat_redirect`;
-  window.location.href = url;
+/** 跳转到网关统一 OAuth 中转入口 */
+function redirectToGatewayOAuth(): void {
+  const target = encodeURIComponent(window.location.href);
+  window.location.href = `${GATEWAY_BASE}/api/wx/oauth/redirect?target=${target}`;
 }
 
 function parseJsApiPayParams(payData: string): WxJsApiPayParams {
   const obj = JSON.parse(payData) as Record<string, string>;
-  // 兼容字段大小写差异
   return {
-    appId: obj.appId || obj.appid || WECHAT_OA_APPID,
+    appId: obj.appId || obj.appid,
     timeStamp: String(obj.timeStamp || obj.timestamp),
     nonceStr: obj.nonceStr || obj.noncestr,
     package: obj.package,
@@ -114,13 +89,8 @@ function parseJsApiPayParams(payData: string): WxJsApiPayParams {
 
 function invokeWxJsApiPay(params: WxJsApiPayParams, onClose: () => void): void {
   const fire = () => {
-    window.WeixinJSBridge!.invoke("getBrandWCPayRequest", params, (res) => {
-      // 无论成功/失败/取消，都跳到成功页让前端轮询订单状态
-      if (res.err_msg === "get_brand_wcpay_request:ok") {
-        onClose();
-      } else {
-        onClose();
-      }
+    window.WeixinJSBridge!.invoke("getBrandWCPayRequest", params, () => {
+      onClose();
     });
   };
   if (typeof window.WeixinJSBridge === "undefined") {
@@ -136,31 +106,16 @@ export const PaymentService = {
     return /micromessenger/i.test(navigator.userAgent);
   },
 
-  /** 应在 App 入口（微信内）检测 URL ?code=&state= 自动续走支付 */
+  /** App 入口调用：把网关回跳带回的 wx_openid 写入缓存并清理 URL */
   async resumeFromWxOAuthIfAny(): Promise<void> {
     if (typeof window === "undefined") return;
-    if (!this.isWechat()) return;
-    const sp = new URLSearchParams(window.location.search);
-    const code = sp.get("code");
-    const state = sp.get("state");
-    if (!code || !state) return;
-    try {
-      const openid = await exchangeOpenId(code);
+    const openid = consumeOpenIdFromUrl();
+    if (openid) {
       try {
         sessionStorage.setItem(OPENID_KEY, openid);
       } catch {
         // ignore
       }
-      // 清掉 url 上的 code/state，避免刷新重复
-      sp.delete("code");
-      sp.delete("state");
-      const newUrl =
-        window.location.pathname +
-        (sp.toString() ? `?${sp.toString()}` : "") +
-        window.location.hash;
-      window.history.replaceState({}, "", newUrl);
-    } catch (e) {
-      console.error("[wx oauth] exchange openid failed", e);
     }
   },
 
@@ -188,7 +143,7 @@ export const PaymentService = {
     const { orderNo, amountYuan, payType, subject } = opts;
     const inWechat = this.isWechat();
 
-    // 微信内必须先有 openid，否则跳 OAuth
+    // 微信内 + 微信支付：必须先有 openid，否则跳网关 OAuth
     let openId: string | null = null;
     if (inWechat && payType === "wechat") {
       try {
@@ -197,12 +152,10 @@ export const PaymentService = {
         openId = null;
       }
       if (!openId) {
-        // 若 url 上已有 code（首次回跳但未 resume），尝试就地换
-        const sp = new URLSearchParams(window.location.search);
-        const code = sp.get("code");
-        if (code) {
+        // 试一次：URL 上可能刚被网关带回来还没清理
+        openId = consumeOpenIdFromUrl();
+        if (openId) {
           try {
-            openId = await exchangeOpenId(code);
             sessionStorage.setItem(OPENID_KEY, openId);
           } catch {
             // ignore
@@ -210,7 +163,7 @@ export const PaymentService = {
         }
       }
       if (!openId) {
-        redirectToWxOAuth(orderNo);
+        redirectToGatewayOAuth();
         return; // 页面将跳转
       }
     }
@@ -223,9 +176,8 @@ export const PaymentService = {
       notifyUrl: NOTIFY_URL,
       returnUrl: buildReturnUrl(orderNo),
     };
-    if (payType === "wechat") {
-      body.clientIp = await getClientIp();
-      if (openId) body.openId = openId;
+    if (payType === "wechat" && openId) {
+      body.openId = openId;
     }
 
     const res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
