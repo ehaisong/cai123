@@ -130,36 +130,32 @@ async function fetchClientIp(): Promise<string | null> {
   return null;
 }
 
-function parseJsApiPayParams(payData: string): WxJsApiPayParams {
-  const obj = (typeof payData === "string" ? JSON.parse(payData) : payData) as Record<string, string>;
-  return {
-    appId: obj.appId || obj.appid,
-    timeStamp: String(obj.timeStamp || obj.timestamp),
-    nonceStr: obj.nonceStr || obj.noncestr,
-    package: obj.package,
-    signType: obj.signType || "RSA",
-    paySign: obj.paySign || obj.sign,
-  };
-}
-
 function gatewayFailureDetail(j: CreateOrderResponse): string {
-  return j.message || j.raw?.failReason || j.raw?.failCode || "创建支付订单失败";
+  const raw = j.raw as { failReason?: string; failCode?: string } | undefined;
+  return j.message || raw?.failReason || raw?.failCode || "创建支付订单失败";
 }
 
-function invokeWxJsApiPay(
-  params: WxJsApiPayParams,
-  onClose: (res: { err_msg: string }) => void,
-): void {
-  const fire = () => {
-    window.WeixinJSBridge!.invoke("getBrandWCPayRequest", params, (res) => {
-      onClose(res);
-    });
-  };
-  if (typeof window.WeixinJSBridge === "undefined") {
-    document.addEventListener("WeixinJSBridgeReady", fire, false);
-  } else {
-    fire();
-  }
+/** 渲染二维码到全屏遮罩层 */
+async function showQrCodeMask(qrContent: string, subject: string): Promise<void> {
+  const dataUrl = await QRCode.toDataURL(qrContent, {
+    width: 256,
+    margin: 2,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+  const id = "pay-qrcode-mask";
+  document.getElementById(id)?.remove();
+  const mask = document.createElement("div");
+  mask.id = id;
+  mask.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;color:#fff;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;";
+  mask.innerHTML = `
+    <p style="font-size:15px;margin:0 0 12px">请使用手机扫码完成支付</p>
+    <p style="font-size:13px;opacity:0.7;margin:0 0 16px">${subject}</p>
+    <img src="${dataUrl}" alt="支付二维码" style="background:#fff;border-radius:8px;padding:8px;width:240px;height:240px"/>
+    <button id="${id}-close" style="margin-top:24px;background:#fff;color:#000;border:0;border-radius:8px;padding:10px 24px;font-size:14px">关闭</button>
+  `;
+  document.body.appendChild(mask);
+  document.getElementById(`${id}-close`)?.addEventListener("click", () => mask.remove());
 }
 
 export const PaymentService = {
