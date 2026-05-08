@@ -18,7 +18,7 @@ export const Route = createFileRoute("/pay/test")({
 function PayTestPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [amount, setAmount] = useState<number>(0.01);
+  const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
   const isWechat = PaymentService.isWechat();
 
