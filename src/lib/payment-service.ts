@@ -4,11 +4,6 @@
 // 网关异步回调到 Supabase Edge Function pay-notify 更新订单状态。
 const GATEWAY_BASE = "https://gw.nrnc.net";
 
-// 公众号 AppID（用于 OAuth 拿 openid + JSAPI 调起）
-const WECHAT_OA_APPID =
-  (import.meta.env.VITE_WECHAT_OA_APPID as string | undefined) ||
-  "wx0dfc3c6b0b3b259b";
-
 // 网关异步通知地址（Supabase Edge Function 公开 URL）
 const NOTIFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pay-notify`;
 
