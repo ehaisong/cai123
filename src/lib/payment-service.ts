@@ -280,10 +280,13 @@ export const PaymentService = {
           message: "微信内未取到 openid，跳网关 OAuth",
           payload: { amountYuan, subject },
         });
+        showLoadingMask("正在准备微信支付…", "正在获取微信授权，请稍候");
         redirectToGatewayOAuth();
         return; // 页面将跳转
       }
     }
+    // 已拿到 openid 或非微信 JSAPI 场景，统一显示 loading，避免接口耗时让用户误判
+    showLoadingMask();
 
     const body: Record<string, unknown> = {
       orderId: orderNo,
