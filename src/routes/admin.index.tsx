@@ -63,6 +63,7 @@ const groups: Array<{ label: string; items: Card[] }> = [
       { to: "/admin/merchants", title: "商家管理", desc: "查看/禁用店铺", icon: Store, color: "bg-orange-500/10 text-orange-600" },
       { to: "/admin/agents", title: "代理管理", desc: "代理列表与归属", icon: UserCog, color: "bg-green-500/10 text-green-600" },
       { to: "/admin/users", title: "用户管理", desc: "用户列表与禁用", icon: Users, color: "bg-blue-500/10 text-blue-600" },
+      { to: "/admin/kyc", title: "实名信息", desc: "查看/修改实名银行卡", icon: ShieldCheck, color: "bg-emerald-500/10 text-emerald-600" },
       { to: "/admin/orders", title: "订单总览", desc: "全平台订单查询", icon: ClipboardList, color: "bg-cyan-500/10 text-cyan-600" },
     ],
   },
