@@ -388,6 +388,7 @@ export const PaymentService = {
         } catch {
           // ignore
         }
+        hideLoadingMask();
         this.showOpenInBrowserMask();
         return;
       }
