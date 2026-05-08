@@ -228,8 +228,15 @@ export const PaymentService = {
             message: `OAuth 回跳后续单失败：${msg}`,
             payload: { pending },
           });
+          hideLoadingMask();
         }
+      } else {
+        // openid 已写入但没有待支付订单，关掉 loading
+        hideLoadingMask();
       }
+    } else if (hasOpenidInUrl) {
+      // 兜底：URL 有 wx_openid 但解析失败
+      hideLoadingMask();
     }
   },
 
