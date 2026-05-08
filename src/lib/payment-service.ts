@@ -50,6 +50,47 @@ function buildReturnUrl(orderNo: string): string {
 }
 
 const OPENID_KEY = "wx_openid";
+const PENDING_WX_PAY_KEY = "pending_wx_pay";
+
+type PendingWxPay = {
+  orderNo: string;
+  amountYuan: number;
+  payType: "wechat";
+  subject: string;
+  createdAt: number;
+};
+
+function savePendingWxPay(pending: Omit<PendingWxPay, "createdAt">): void {
+  try {
+    sessionStorage.setItem(PENDING_WX_PAY_KEY, JSON.stringify({ ...pending, createdAt: Date.now() }));
+  } catch {
+    // ignore
+  }
+}
+
+function consumePendingWxPay(): PendingWxPay | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_WX_PAY_KEY);
+    if (!raw) return null;
+    const pending = JSON.parse(raw) as PendingWxPay;
+    const fresh = Date.now() - Number(pending.createdAt || 0) < 10 * 60 * 1000;
+    if (!fresh || !pending.orderNo || pending.payType !== "wechat") {
+      sessionStorage.removeItem(PENDING_WX_PAY_KEY);
+      return null;
+    }
+    return pending;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingWxPay(): void {
+  try {
+    sessionStorage.removeItem(PENDING_WX_PAY_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 /** 从 URL 读取并清理 wx_openid / wx_oauth_error，返回 openid */
 function consumeOpenIdFromUrl(): string | null {
@@ -76,7 +117,7 @@ function redirectToGatewayOAuth(): void {
 }
 
 function parseJsApiPayParams(payData: string): WxJsApiPayParams {
-  const obj = JSON.parse(payData) as Record<string, string>;
+  const obj = (typeof payData === "string" ? JSON.parse(payData) : payData) as Record<string, string>;
   return {
     appId: obj.appId || obj.appid,
     timeStamp: String(obj.timeStamp || obj.timestamp),
@@ -115,6 +156,19 @@ export const PaymentService = {
         sessionStorage.setItem(OPENID_KEY, openid);
       } catch {
         // ignore
+      }
+      const pending = consumePendingWxPay();
+      if (pending) {
+        try {
+          await this.pay({
+            orderNo: pending.orderNo,
+            amountYuan: pending.amountYuan,
+            payType: pending.payType,
+            subject: pending.subject,
+          });
+        } catch (e) {
+          console.error("[wx oauth] resume pending payment failed", e, pending);
+        }
       }
     }
   },
@@ -163,6 +217,7 @@ export const PaymentService = {
         }
       }
       if (!openId) {
+        savePendingWxPay({ orderNo, amountYuan, payType: "wechat", subject });
         redirectToGatewayOAuth();
         return; // 页面将跳转
       }
@@ -185,7 +240,17 @@ export const PaymentService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`网关错误 HTTP ${res.status}`);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      let detail = text;
+      try {
+        const parsed = JSON.parse(text) as { message?: string; msg?: string; error?: string };
+        detail = parsed.message || parsed.msg || parsed.error || text;
+      } catch {
+        // keep raw text
+      }
+      throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
+    }
     const j = (await res.json()) as CreateOrderResponse;
     if (!j.success || !j.payData) throw new Error(j.message || "创建支付订单失败");
 
@@ -193,6 +258,7 @@ export const PaymentService = {
     if (inWechat && payType === "wechat") {
       try {
         const params = parseJsApiPayParams(j.payData);
+        clearPendingWxPay();
         invokeWxJsApiPay(params, () => {
           window.location.href = buildReturnUrl(orderNo);
         });
