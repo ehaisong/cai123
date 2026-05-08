@@ -405,10 +405,12 @@ export const PaymentService = {
 
     // 二维码支付（PC / 桌面浏览器场景）
     if (payTypeResp === "qrcode" || j.payMethod === "qrcode") {
+      hideLoadingMask();
       await showQrCodeMask(payInfo, subject);
       return;
     }
 
+    hideLoadingMask();
     throw new Error(`不支持的支付响应类型：${payTypeResp || j.payMethod || "unknown"}`);
   },
 
