@@ -320,6 +320,7 @@ export const PaymentService = {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       logPayment({ orderNo, stage: "create_error", level: "error", message: `网络错误：${msg}` });
+      hideLoadingMask();
       throw new Error(`网关网络错误：${msg}`);
     }
     if (!res.ok) {
@@ -338,6 +339,7 @@ export const PaymentService = {
         message: `网关 HTTP ${res.status}`,
         payload: { status: res.status, body: text.slice(0, 2000) },
       });
+      hideLoadingMask();
       throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
     }
     const j = (await res.json()) as CreateOrderResponse;
