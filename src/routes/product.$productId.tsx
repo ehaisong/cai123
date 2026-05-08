@@ -2,9 +2,11 @@ import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/h5/page-header";
-import { fmtDate, fmtMoney } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { PaymentService, type PayType } from "@/lib/payment-service";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/product/$productId")({
