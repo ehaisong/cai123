@@ -156,10 +156,13 @@ function parseJsApiPayParams(payData: string): WxJsApiPayParams {
   };
 }
 
-function invokeWxJsApiPay(params: WxJsApiPayParams, onClose: () => void): void {
+function invokeWxJsApiPay(
+  params: WxJsApiPayParams,
+  onClose: (res: { err_msg: string }) => void,
+): void {
   const fire = () => {
-    window.WeixinJSBridge!.invoke("getBrandWCPayRequest", params, () => {
-      onClose();
+    window.WeixinJSBridge!.invoke("getBrandWCPayRequest", params, (res) => {
+      onClose(res);
     });
   };
   if (typeof window.WeixinJSBridge === "undefined") {
