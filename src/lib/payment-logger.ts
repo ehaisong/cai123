@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export type PayLogStage =
   | "create_request"
   | "create_response"
