@@ -98,7 +98,7 @@ function LoginDonePage() {
     return_path = safeBusinessRedirect(return_path);
 
     if (provider === "phone") setHint("正在完成短信登录，请稍候…");
-    else if (provider === "wechat") setHint("正在完成微信登录，请稍候…");
+    else if (provider === "wechat") setHint("微信授权成功，正在创建会话…");
 
     console.log("[login-done] mount", {
       hasTicket: !!ticket,
