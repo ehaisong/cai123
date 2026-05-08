@@ -30,6 +30,28 @@ export const Route = createFileRoute("/auth/login")({
 const HUB_BASE = "https://wx.lovclaw.com";
 const HUB_CLIENT = "66cai";
 
+const env = import.meta.env as Record<string, string | undefined>;
+const SUPABASE_URL = env.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
+const SUPABASE_ANON = env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+const EXCHANGE_URL = `${SUPABASE_URL}/functions/v1/wechat-exchange`;
+
+/**
+ * 预热 wechat-exchange 边缘函数，避免冷启动。
+ * 用 OPTIONS 触发 CORS 预检即可启动 isolate；不阻塞、不报错。
+ */
+function warmExchangeFn() {
+  try {
+    void fetch(EXCHANGE_URL, {
+      method: "OPTIONS",
+      headers: { "Access-Control-Request-Method": "POST" },
+      mode: "cors",
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
 type TabKey = "customer" | "staff";
 
 function LoginPage() {
@@ -91,12 +113,20 @@ function LoginPage() {
     return /micromessenger/i.test(navigator.userAgent);
   };
 
+  // 进入登录页就预热一次边缘函数，降低后续 ticket 交换的冷启动概率
+  useEffect(() => {
+    warmExchangeFn();
+  }, []);
+
   const openWechat = () => {
     if (search.ref) {
       try { localStorage.setItem("pending_referrer", search.ref); } catch {}
     }
     const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
     try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
+    // 跳转中转站之前再预热一次：让 isolate 与微信 OAuth 并行启动，
+    // 用户回到 /login/done 时函数已是热的。
+    warmExchangeFn();
     if (isWechatBrowser()) {
       // 微信内：必须整页跳转中转站，由中转站走公众号网页授权（snsapi_userinfo）实现无感一键登录
       // 中转站完成授权后会 302 回 /login/done?ticket=...
