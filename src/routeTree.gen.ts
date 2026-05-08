@@ -63,6 +63,7 @@ import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.pro
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
 import { Route as ApiPublicPayNotifyRouteImport } from './routes/api.public.pay-notify'
+import { Route as ApiPublicPayWxStartRouteImport } from './routes/api.public.pay.wx-start'
 import { Route as ApiPublicPayCreateRouteImport } from './routes/api.public.pay.create'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
@@ -339,6 +340,11 @@ const ApiPublicPayNotifyRoute = ApiPublicPayNotifyRouteImport.update({
   path: '/api/public/pay-notify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPayWxStartRoute = ApiPublicPayWxStartRouteImport.update({
+  id: '/api/public/pay/wx-start',
+  path: '/api/public/pay/wx-start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPayCreateRoute = ApiPublicPayCreateRouteImport.update({
   id: '/api/public/pay/create',
   path: '/api/public/pay/create',
@@ -425,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
   '/api/public/pay/create': typeof ApiPublicPayCreateRoute
+  '/api/public/pay/wx-start': typeof ApiPublicPayWxStartRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -486,6 +493,7 @@ export interface FileRoutesByTo {
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
   '/api/public/pay/create': typeof ApiPublicPayCreateRoute
+  '/api/public/pay/wx-start': typeof ApiPublicPayWxStartRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -548,6 +556,7 @@ export interface FileRoutesById {
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
   '/api/public/pay/create': typeof ApiPublicPayCreateRoute
+  '/api/public/pay/wx-start': typeof ApiPublicPayWxStartRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -611,6 +620,7 @@ export interface FileRouteTypes {
     | '/merchant/products/new'
     | '/merchant/products/'
     | '/api/public/pay/create'
+    | '/api/public/pay/wx-start'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues/'
@@ -672,6 +682,7 @@ export interface FileRouteTypes {
     | '/merchant/products/new'
     | '/merchant/products'
     | '/api/public/pay/create'
+    | '/api/public/pay/wx-start'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/merchant/products/new'
     | '/merchant/products/'
     | '/api/public/pay/create'
+    | '/api/public/pay/wx-start'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues/'
@@ -794,6 +806,7 @@ export interface RootRouteChildren {
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
   ApiPublicPayCreateRoute: typeof ApiPublicPayCreateRoute
+  ApiPublicPayWxStartRoute: typeof ApiPublicPayWxStartRoute
   MerchantProductsProductIdIssuesBulkImportRoute: typeof MerchantProductsProductIdIssuesBulkImportRoute
   MerchantProductsProductIdIssuesNewRoute: typeof MerchantProductsProductIdIssuesNewRoute
   MerchantProductsProductIdIssuesIndexRoute: typeof MerchantProductsProductIdIssuesIndexRoute
@@ -1180,6 +1193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPayNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pay/wx-start': {
+      id: '/api/public/pay/wx-start'
+      path: '/api/public/pay/wx-start'
+      fullPath: '/api/public/pay/wx-start'
+      preLoaderRoute: typeof ApiPublicPayWxStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/pay/create': {
       id: '/api/public/pay/create'
       path: '/api/public/pay/create'
@@ -1285,6 +1305,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
   ApiPublicPayCreateRoute: ApiPublicPayCreateRoute,
+  ApiPublicPayWxStartRoute: ApiPublicPayWxStartRoute,
   MerchantProductsProductIdIssuesBulkImportRoute:
     MerchantProductsProductIdIssuesBulkImportRoute,
   MerchantProductsProductIdIssuesNewRoute:

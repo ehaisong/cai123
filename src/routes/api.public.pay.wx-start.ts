@@ -1,5 +1,5 @@
 // 微信内支付：跳转微信公众号 OAuth 授权页。
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ThreeYPayConfig } from "@/lib/threeypay.server";
 
 const SITE_ORIGIN = "https://66cai.site";
