@@ -1,7 +1,8 @@
-// 通过 3ypay 中转支付网关 gw.nrnc.net 发起支付。
-// 微信内：跳转网关统一 OAuth 中转 → 回跳带 ?wx_openid → JSAPI 唤起
-// 浏览器内：支付宝直跳 payUrl
+// 通过 3ypay 中转支付网关 gw.nrnc.net 发起支付（v2 协议）。
+// 微信内：跳转网关统一 OAuth 中转 → 回跳带 ?wx_openid → method=jsapi 创建 → 直接跳 pay_info
+// 浏览器内：jump → 直跳 pay_info；qrcode → 渲染二维码
 // 网关异步回调到 Supabase Edge Function pay-notify 更新订单状态。
+import QRCode from "qrcode";
 import { logPayment } from "./payment-logger";
 
 const GATEWAY_BASE = "https://gw.nrnc.net";
@@ -20,37 +21,15 @@ export interface QueryOrderResponse {
 
 interface CreateOrderResponse {
   success: boolean;
-  payDataType?: "payUrl" | "qrCode" | "weChat" | "data" | "jsapi";
-  payData?: string;
-  message?: string;
-  raw?: {
-    failCode?: string;
-    failReason?: string;
-    state?: number | string;
-    payDataType?: string;
-    payOrderNo?: string;
+  provider?: string;
+  payType?: PayType;
+  payMethod?: "jsapi" | "qrcode" | "jump";
+  data?: {
+    pay_type?: "qrcode" | "jump";
+    pay_info?: string;
   };
-}
-
-interface WxJsApiPayParams {
-  appId: string;
-  timeStamp: string;
-  nonceStr: string;
-  package: string;
-  signType: string;
-  paySign: string;
-}
-
-declare global {
-  interface Window {
-    WeixinJSBridge?: {
-      invoke: (
-        api: string,
-        params: WxJsApiPayParams,
-        cb: (res: { err_msg: string }) => void,
-      ) => void;
-    };
-  }
+  message?: string;
+  raw?: Record<string, unknown>;
 }
 
 function buildReturnUrl(orderNo: string): string {
