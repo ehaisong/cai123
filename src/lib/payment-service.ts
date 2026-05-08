@@ -186,6 +186,12 @@ export const PaymentService = {
         // ignore
       }
       const pending = consumePendingWxPay();
+      logPayment({
+        orderNo: pending?.orderNo,
+        stage: "oauth_resume",
+        message: "OAuth 回跳，已获取 openid",
+        payload: { openidPrefix: openid.slice(0, 6), hasPending: !!pending },
+      });
       if (pending) {
         try {
           await this.pay({
@@ -195,7 +201,14 @@ export const PaymentService = {
             subject: pending.subject,
           });
         } catch (e) {
-          console.error("[wx oauth] resume pending payment failed", e, pending);
+          const msg = e instanceof Error ? e.message : String(e);
+          logPayment({
+            orderNo: pending.orderNo,
+            stage: "error",
+            level: "error",
+            message: `OAuth 回跳后续单失败：${msg}`,
+            payload: { pending },
+          });
         }
       }
     }
