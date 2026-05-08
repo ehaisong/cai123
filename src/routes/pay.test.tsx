@@ -28,8 +28,8 @@ function PayTestPage() {
 
   const handlePay = async (payType: PayType) => {
     if (!user) return;
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("请输入测试金额（建议 0.01 元）");
+    if (!Number.isFinite(amount) || amount < 1) {
+      toast.error("网关最低支付金额为 1 元");
       return;
     }
     setSubmitting(payType);
