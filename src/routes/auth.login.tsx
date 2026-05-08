@@ -113,12 +113,20 @@ function LoginPage() {
     return /micromessenger/i.test(navigator.userAgent);
   };
 
+  // 进入登录页就预热一次边缘函数，降低后续 ticket 交换的冷启动概率
+  useEffect(() => {
+    warmExchangeFn();
+  }, []);
+
   const openWechat = () => {
     if (search.ref) {
       try { localStorage.setItem("pending_referrer", search.ref); } catch {}
     }
     const back = safeRedirect(search.redirect) ?? (search.ref ? `/?ref=${encodeURIComponent(search.ref)}` : "/");
     try { sessionStorage.setItem("wechat_login_return_path", back); } catch {}
+    // 跳转中转站之前再预热一次：让 isolate 与微信 OAuth 并行启动，
+    // 用户回到 /login/done 时函数已是热的。
+    warmExchangeFn();
     if (isWechatBrowser()) {
       // 微信内：必须整页跳转中转站，由中转站走公众号网页授权（snsapi_userinfo）实现无感一键登录
       // 中转站完成授权后会 302 回 /login/done?ticket=...
