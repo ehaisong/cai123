@@ -362,7 +362,10 @@ export const PaymentService = {
         payInfoPreview: typeof payInfo === "string" ? payInfo.slice(0, 500) : null,
       },
     });
-    if (!okResp || !payInfo) throw new Error(gatewayFailureDetail(j));
+    if (!okResp || !payInfo) {
+      hideLoadingMask();
+      throw new Error(gatewayFailureDetail(j));
+    }
 
     // 跳转支付（13pay JSAPI / H5 / 支付宝 H5 都走此分支）
     const isJump =
