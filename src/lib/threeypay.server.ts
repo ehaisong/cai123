@@ -120,7 +120,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   if (input.extra) biz.extra = input.extra;
 
   const r = await callOpenApi("/openapi/order/pay/create", biz);
-  if ("raw" in r) return { ok: false, msg: r.msg, raw: r.raw };
+  if ("raw" in r) return { ok: false, msg: r.msg ?? "网关响应错误", raw: r.raw };
 
   const j = r.json as { code?: number; msg?: string; data?: string | Record<string, unknown> };
   if (j.code !== 200) {
