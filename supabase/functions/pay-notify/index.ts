@@ -117,8 +117,25 @@ Deno.serve(async (req: Request) => {
   });
   if (error) {
     console.error("[pay-notify] rpc error", error);
+    await supabase.from("payment_logs").insert({
+      order_no: merchantOrderNo,
+      source: "gateway-notify",
+      stage: "notify_processed",
+      level: "error",
+      message: `mark_payment_paid 失败：${error.message}`,
+      payload: { error, body },
+    });
     return fail("error", 500);
   }
+
+  await supabase.from("payment_logs").insert({
+    order_no: merchantOrderNo,
+    source: "gateway-notify",
+    stage: "notify_processed",
+    level: "info",
+    message: "订单已标记为已支付",
+    payload: { tradeNo, amountYuan: expected },
+  });
 
   return ok();
 });
