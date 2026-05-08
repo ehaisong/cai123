@@ -193,6 +193,10 @@ export const PaymentService = {
   /** App 入口调用：把网关回跳带回的 wx_openid 写入缓存并清理 URL */
   async resumeFromWxOAuthIfAny(): Promise<void> {
     if (typeof window === "undefined") return;
+    // 若 URL 上带有 wx_openid，立即显示 loading，避免露出原页面让用户误判
+    const hasOpenidInUrl =
+      typeof window !== "undefined" && /[?&]wx_openid=/.test(window.location.search);
+    if (hasOpenidInUrl) showLoadingMask("正在拉起微信支付…", "正在恢复支付流程，请稍候");
     const openid = consumeOpenIdFromUrl();
     if (openid) {
       try {
