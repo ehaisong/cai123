@@ -18,7 +18,7 @@ export const Route = createFileRoute("/pay/test")({
 function PayTestPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [amount, setAmount] = useState<number>(0.01);
+  const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
   const isWechat = PaymentService.isWechat();
 
@@ -28,8 +28,8 @@ function PayTestPage() {
 
   const handlePay = async (payType: PayType) => {
     if (!user) return;
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("请输入测试金额（建议 0.01 元）");
+    if (!Number.isFinite(amount) || amount < 1) {
+      toast.error("网关最低支付金额为 1 元");
       return;
     }
     setSubmitting(payType);
@@ -68,13 +68,13 @@ function PayTestPage() {
             <Label className="text-xs">测试金额（元）</Label>
             <Input
               type="number"
-              step="0.01"
-              min="0.01"
+              step="1"
+              min="1"
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              建议金额 0.01 元；测试订单不会自动加到钱包余额。
+              网关最低支付金额 1 元；测试订单不会加到钱包余额。
             </p>
           </div>
 
