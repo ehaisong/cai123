@@ -1,17 +1,40 @@
-// 直连 3ypay 的前端支付服务（通过 Supabase Edge Functions 调用）。
-// - 微信内：跳转 pay-wx-start Edge Function → OAuth → 回调到 66cai.site → JSAPI 唤起
-// - 微信外：调用 pay-create Edge Function 拿支付宝 H5 链接 → 直接跳转
-import { supabase } from "@/integrations/supabase/client";
+// 通过 3ypay 中转支付网关 gw.nrnc.net 发起支付。
+// 前端直接调用网关 /api/pay/create 与 /api/pay/query；
+// 网关异步回调到 Supabase Edge Function pay-notify 更新订单状态。
+const GATEWAY_BASE = "https://gw.nrnc.net";
+
+// 网关异步通知地址（Supabase Edge Function 公开 URL，无需走自有域名）
+const NOTIFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pay-notify`;
 
 export type PayType = "wechat" | "alipay";
-
-const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
 export interface QueryOrderResponse {
   success: boolean;
   tradeStatus?: "SUCCESS" | "WAIT_BUYER_PAY" | "CLOSED" | "FAILED";
   amount?: number;
   tradeNo?: string;
+}
+
+interface CreateOrderResponse {
+  success: boolean;
+  payDataType?: "payUrl" | "qrCode";
+  payData?: string;
+  message?: string;
+}
+
+async function getClientIp(): Promise<string> {
+  try {
+    const r = await fetch("https://api.ipify.org?format=json");
+    const j = (await r.json()) as { ip?: string };
+    return j.ip || "127.0.0.1";
+  } catch {
+    return "127.0.0.1";
+  }
+}
+
+function buildReturnUrl(orderNo: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://66cai.site";
+  return `${origin}/pay/success?orderNo=${encodeURIComponent(orderNo)}`;
 }
 
 export const PaymentService = {
@@ -21,24 +44,18 @@ export const PaymentService = {
   },
 
   async queryOrder(orderNo: string): Promise<QueryOrderResponse> {
-    const { data } = await supabase
-      .from("payment_orders")
-      .select("status, amount, trade_no")
-      .eq("order_no", orderNo)
-      .maybeSingle();
-    if (!data) return { success: true, tradeStatus: "WAIT_BUYER_PAY" };
-    const map: Record<string, QueryOrderResponse["tradeStatus"]> = {
-      paid: "SUCCESS",
-      pending: "WAIT_BUYER_PAY",
-      closed: "CLOSED",
-      failed: "FAILED",
-    };
-    return {
-      success: true,
-      tradeStatus: map[data.status] ?? "WAIT_BUYER_PAY",
-      amount: Number(data.amount),
-      tradeNo: data.trade_no ?? undefined,
-    };
+    try {
+      const res = await fetch(`${GATEWAY_BASE}/api/pay/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: orderNo }),
+      });
+      if (!res.ok) return { success: false };
+      const j = (await res.json()) as QueryOrderResponse;
+      return j;
+    } catch {
+      return { success: false };
+    }
   },
 
   async pay(opts: {
@@ -47,39 +64,51 @@ export const PaymentService = {
     payType: PayType;
     subject: string;
   }): Promise<void> {
-    const { orderNo, payType } = opts;
+    const { orderNo, amountYuan, payType, subject } = opts;
 
-    // 微信内 → 跳 Edge Function → 微信 OAuth → JSAPI
-    if (this.isWechat() && payType === "wechat") {
-      window.location.href = `${FUNCTIONS_BASE}/pay-wx-start?orderNo=${encodeURIComponent(orderNo)}`;
-      return;
+    // 微信内点击支付宝 → 提示在浏览器打开（先创建订单缓存 payUrl）
+    const inWechat = this.isWechat();
+
+    const body: Record<string, unknown> = {
+      orderId: orderNo,
+      amount: Math.round(amountYuan * 100), // 单位：分
+      payType,
+      subject,
+      notifyUrl: NOTIFY_URL,
+      returnUrl: buildReturnUrl(orderNo),
+    };
+    if (payType === "wechat") {
+      body.clientIp = await getClientIp();
     }
 
-    // 微信内点支付宝 → 弹层提示在外部浏览器打开
-    if (this.isWechat() && payType === "alipay") {
-      this.showOpenInBrowserMask(orderNo);
-      return;
-    }
-
-    // 微信外 → Edge Function 创建订单 → 跳支付链接
-    const res = await fetch(`${FUNCTIONS_BASE}/pay-create`, {
+    const res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      },
-      body: JSON.stringify({ orderNo, payType }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
-    const j = (await res.json()) as { ok: boolean; payInfo?: string; msg?: string };
-    if (!j.ok || !j.payInfo) throw new Error(j.msg || "创建支付订单失败");
-    window.location.href = j.payInfo;
+    if (!res.ok) throw new Error(`网关错误 HTTP ${res.status}`);
+    const j = (await res.json()) as CreateOrderResponse;
+    if (!j.success || !j.payData) throw new Error(j.message || "创建支付订单失败");
+
+    if (inWechat && payType === "alipay") {
+      // 微信内打开支付宝会被拦截 → 缓存 payUrl + 弹层引导
+      try {
+        localStorage.setItem(
+          "pending_alipay",
+          JSON.stringify({ orderId: orderNo, payUrl: j.payData, createdAt: Date.now() }),
+        );
+      } catch {
+        // ignore
+      }
+      this.showOpenInBrowserMask();
+      return;
+    }
+
+    window.location.href = j.payData;
   },
 
-  showOpenInBrowserMask(orderNo?: string): void {
+  showOpenInBrowserMask(): void {
     const id = "open-in-browser-mask";
-    if (orderNo) {
-      localStorage.setItem("pending_alipay_order", orderNo);
-    }
     if (document.getElementById(id)) {
       (document.getElementById(id) as HTMLElement).style.display = "flex";
       return;
@@ -104,15 +133,22 @@ export const PaymentService = {
     });
   },
 
+  /** 在外部浏览器入口处调用，检测 localStorage 待支付订单并自动跳转 */
   checkPendingAlipay(): void {
-    // 兼容旧版本占位，新流程不再需要预存 URL
     if (typeof window === "undefined") return;
     if (this.isWechat()) return;
-    const orderNo = localStorage.getItem("pending_alipay_order");
-    if (!orderNo) return;
-    localStorage.removeItem("pending_alipay_order");
-    // 自动重新拉起
-    void this.pay({ orderNo, amountYuan: 0, payType: "alipay", subject: "" }).catch(() => {});
+    const raw = localStorage.getItem("pending_alipay");
+    if (!raw) return;
+    localStorage.removeItem("pending_alipay");
+    try {
+      const p = JSON.parse(raw) as { payUrl?: string; createdAt?: number };
+      if (!p.payUrl) return;
+      const fresh = !p.createdAt || Date.now() - p.createdAt < 5 * 60 * 1000;
+      if (!fresh) return;
+      window.location.href = p.payUrl;
+    } catch {
+      // ignore
+    }
   },
 
   startPolling(
