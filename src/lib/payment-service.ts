@@ -116,6 +116,32 @@ function redirectToGatewayOAuth(): void {
   window.location.href = `${GATEWAY_BASE}/api/wx/oauth/redirect?target=${target}`;
 }
 
+let cachedClientIp: string | null = null;
+async function fetchClientIp(): Promise<string | null> {
+  if (cachedClientIp) return cachedClientIp;
+  const sources = [
+    "https://api.ipify.org?format=json",
+    "https://ipapi.co/json/",
+  ];
+  for (const url of sources) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 2500);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      const j = (await r.json()) as { ip?: string };
+      if (j.ip && /^[\d.]+$|:/.test(j.ip)) {
+        cachedClientIp = j.ip;
+        return j.ip;
+      }
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
 function parseJsApiPayParams(payData: string): WxJsApiPayParams {
   const obj = (typeof payData === "string" ? JSON.parse(payData) : payData) as Record<string, string>;
   return {
@@ -234,6 +260,8 @@ export const PaymentService = {
     if (payType === "wechat" && openId) {
       body.openId = openId;
     }
+    const clientIp = await fetchClientIp();
+    if (clientIp) body.clientIp = clientIp;
 
     const res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
       method: "POST",
