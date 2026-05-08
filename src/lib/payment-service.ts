@@ -1,14 +1,16 @@
-// 直连 3ypay 的前端支付服务。
-// - 微信内：跳转 /api/public/pay/wx-start → OAuth → JSAPI 唤起
-// - 微信外：POST /api/public/pay/create 拿支付宝 H5 链接 → 直接跳转
+// 直连 3ypay 的前端支付服务（通过 Supabase Edge Functions 调用）。
+// - 微信内：跳转 pay-wx-start Edge Function → OAuth → 回调到 66cai.site → JSAPI 唤起
+// - 微信外：调用 pay-create Edge Function 拿支付宝 H5 链接 → 直接跳转
 import { supabase } from "@/integrations/supabase/client";
 
 export type PayType = "wechat" | "alipay";
 
+const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
 export interface QueryOrderResponse {
   success: boolean;
   tradeStatus?: "SUCCESS" | "WAIT_BUYER_PAY" | "CLOSED" | "FAILED";
-  amount?: number; // 元
+  amount?: number;
   tradeNo?: string;
 }
 
@@ -47,9 +49,9 @@ export const PaymentService = {
   }): Promise<void> {
     const { orderNo, payType } = opts;
 
-    // 微信内 → 走微信公众号 OAuth + JSAPI
+    // 微信内 → 跳 Edge Function → 微信 OAuth → JSAPI
     if (this.isWechat() && payType === "wechat") {
-      window.location.href = `/api/public/pay/wx-start?orderNo=${encodeURIComponent(orderNo)}`;
+      window.location.href = `${FUNCTIONS_BASE}/pay-wx-start?orderNo=${encodeURIComponent(orderNo)}`;
       return;
     }
 
@@ -59,10 +61,13 @@ export const PaymentService = {
       return;
     }
 
-    // 微信外 → 创建订单 → 跳支付链接
-    const res = await fetch("/api/public/pay/create", {
+    // 微信外 → Edge Function 创建订单 → 跳支付链接
+    const res = await fetch(`${FUNCTIONS_BASE}/pay-create`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
       body: JSON.stringify({ orderNo, payType }),
     });
     const j = (await res.json()) as { ok: boolean; payInfo?: string; msg?: string };
