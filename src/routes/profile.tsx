@@ -87,8 +87,10 @@ function ProfilePage() {
       <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
         <MenuItem icon={<Smartphone className="w-6 h-6 text-success" />} label="手机绑定" to="/profile/bind-phone" />
         <MenuItem icon={<FileText className="w-6 h-6 text-warning" />} label="我的订单" to="/orders" />
-        <MenuItem icon={<Smartphone className="w-6 h-6 text-success" />} label="手机绑定" to="/profile/bind-phone" />
-        <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
+        <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="实名绑定" to="/profile/kyc" />
+        {!isMerchant && (
+          <MenuItem icon={<Store className="w-6 h-6 text-info" />} label="申请商家" to="/merchant/apply" />
+        )}
         <MenuItem icon={<Shield className="w-6 h-6 text-primary" />} label="隐私协议" to="/privacy" />
         <MenuItem icon={<Handshake className="w-6 h-6 text-success" />} label="代理中心" to="/agent" />
         {isAgent && (
