@@ -17,7 +17,7 @@ function PaySuccessPage() {
   const { orderNo } = Route.useSearch();
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
-  const [info, setInfo] = useState<{ amount?: number; tradeNo?: string; purpose?: string } | null>(null);
+  const [info, setInfo] = useState<{ amount?: number; tradeNo?: string; purpose?: string; productId?: string } | null>(null);
 
   useEffect(() => {
     if (!orderNo) {
@@ -26,35 +26,53 @@ function PaySuccessPage() {
     }
 
     let stopPolling: (() => void) | null = null;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handlePaid = (
+      d: { amount?: number | string | null; trade_no?: string | null; purpose?: string | null; metadata?: unknown },
+      fallbackAmount?: number,
+    ) => {
+      const meta = (d.metadata ?? {}) as { product_id?: string };
+      const productId = meta.product_id;
+      setStatus("success");
+      setInfo({
+        amount: d.amount != null ? Number(d.amount) : fallbackAmount,
+        tradeNo: d.trade_no ?? undefined,
+        purpose: d.purpose ?? undefined,
+        productId,
+      });
+      // 商品购买：短暂展示成功后自动跳到内容详情页
+      if (d.purpose === "product_purchase" && productId) {
+        redirectTimer = setTimeout(() => {
+          navigate({ to: "/product/$productId", params: { productId } });
+        }, 1200);
+      }
+    };
 
     const init = async () => {
-      // 先看本地订单状态（如果回调已经入账）
       const { data } = await supabase
         .from("payment_orders")
-        .select("status, amount, trade_no, purpose")
+        .select("status, amount, trade_no, purpose, metadata")
         .eq("order_no", orderNo)
         .maybeSingle();
       if (data?.status === "paid") {
-        setStatus("success");
-        setInfo({ amount: Number(data.amount), tradeNo: data.trade_no ?? undefined, purpose: data.purpose });
+        handlePaid(data);
         return;
       }
-      const purpose = data?.purpose;
       stopPolling = PaymentService.startPolling(
         orderNo,
         async (r: QueryOrderResponse) => {
-          // 网关已成功；再查一次本地订单获取最新状态
           const { data: d2 } = await supabase
             .from("payment_orders")
-            .select("amount, trade_no, purpose")
+            .select("amount, trade_no, purpose, metadata")
             .eq("order_no", orderNo)
             .maybeSingle();
-          setStatus("success");
-          setInfo({
-            amount: d2?.amount ? Number(d2.amount) : (r.amount ? r.amount / 100 : undefined),
-            tradeNo: d2?.trade_no ?? r.tradeNo,
-            purpose: d2?.purpose ?? purpose,
-          });
+          if (d2) {
+            handlePaid(d2, r.amount ? r.amount / 100 : undefined);
+          } else {
+            setStatus("success");
+            setInfo({ amount: r.amount ? r.amount / 100 : undefined, tradeNo: r.tradeNo });
+          }
         },
         () => setStatus("failed"),
       );
@@ -62,8 +80,9 @@ function PaySuccessPage() {
     init();
     return () => {
       stopPolling?.();
+      if (redirectTimer) clearTimeout(redirectTimer);
     };
-  }, [orderNo]);
+  }, [orderNo, navigate]);
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
@@ -89,7 +108,14 @@ function PaySuccessPage() {
                 <p className="mt-1 text-xs text-muted-foreground break-all">流水号：{info.tradeNo}</p>
               )}
               <div className="mt-6 flex gap-2">
-                {info?.purpose === "recharge" ? (
+                {info?.purpose === "product_purchase" && info?.productId ? (
+                  <Button
+                    className="flex-1"
+                    onClick={() => navigate({ to: "/product/$productId", params: { productId: info.productId! } })}
+                  >
+                    立即查看内容
+                  </Button>
+                ) : info?.purpose === "recharge" ? (
                   <Button className="flex-1" onClick={() => navigate({ to: "/wallet" })}>
                     返回钱包
                   </Button>
@@ -99,6 +125,9 @@ function PaySuccessPage() {
                   </Button>
                 )}
               </div>
+              {info?.purpose === "product_purchase" && info?.productId && (
+                <p className="mt-2 text-[11px] text-muted-foreground">即将自动跳转…</p>
+              )}
             </>
           )}
           {status === "failed" && (
