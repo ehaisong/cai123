@@ -315,8 +315,8 @@ export const PaymentService = {
       throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
     }
     const j = (await res.json()) as CreateOrderResponse;
-    const payInfo = j.data?.pay_info;
-    const payTypeResp = j.data?.pay_type;
+    const payInfo = j.data?.pay_info ?? j.pay_info ?? j.raw?.pay_info;
+    const payTypeResp = j.data?.pay_type ?? j.pay_type ?? j.raw?.pay_type;
     const okResp = j.success && !!payInfo;
     logPayment({
       orderNo,
