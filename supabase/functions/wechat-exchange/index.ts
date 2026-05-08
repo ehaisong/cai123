@@ -62,8 +62,12 @@ function maskPhone(p: string): string {
 }
 
 function normalizePhoneForAuth(raw: string): string {
-  // Supabase auth.users.phone 通常存为不带 + 的纯数字（E.164 去掉 +）
-  return raw.replace(/\D/g, "");
+  // 统一规范：纯数字；中国手机号去掉前导 86，仅保留 11 位本地号
+  const digits = (raw ?? "").replace(/\D/g, "");
+  if (digits.length === 13 && digits.startsWith("86") && digits[2] === "1") {
+    return digits.slice(2);
+  }
+  return digits;
 }
 
 Deno.serve(async (req) => {
@@ -332,7 +336,7 @@ Deno.serve(async (req) => {
     sideEffects.push(
       supabaseAdmin
         .from("profiles")
-        .update({ phone: rawPhone })
+        .update({ phone: normPhone })
         .eq("user_id", userId)
         .is("phone", null)
         .then(({ error }) => {
