@@ -118,9 +118,9 @@ function Inner() {
       _id_card_no: editing.id_card_no ?? "",
       _bank_name: editing.bank_name ?? "",
       _bank_account: editing.bank_account ?? "",
-      _bank_branch: editing.bank_branch ?? null,
-      _phone: editing.phone ?? null,
-      _remark: editing.remark ?? null,
+      _bank_branch: editing.bank_branch ?? undefined,
+      _phone: editing.phone ?? undefined,
+      _remark: editing.remark ?? undefined,
     });
     if (error) {
       reportRpcError(error, { op: "admin_update_user_kyc", scope: "AdminKyc" });
