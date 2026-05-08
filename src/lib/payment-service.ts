@@ -299,13 +299,18 @@ export const PaymentService = {
     // 已拿到 openid 或非微信 JSAPI 场景，统一显示 loading，避免接口耗时让用户误判
     showLoadingMask();
 
+    const returnUrl = buildReturnUrl(orderNo);
     const body: Record<string, unknown> = {
       orderId: orderNo,
       amount: Math.round(amountYuan * 100), // 单位：分
       payType,
       subject,
       notifyUrl: NOTIFY_URL,
-      returnUrl: buildReturnUrl(orderNo),
+      returnUrl,
+      // 兼容字段：网关 / 上游 13pay 不同字段名都带上，确保支付完成后能跳回站内
+      return_url: returnUrl,
+      redirect_url: returnUrl,
+      redirectUrl: returnUrl,
     };
     if (payType === "wechat" && openId) {
       body.openId = openId;
