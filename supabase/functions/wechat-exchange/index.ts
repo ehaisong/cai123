@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
     sideEffects.push(
       supabaseAdmin
         .from("profiles")
-        .update({ phone: rawPhone })
+        .update({ phone: normPhone })
         .eq("user_id", userId)
         .is("phone", null)
         .then(({ error }) => {
