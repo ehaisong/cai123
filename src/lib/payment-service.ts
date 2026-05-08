@@ -409,13 +409,24 @@ export const PaymentService = {
         return;
       }
 
+      // 在 pay_info URL 上追加 redirect_url，确保 13pay jspay 收银台支付完成
+      // 后能跳回站内 /pay/success，而不是只能由用户手动关闭微信网页（会直接关掉整个 webview）
+      let target = payInfo;
+      try {
+        const u = new URL(payInfo);
+        if (!u.searchParams.has("redirect_url")) u.searchParams.set("redirect_url", returnUrl);
+        if (!u.searchParams.has("return_url")) u.searchParams.set("return_url", returnUrl);
+        target = u.toString();
+      } catch {
+        // payInfo 不是合法 URL（例如 weixin://），保持原样
+      }
       logPayment({
         orderNo,
         stage: "jsapi_invoke",
         message: "跳转网关返回的支付 URL",
-        payload: { urlPreview: payInfo.slice(0, 200) },
+        payload: { urlPreview: target.slice(0, 300) },
       });
-      window.location.href = payInfo;
+      window.location.href = target;
       return;
     }
 
