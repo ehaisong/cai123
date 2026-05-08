@@ -36,9 +36,13 @@ function BindPhonePage() {
     if (!user) { navigate({ to: "/auth/login" }); return; }
     supabase.from("profiles").select("phone").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
-        const p = data?.phone ?? null;
-        setCurrentPhone(p);
-        if (p) setPhone(p);
+        const raw = data?.phone ?? null;
+        // 规范化：去掉非数字 + 去掉前导 86，仅保留 11 位本地号
+        const digits = (raw ?? "").replace(/\D/g, "");
+        const local = digits.startsWith("86") ? digits.slice(2) : digits;
+        const normalized = /^1\d{10}$/.test(local) ? local : "";
+        setCurrentPhone(raw);
+        if (normalized) setPhone(normalized);
       });
     setHasPassword(Boolean(user.user_metadata?.has_password));
   }, [user?.id]);
