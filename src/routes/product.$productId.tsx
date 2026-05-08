@@ -63,24 +63,33 @@ function ProductDetailPage() {
 
   useEffect(() => { load(); }, [productId, user?.id]);
 
-  const handleBuy = async () => {
+  const [showPay, setShowPay] = useState(false);
+
+  const startPayment = async (payType: PayType) => {
     if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
     if (!current) return;
+    setShowPay(false);
     setBuying(true);
-    const { data: orderId, error } = await supabase.rpc("purchase_product", { _product_id: productId, _issue_id: current.id, _shop_merchant_id: from ?? undefined });
-    setBuying(false);
-    if (error) {
-      if (error.message.includes("余额")) {
-        toast.error(error.message);
-        setTimeout(() => navigate({ to: "/wallet" }), 800);
-        return;
-      }
-      toast.error(error.message);
-      return;
+    try {
+      const { data, error } = await supabase.rpc(
+        "create_product_payment_order" as never,
+        { _product_id: productId, _issue_id: current.id, _pay_type: payType, _shop_merchant_id: from ?? null } as never,
+      );
+      if (error) throw new Error(error.message);
+      const row = Array.isArray(data) ? (data as Array<{ order_no: string; amount: number; subject: string }>)[0] : (data as { order_no: string; amount: number; subject: string });
+      if (!row?.order_no) throw new Error("创建支付订单失败");
+      await PaymentService.pay({
+        orderNo: row.order_no,
+        amountYuan: Number(row.amount),
+        payType,
+        subject: row.subject || product?.title || "付费内容",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg);
+    } finally {
+      setBuying(false);
     }
-    toast.success("购买成功，已解锁内容");
-    void orderId;
-    load();
   };
 
   if (!product) {
