@@ -645,6 +645,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string | null
+          level: string
+          message: string | null
+          order_no: string | null
+          payload: Json
+          source: string
+          stage: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          level?: string
+          message?: string | null
+          order_no?: string | null
+          payload?: Json
+          source: string
+          stage: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          level?: string
+          message?: string | null
+          order_no?: string | null
+          payload?: Json
+          source?: string
+          stage?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payment_orders: {
         Row: {
           amount: number
