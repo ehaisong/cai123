@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, Settings } from "lucide-react";
+import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, Settings, ShieldCheck } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
 import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
@@ -74,6 +74,7 @@ function MerchantHomeInner() {
         <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
         <Cell icon={<Link2 className="w-6 h-6 text-info" />} label="挂靠商家" to="/merchant/affiliations" />
         <Cell icon={<Send className="w-6 h-6 text-primary" />} label="消息群发" to="/merchant/messages" />
+        <Cell icon={<ShieldCheck className="w-6 h-6 text-success" />} label="实名绑定" to="/profile/kyc" />
         <Cell icon={<Settings className="w-6 h-6 text-muted-foreground" />} label="设置" to="/profile/bind-phone" />
         <Cell icon={<LogOut className="w-6 h-6 text-destructive" />} label="退出登录" onClick={() => { void logout(); }} />
       </div>

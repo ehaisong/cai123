@@ -27,6 +27,7 @@ import { Route as WalletTransactionsRouteImport } from './routes/wallet_.transac
 import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
+import { Route as ProfileKycRouteImport } from './routes/profile.kyc'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
@@ -55,6 +56,7 @@ import { Route as AdminPaymentRouteImport } from './routes/admin.payment'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminMerchantRecruitRouteImport } from './routes/admin.merchant-recruit'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
@@ -156,6 +158,11 @@ const ProfileBindPhoneRoute = ProfileBindPhoneRouteImport.update({
   id: '/profile_/bind-phone',
   path: '/profile/bind-phone',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileKycRoute = ProfileKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => ProfileRoute,
 } as any)
 const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
@@ -297,6 +304,11 @@ const AdminMerchantRecruitRoute = AdminMerchantRecruitRouteImport.update({
   path: '/admin/merchant-recruit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/admin/kyc',
+  path: '/admin/kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCommissionRoute = AdminCommissionRouteImport.update({
   id: '/admin/commission',
   path: '/admin/commission',
@@ -367,13 +379,14 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -402,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/profile/kyc': typeof ProfileKycRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
@@ -426,13 +440,14 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -461,6 +476,7 @@ export interface FileRoutesByTo {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/profile/kyc': typeof ProfileKycRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
@@ -486,13 +502,14 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -521,6 +538,7 @@ export interface FileRoutesById {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/profile/kyc': typeof ProfileKycRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
@@ -554,6 +572,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/kyc'
     | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
@@ -582,6 +601,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/product/$productId'
+    | '/profile/kyc'
     | '/profile/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
@@ -613,6 +633,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/kyc'
     | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
@@ -641,6 +662,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/product/$productId'
+    | '/profile/kyc'
     | '/profile/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
@@ -672,6 +694,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/kyc'
     | '/admin/merchant-recruit'
     | '/admin/merchants'
     | '/admin/orders'
@@ -700,6 +723,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/product/$productId'
+    | '/profile/kyc'
     | '/profile_/bind-phone'
     | '/shop/$merchantId'
     | '/shop/me'
@@ -725,13 +749,14 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   OrdersRoute: typeof OrdersRoute
   PrivacyRoute: typeof PrivacyRoute
-  ProfileRoute: typeof ProfileRoute
+  ProfileRoute: typeof ProfileRouteWithChildren
   TermsRoute: typeof TermsRoute
   WalletRoute: typeof WalletRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminCommissionRoute: typeof AdminCommissionRoute
+  AdminKycRoute: typeof AdminKycRoute
   AdminMerchantRecruitRoute: typeof AdminMerchantRecruitRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -901,6 +926,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/profile/bind-phone'
       preLoaderRoute: typeof ProfileBindPhoneRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/profile/kyc': {
+      id: '/profile/kyc'
+      path: '/kyc'
+      fullPath: '/profile/kyc'
+      preLoaderRoute: typeof ProfileKycRouteImport
+      parentRoute: typeof ProfileRoute
     }
     '/product/$productId': {
       id: '/product/$productId'
@@ -1098,6 +1130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantRecruitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/admin/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/commission': {
       id: '/admin/commission'
       path: '/admin/commission'
@@ -1178,6 +1217,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ProfileRouteChildren {
+  ProfileKycRoute: typeof ProfileKycRoute
+}
+
+const ProfileRouteChildren: ProfileRouteChildren = {
+  ProfileKycRoute: ProfileKycRoute,
+}
+
+const ProfileRouteWithChildren =
+  ProfileRoute._addFileChildren(ProfileRouteChildren)
+
 interface MerchantAgentsRouteChildren {
   MerchantAgentsUserIdRoute: typeof MerchantAgentsUserIdRoute
 }
@@ -1200,13 +1250,14 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   OrdersRoute: OrdersRoute,
   PrivacyRoute: PrivacyRoute,
-  ProfileRoute: ProfileRoute,
+  ProfileRoute: ProfileRouteWithChildren,
   TermsRoute: TermsRoute,
   WalletRoute: WalletRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
   AdminCommissionRoute: AdminCommissionRoute,
+  AdminKycRoute: AdminKycRoute,
   AdminMerchantRecruitRoute: AdminMerchantRecruitRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,

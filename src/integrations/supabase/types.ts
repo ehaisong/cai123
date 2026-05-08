@@ -1086,6 +1086,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_kyc: {
+        Row: {
+          bank_account: string
+          bank_branch: string | null
+          bank_name: string
+          created_at: string
+          id: string
+          id_card_no: string
+          phone: string | null
+          real_name: string
+          remark: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          bank_account: string
+          bank_branch?: string | null
+          bank_name: string
+          created_at?: string
+          id?: string
+          id_card_no: string
+          phone?: string | null
+          real_name: string
+          remark?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          bank_account?: string
+          bank_branch?: string | null
+          bank_name?: string
+          created_at?: string
+          id?: string
+          id_card_no?: string
+          phone?: string | null
+          real_name?: string
+          remark?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1221,12 +1266,48 @@ export type Database = {
         Args: { _audience?: string; _content: string; _title: string }
         Returns: number
       }
+      admin_get_user_kyc: {
+        Args: { _user_id: string }
+        Returns: {
+          bank_account: string
+          bank_branch: string | null
+          bank_name: string
+          created_at: string
+          id: string
+          id_card_no: string
+          phone: string | null
+          real_name: string
+          remark: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "user_kyc"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_recharge_user: {
         Args: { _amount: number; _note?: string; _user_id: string }
         Returns: string
       }
       admin_send_message: {
         Args: { _content: string; _title: string; _user_id: string }
+        Returns: string
+      }
+      admin_update_user_kyc: {
+        Args: {
+          _bank_account: string
+          _bank_branch?: string
+          _bank_name: string
+          _id_card_no: string
+          _phone?: string
+          _real_name: string
+          _remark?: string
+          _user_id: string
+        }
         Returns: string
       }
       apply_affiliation: {

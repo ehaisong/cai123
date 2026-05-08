@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
-import { Users, TrendingUp, Share2, Wallet, CalendarDays, ArrowRightLeft, Store } from "lucide-react";
+import { Users, TrendingUp, Share2, Wallet, CalendarDays, ArrowRightLeft, Store, ShieldCheck } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -317,6 +317,16 @@ function AgentPage() {
           <div>
             <div className="text-sm font-semibold">申请提现</div>
             <div className="text-[11px] text-muted-foreground">分成实时到账</div>
+          </div>
+        </Link>
+        <Link
+          to="/profile/kyc"
+          className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
+        >
+          <ShieldCheck className="h-5 w-5 text-success" />
+          <div>
+            <div className="text-sm font-semibold">实名绑定</div>
+            <div className="text-[11px] text-muted-foreground">提现转账必填</div>
           </div>
         </Link>
         <Link
