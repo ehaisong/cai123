@@ -260,6 +260,8 @@ export const PaymentService = {
     if (payType === "wechat" && openId) {
       body.openId = openId;
     }
+    const clientIp = await fetchClientIp();
+    if (clientIp) body.clientIp = clientIp;
 
     const res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
       method: "POST",
