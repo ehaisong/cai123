@@ -1,77 +1,83 @@
-// 3ypay 支付回调接收。该路径前缀 /api/public/* 在已发布站点会绕过登录鉴权。
+// 3ypay 支付异步通知。RSA2 验签 + 校验金额 + 调 mark_payment_paid。
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { rsa2Verify } from "@/lib/threeypay.server";
 
 export const Route = createFileRoute("/api/public/pay-notify")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const text = (msg: string, status = 200) =>
-          new Response(msg, { status, headers: { "Content-Type": "text/plain" } });
+        const ok = (msg = "SUCCESS") =>
+          new Response(JSON.stringify({ code: msg }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
 
         let body: Record<string, unknown> = {};
-        const contentType = request.headers.get("content-type") || "";
         try {
-          if (contentType.includes("application/json")) {
-            body = await request.json();
-          } else {
-            const form = await request.formData();
-            form.forEach((v, k) => {
-              body[k] = typeof v === "string" ? v : "";
-            });
-          }
+          body = (await request.json()) as Record<string, unknown>;
         } catch {
-          return text("fail", 400);
+          return new Response("invalid", { status: 400 });
         }
 
-        const merchantOrderNo = String(body.merchantOrderNo ?? body.orderId ?? "");
-        const tradeStatus = String(body.tradeStatus ?? "");
-        const totalAmountCents = Number(body.totalAmount ?? 0);
-        const tradeNo = String(body.tradeNo ?? "");
+        const sign = String(body.sign || "");
+        if (!rsa2Verify(body, sign)) {
+          console.error("[pay-notify] sign verify failed", body);
+          return new Response("invalid sign", { status: 400 });
+        }
 
-        if (!merchantOrderNo) return text("fail", 400);
+        // 业务字段在 data 里（JSON 字符串或对象）
+        let data: Record<string, unknown> = {};
+        const rawData = body.data;
+        try {
+          data = typeof rawData === "string" ? JSON.parse(rawData) : ((rawData as Record<string, unknown>) || {});
+        } catch {
+          // ignore
+        }
 
-        // 找不到订单时仍返回 success，避免重试堆积
+        const mchOrderNo = String(data.mchOrderNo ?? body.mchOrderNo ?? "");
+        const state = Number(data.state ?? body.state ?? 0);
+        const payAmount = Number(data.payAmount ?? body.payAmount ?? 0);
+        const payOrderNo = String(data.payOrderNo ?? body.payOrderNo ?? "");
+
+        if (!mchOrderNo) return ok();
+
         const { data: order } = await supabaseAdmin
           .from("payment_orders")
           .select("order_no, amount, status")
-          .eq("order_no", merchantOrderNo)
+          .eq("order_no", mchOrderNo)
           .maybeSingle();
-        if (!order) return text("success");
+        if (!order) return ok();
+        if (order.status === "paid") return ok();
 
-        if (order.status === "paid") return text("success");
-
-        if (tradeStatus !== "SUCCESS") {
-          // 失败/关闭：可选地标记，不影响幂等返回
-          if (tradeStatus === "CLOSED" || tradeStatus === "FAILED") {
+        if (state !== 3) {
+          if (state === 5 || state === 7) {
             await supabaseAdmin
               .from("payment_orders")
-              .update({ status: tradeStatus === "CLOSED" ? "closed" : "failed" })
-              .eq("order_no", merchantOrderNo);
+              .update({ status: state === 5 ? "closed" : "failed" })
+              .eq("order_no", mchOrderNo);
           }
-          return text("success");
+          return ok();
         }
 
-        const amountYuan = Math.round(totalAmountCents) / 100;
         const expected = Number(order.amount);
-        if (Math.abs(expected - amountYuan) > 0.001) {
-          console.error("[pay-notify] amount mismatch", { merchantOrderNo, expected, amountYuan });
-          return text("amount mismatch", 400);
+        if (Math.abs(expected - payAmount) > 0.001) {
+          console.error("[pay-notify] amount mismatch", { mchOrderNo, expected, payAmount });
+          return new Response("amount mismatch", { status: 400 });
         }
 
         const { error } = await supabaseAdmin.rpc("mark_payment_paid", {
-          _order_no: merchantOrderNo,
-          _amount: amountYuan,
-          _trade_no: tradeNo,
+          _order_no: mchOrderNo,
+          _amount: payAmount,
+          _trade_no: payOrderNo,
         });
         if (error) {
           console.error("[pay-notify] rpc error", error);
-          return text("error", 500);
+          return new Response("error", { status: 500 });
         }
-        return text("success");
+        return ok();
       },
-
-      GET: async () => new Response("pay-notify endpoint", { status: 200 }),
+      GET: async () => new Response("pay-notify endpoint"),
     },
   },
 });
