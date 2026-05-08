@@ -80,7 +80,7 @@ function PayTestPage() {
 
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground">
             <p>当前环境：<strong>{isWechat ? "微信内" : "外部浏览器"}</strong></p>
-            <p>支付通道：3ypay 中转网关 gw.nrnc.net</p>
+            <p>支付通道：gw.nrnc.net 中转 v2（13pay JSAPI=jump，H5/支付宝=jump，桌面=qrcode）</p>
           </div>
 
           {isWechat ? (
