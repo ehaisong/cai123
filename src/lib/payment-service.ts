@@ -138,6 +138,29 @@ function gatewayFailureDetail(j: CreateOrderResponse): string {
   return j.message || raw?.failReason || raw?.failCode || "创建支付订单失败";
 }
 
+/** 全屏 Loading 遮罩，避免微信 OAuth 回跳/跳转支付间隙露出原页面 */
+function showLoadingMask(text = "正在拉起微信支付…", subText = "请稍候，不要关闭页面"): void {
+  if (typeof document === "undefined") return;
+  const id = "pay-loading-mask";
+  if (document.getElementById(id)) return;
+  const mask = document.createElement("div");
+  mask.id = id;
+  mask.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;color:#fff;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;";
+  mask.innerHTML = `
+    <div style="width:42px;height:42px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:pay-spin 0.9s linear infinite;margin-bottom:18px"></div>
+    <p style="font-size:16px;font-weight:600;margin:0 0 6px">${text}</p>
+    <p style="font-size:12px;opacity:0.65;margin:0">${subText}</p>
+    <style>@keyframes pay-spin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(mask);
+}
+
+function hideLoadingMask(): void {
+  if (typeof document === "undefined") return;
+  document.getElementById("pay-loading-mask")?.remove();
+}
+
 /** 渲染二维码到全屏遮罩层 */
 async function showQrCodeMask(qrContent: string, subject: string): Promise<void> {
   const dataUrl = await QRCode.toDataURL(qrContent, {
