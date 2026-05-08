@@ -23,6 +23,13 @@ interface CreateOrderResponse {
   payDataType?: "payUrl" | "qrCode" | "weChat" | "data" | "jsapi";
   payData?: string;
   message?: string;
+  raw?: {
+    failCode?: string;
+    failReason?: string;
+    state?: number | string;
+    payDataType?: string;
+    payOrderNo?: string;
+  };
 }
 
 interface WxJsApiPayParams {
@@ -154,6 +161,10 @@ function parseJsApiPayParams(payData: string): WxJsApiPayParams {
     signType: obj.signType || "RSA",
     paySign: obj.paySign || obj.sign,
   };
+}
+
+function gatewayFailureDetail(j: CreateOrderResponse): string {
+  return j.message || j.raw?.failReason || j.raw?.failCode || "创建支付订单失败";
 }
 
 function invokeWxJsApiPay(
