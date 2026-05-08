@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useLogout } from "@/lib/use-logout";
 import { BottomNav } from "@/components/h5/bottom-nav";
-import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Eye, Shield, LogOut, UserCircle2, Sparkles, Share2, Smartphone, Wallet as WalletIcon, Coins } from "lucide-react";
+import { Settings, FileText, Store, Handshake, MessageSquareWarning, HeadphonesIcon, Shield, LogOut, UserCircle2, Sparkles, Share2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
