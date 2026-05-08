@@ -63,6 +63,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   useEffect(() => {
+    void PaymentService.resumeFromWxOAuthIfAny();
     PaymentService.checkPendingAlipay();
   }, []);
   return (
