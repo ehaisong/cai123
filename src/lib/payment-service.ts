@@ -338,17 +338,18 @@ export const PaymentService = {
     logPayment({
       orderNo,
       stage: "create_response",
-      level: j.success ? "info" : "error",
-      message: j.success ? "网关返回成功" : `网关返回失败：${j.message ?? ""}`,
+      level: j.success && j.payData ? "info" : "error",
+      message: j.success && j.payData ? "网关返回成功" : `网关返回不可支付：${gatewayFailureDetail(j)}`,
       payload: {
         success: j.success,
         payDataType: j.payDataType,
         message: j.message,
+        raw: j.raw,
         payDataPreview:
           typeof j.payData === "string" ? j.payData.slice(0, 500) : JSON.stringify(j.payData ?? "").slice(0, 500),
       },
     });
-    if (!j.success || !j.payData) throw new Error(j.message || "创建支付订单失败");
+    if (!j.success || !j.payData) throw new Error(gatewayFailureDetail(j));
 
     // 微信内 + 微信支付 → JSAPI 唤起
     if (inWechat && payType === "wechat") {
