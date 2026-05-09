@@ -120,7 +120,9 @@ function HomeRouter() {
       setState({ kind: "no-default" });
       void refResolved;
     })();
-  }, [authLoading, user?.id, search.ref, hasRole]);
+    // 注意：依赖 roles 数组而不是 hasRole 函数，避免每次 render 重跑
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, rolesLoaded, user?.id, search.ref]);
 
   if (state.kind === "loading") {
     return (
