@@ -11,7 +11,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
 import { ShieldCheck, Lock } from "lucide-react";
 
-export const Route = createFileRoute("/profile/kyc")({
+export const Route = createFileRoute("/profile_/kyc")({
   component: () => (
     <RouteGuard title="实名绑定">
       <Inner />

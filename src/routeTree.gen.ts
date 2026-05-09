@@ -26,8 +26,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WalletTransactionsRouteImport } from './routes/wallet_.transactions'
 import { Route as ShopMeRouteImport } from './routes/shop.me'
 import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
+import { Route as ProfileKycRouteImport } from './routes/profile_.kyc'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
-import { Route as ProfileKycRouteImport } from './routes/profile.kyc'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
@@ -154,15 +154,15 @@ const ShopMerchantIdRoute = ShopMerchantIdRouteImport.update({
   path: '/shop/$merchantId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileKycRoute = ProfileKycRouteImport.update({
+  id: '/profile_/kyc',
+  path: '/profile/kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileBindPhoneRoute = ProfileBindPhoneRouteImport.update({
   id: '/profile_/bind-phone',
   path: '/profile/bind-phone',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileKycRoute = ProfileKycRouteImport.update({
-  id: '/kyc',
-  path: '/kyc',
-  getParentRoute: () => ProfileRoute,
 } as any)
 const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
@@ -379,7 +379,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -415,8 +415,8 @@ export interface FileRoutesByFullPath {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/product/$productId': typeof ProductProductIdRoute
-  '/profile/kyc': typeof ProfileKycRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
+  '/profile/kyc': typeof ProfileKycRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
@@ -440,7 +440,7 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -476,8 +476,8 @@ export interface FileRoutesByTo {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/product/$productId': typeof ProductProductIdRoute
-  '/profile/kyc': typeof ProfileKycRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
+  '/profile/kyc': typeof ProfileKycRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
   '/wallet/transactions': typeof WalletTransactionsRoute
@@ -502,7 +502,7 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
   '/privacy': typeof PrivacyRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
   '/wallet': typeof WalletRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -538,8 +538,8 @@ export interface FileRoutesById {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/product/$productId': typeof ProductProductIdRoute
-  '/profile/kyc': typeof ProfileKycRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
+  '/profile_/kyc': typeof ProfileKycRoute
   '/shop/$merchantId': typeof ShopMerchantIdRoute
   '/shop/me': typeof ShopMeRoute
   '/wallet_/transactions': typeof WalletTransactionsRoute
@@ -601,8 +601,8 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/product/$productId'
-    | '/profile/kyc'
     | '/profile/bind-phone'
+    | '/profile/kyc'
     | '/shop/$merchantId'
     | '/shop/me'
     | '/wallet/transactions'
@@ -662,8 +662,8 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/product/$productId'
-    | '/profile/kyc'
     | '/profile/bind-phone'
+    | '/profile/kyc'
     | '/shop/$merchantId'
     | '/shop/me'
     | '/wallet/transactions'
@@ -723,8 +723,8 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/product/$productId'
-    | '/profile/kyc'
     | '/profile_/bind-phone'
+    | '/profile_/kyc'
     | '/shop/$merchantId'
     | '/shop/me'
     | '/wallet_/transactions'
@@ -749,7 +749,7 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   OrdersRoute: typeof OrdersRoute
   PrivacyRoute: typeof PrivacyRoute
-  ProfileRoute: typeof ProfileRouteWithChildren
+  ProfileRoute: typeof ProfileRoute
   TermsRoute: typeof TermsRoute
   WalletRoute: typeof WalletRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
@@ -786,6 +786,7 @@ export interface RootRouteChildren {
   PayTestRoute: typeof PayTestRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ProfileBindPhoneRoute: typeof ProfileBindPhoneRoute
+  ProfileKycRoute: typeof ProfileKycRoute
   ShopMerchantIdRoute: typeof ShopMerchantIdRoute
   ShopMeRoute: typeof ShopMeRoute
   WalletTransactionsRoute: typeof WalletTransactionsRoute
@@ -920,19 +921,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopMerchantIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile_/kyc': {
+      id: '/profile_/kyc'
+      path: '/profile/kyc'
+      fullPath: '/profile/kyc'
+      preLoaderRoute: typeof ProfileKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile_/bind-phone': {
       id: '/profile_/bind-phone'
       path: '/profile/bind-phone'
       fullPath: '/profile/bind-phone'
       preLoaderRoute: typeof ProfileBindPhoneRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/profile/kyc': {
-      id: '/profile/kyc'
-      path: '/kyc'
-      fullPath: '/profile/kyc'
-      preLoaderRoute: typeof ProfileKycRouteImport
-      parentRoute: typeof ProfileRoute
     }
     '/product/$productId': {
       id: '/product/$productId'
@@ -1217,17 +1218,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProfileRouteChildren {
-  ProfileKycRoute: typeof ProfileKycRoute
-}
-
-const ProfileRouteChildren: ProfileRouteChildren = {
-  ProfileKycRoute: ProfileKycRoute,
-}
-
-const ProfileRouteWithChildren =
-  ProfileRoute._addFileChildren(ProfileRouteChildren)
-
 interface MerchantAgentsRouteChildren {
   MerchantAgentsUserIdRoute: typeof MerchantAgentsUserIdRoute
 }
@@ -1250,7 +1240,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   OrdersRoute: OrdersRoute,
   PrivacyRoute: PrivacyRoute,
-  ProfileRoute: ProfileRouteWithChildren,
+  ProfileRoute: ProfileRoute,
   TermsRoute: TermsRoute,
   WalletRoute: WalletRoute,
   AdminAgentsRoute: AdminAgentsRoute,
@@ -1287,6 +1277,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayTestRoute: PayTestRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ProfileBindPhoneRoute: ProfileBindPhoneRoute,
+  ProfileKycRoute: ProfileKycRoute,
   ShopMerchantIdRoute: ShopMerchantIdRoute,
   ShopMeRoute: ShopMeRoute,
   WalletTransactionsRoute: WalletTransactionsRoute,
@@ -1306,3 +1297,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
