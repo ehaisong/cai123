@@ -101,6 +101,11 @@ function ShopPage() {
 
   useEffect(() => {
     setOrigin(typeof window !== "undefined" ? window.location.origin : "");
+    // 记住"上次访问的店铺"：无论登录与否，扫码或直链进入后写入 localStorage，
+    // 让下次访问 / 时直接进入该店铺；扫描其他店铺二维码会自动覆盖。
+    if (typeof window !== "undefined") {
+      try { localStorage.setItem("last_shop_id", merchantId); } catch {}
+    }
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
     (async () => {
