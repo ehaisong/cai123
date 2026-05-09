@@ -77,6 +77,7 @@ function ProfilePage() {
         <RowAvatar avatar={profile?.avatar_url ?? null} />
         <Row label="昵称" value={profile?.nickname ?? "未设置"} />
         <Row label="登录号码" value={maskPhone(profile?.phone)} to="/profile/bind-phone" />
+        <Row label="设置密码" to="/profile/bind-phone" />
         <Row label="实名认证" to="/profile/kyc" />
         <Row label="用户服务协议" to="/terms" />
         <Row label="隐私权政策" to="/privacy" />
