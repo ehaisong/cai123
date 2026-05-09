@@ -22,10 +22,11 @@ interface RouteGuardProps {
  * - 角色不匹配 → 展示无权限提示
  */
 export function RouteGuard({ roles, title, forbiddenText, children }: RouteGuardProps) {
-  const { user, loading, hasRole } = useAuth();
+  const { user, loading, rolesLoaded, hasRole } = useAuth();
   const navigate = useNavigate();
 
-  if (loading) {
+  // 已登录但角色尚未从数据库加载完成时，不能立刻判"无权限"，否则会出现登录后被弹回首页的现象
+  if (loading || (user && !rolesLoaded)) {
     return (
       <div className="h5-shell">
         <PageHeader title={title} />
