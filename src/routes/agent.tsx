@@ -187,6 +187,9 @@ function AgentPage() {
     <div className="h5-shell flex min-h-screen flex-col bg-background">
       <PageHeader title="代理中心" />
 
+      {/* 当前活跃商家 + 切换入口 */}
+      <ActiveMerchantCard userId={user.id} />
+
       {/* 累计分成 */}
       <div className="m-3 rounded-2xl p-5 text-white" style={{ background: "var(--gradient-orange)" }}>
         <div className="text-sm opacity-90">累计分成（元）</div>
@@ -376,6 +379,42 @@ function AgentPage() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ActiveMerchantCard({ userId }: { userId: string }) {
+  const [active, setActive] = useState<{ shop_name: string; shop_avatar_url: string | null; merchant_id: string } | null>(null);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc("agent_my_bound_merchants");
+      const list = (data as any[]) ?? [];
+      setCount(list.length);
+      const a = list.find((r) => r.is_active);
+      if (a) setActive({ shop_name: a.shop_name, shop_avatar_url: a.shop_avatar_url, merchant_id: a.merchant_id });
+    })();
+  }, [userId]);
+
+  if (!active) return null;
+  return (
+    <div className="mx-3 mt-3 bg-card rounded-2xl p-3 flex items-center gap-3">
+      <div className="h-12 w-12 rounded-full bg-muted overflow-hidden shrink-0">
+        {active.shop_avatar_url
+          ? <img src={active.shop_avatar_url} alt={active.shop_name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Store className="h-5 w-5" /></div>}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold truncate">{active.shop_name}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">已绑定 {count} 家商家</div>
+      </div>
+      <Link
+        to="/agent/merchants"
+        className="shrink-0 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium"
+      >
+        <ArrowRightLeft className="h-3.5 w-3.5" /> 切换
+      </Link>
     </div>
   );
 }

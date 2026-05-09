@@ -45,6 +45,7 @@ import { Route as LoginDoneRouteImport } from './routes/login.done'
 import { Route as AuthStaffLoginRouteImport } from './routes/auth.staff-login'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AgentShareRouteImport } from './routes/agent_.share'
+import { Route as AgentMerchantsRouteImport } from './routes/agent_.merchants'
 import { Route as AgentInviteesRouteImport } from './routes/agent_.invitees'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
 import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
@@ -249,6 +250,11 @@ const AgentShareRoute = AgentShareRouteImport.update({
   path: '/agent/share',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentMerchantsRoute = AgentMerchantsRouteImport.update({
+  id: '/agent_/merchants',
+  path: '/agent/merchants',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentInviteesRoute = AgentInviteesRouteImport.update({
   id: '/agent_/invitees',
   path: '/agent/invitees',
@@ -398,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/agent/invitees': typeof AgentInviteesRoute
+  '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -459,6 +466,7 @@ export interface FileRoutesByTo {
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/agent/invitees': typeof AgentInviteesRoute
+  '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -521,6 +529,7 @@ export interface FileRoutesById {
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/agent_/invitees': typeof AgentInviteesRoute
+  '/agent_/merchants': typeof AgentMerchantsRoute
   '/agent_/share': typeof AgentShareRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -584,6 +593,7 @@ export interface FileRouteTypes {
     | '/admin/wechat'
     | '/admin/withdrawals'
     | '/agent/invitees'
+    | '/agent/merchants'
     | '/agent/share'
     | '/auth/login'
     | '/auth/staff-login'
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/admin/wechat'
     | '/admin/withdrawals'
     | '/agent/invitees'
+    | '/agent/merchants'
     | '/agent/share'
     | '/auth/login'
     | '/auth/staff-login'
@@ -706,6 +717,7 @@ export interface FileRouteTypes {
     | '/admin/wechat'
     | '/admin/withdrawals'
     | '/agent_/invitees'
+    | '/agent_/merchants'
     | '/agent_/share'
     | '/auth/login'
     | '/auth/staff-login'
@@ -768,6 +780,7 @@ export interface RootRouteChildren {
   AdminWechatRoute: typeof AdminWechatRoute
   AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
   AgentInviteesRoute: typeof AgentInviteesRoute
+  AgentMerchantsRoute: typeof AgentMerchantsRoute
   AgentShareRoute: typeof AgentShareRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthStaffLoginRoute: typeof AuthStaffLoginRoute
@@ -1054,6 +1067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentShareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agent_/merchants': {
+      id: '/agent_/merchants'
+      path: '/agent/merchants'
+      fullPath: '/agent/merchants'
+      preLoaderRoute: typeof AgentMerchantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agent_/invitees': {
       id: '/agent_/invitees'
       path: '/agent/invitees'
@@ -1259,6 +1279,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminWechatRoute: AdminWechatRoute,
   AdminWithdrawalsRoute: AdminWithdrawalsRoute,
   AgentInviteesRoute: AgentInviteesRoute,
+  AgentMerchantsRoute: AgentMerchantsRoute,
   AgentShareRoute: AgentShareRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthStaffLoginRoute: AuthStaffLoginRoute,

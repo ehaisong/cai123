@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_merchant_bindings: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_relations: {
         Row: {
           agent_code: string | null
@@ -1318,6 +1339,29 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      agent_add_merchant_binding: {
+        Args: { _merchant_owner_phone: string }
+        Returns: string
+      }
+      agent_my_bound_merchants: {
+        Args: never
+        Returns: {
+          bound_at: string
+          is_active: boolean
+          merchant_id: string
+          shop_avatar_url: string
+          shop_name: string
+          status: Database["public"]["Enums"]["merchant_status"]
+        }[]
+      }
+      agent_switch_active_merchant: {
+        Args: { _merchant_id: string }
+        Returns: boolean
+      }
+      agent_unbind_merchant: {
+        Args: { _merchant_id: string }
+        Returns: boolean
       }
       apply_affiliation: {
         Args: { _host_merchant_id: string; _note?: string }
