@@ -81,7 +81,7 @@ function ProfilePage() {
         <Row label="实名认证" to="/profile/kyc" />
         <Row label="用户服务协议" to="/terms" />
         <Row label="隐私权政策" to="/privacy" />
-        <Row label="注销账号" to="/contact" />
+        <Row label="联系客服" to="/contact" />
       </div>
 
       {/* 后台入口（仅角色可见） */}
