@@ -33,8 +33,21 @@ function HomeRouter() {
     if (user && !rolesLoaded) return;
 
     (async () => {
-      // A) 未带 ref 且未登录 → 跳转登录页（登录后回首页继续解析默认店铺）
+      // 读取"上次访问店铺"（扫码 / 直链都会写入 localStorage），用于跨 session 记忆。
+      const lastShopId = (() => {
+        if (typeof window === "undefined") return null;
+        try { return localStorage.getItem("last_shop_id"); } catch { return null; }
+      })();
+
+      // A) 未带 ref 且未登录：
+      //    - 若有上次访问店铺记录 → 直接进入该店铺
+      //    - 否则 → 跳转登录页
       if (!search.ref && !user) {
+        if (lastShopId) {
+          const { data: m } = await supabase
+            .from("merchants").select("id").eq("id", lastShopId).eq("status", "approved").maybeSingle();
+          if (m?.id) { setState({ kind: "shop", merchantId: m.id }); return; }
+        }
         setState({ kind: "redirect-login" });
         return;
       }
@@ -93,7 +106,9 @@ function HomeRouter() {
         return;
       }
 
-      // 2) 已登录买家若有绑定商家，优先使用
+      // 2) 已登录用户：优先使用 localStorage 记录的"上次访问店铺"，
+      //    其次回退到 agent_relations.bound_merchant_id（代理绑定关系）。
+      if (!target && lastShopId) target = lastShopId;
       if (!target && user) {
         const { data: ar } = await supabase
           .from("agent_relations")
