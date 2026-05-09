@@ -9,6 +9,8 @@ interface AuthContextValue {
   user: User | null;
   roles: AppRole[];
   loading: boolean;
+  /** roles 是否已经从数据库加载完成（区分"未登录/无角色"与"加载中"） */
+  rolesLoaded: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
   hasRole: (r: AppRole) => boolean;
@@ -21,11 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   const loadRoles = async (uid: string | undefined) => {
-    if (!uid) { setRoles([]); return; }
+    if (!uid) { setRoles([]); setRolesLoaded(true); return; }
+    setRolesLoaded(false);
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setRoles((data ?? []).map((r) => r.role as AppRole));
+    setRolesLoaded(true);
   };
 
   useEffect(() => {
@@ -49,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     roles,
     loading,
+    rolesLoaded,
     signOut: async () => { await supabase.auth.signOut(); },
     refreshRoles: () => loadRoles(user?.id),
     hasRole: (r) => roles.includes(r),

@@ -48,8 +48,8 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
 
   if (merchant?.status === "approved") {
     if (!roles.includes("merchant")) {
-      // 异步补角色，不阻塞跳转
-      void supabase.from("user_roles").insert({ user_id: uid, role: "merchant" });
+      // 必须等角色写入完成，否则 /merchant 的 RouteGuard 立刻判无权限
+      try { await supabase.from("user_roles").insert({ user_id: uid, role: "merchant" }); } catch {}
     }
     return { path: "/merchant" };
   }

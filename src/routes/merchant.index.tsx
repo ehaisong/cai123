@@ -25,13 +25,18 @@ function MerchantHomeInner() {
   const { user } = useAuth();
   const logout = useLogout();
   const [merchant, setMerchant] = useState<any>(null);
+  const [merchantLoading, setMerchantLoading] = useState(true);
   const [stats, setStats] = useState({ products: 0, orders: 0, balance: 0, monthSales: 0 });
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
+      setMerchantLoading(true);
       const { data: m } = await supabase.from("merchants").select("*").eq("user_id", user.id).maybeSingle();
+      if (cancelled) return;
       setMerchant(m);
+      setMerchantLoading(false);
       if (!m) return;
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
       const [{ count: pc }, { count: oc }, { data: w }, { data: monthOrders }] = await Promise.all([
@@ -40,11 +45,22 @@ function MerchantHomeInner() {
         supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
         supabase.from("orders").select("amount").eq("merchant_id", m.id).eq("status", "paid").gte("paid_at", monthStart.toISOString()),
       ]);
+      if (cancelled) return;
       const monthSales = (monthOrders ?? []).reduce((s, r: any) => s + Number(r.amount), 0);
       setStats({ products: pc ?? 0, orders: oc ?? 0, balance: Number(w?.balance ?? 0), monthSales });
     })();
+    return () => { cancelled = true; };
   }, [user?.id]);
 
+  if (merchantLoading) {
+    return (
+      <div className="h5-shell flex min-h-screen flex-col">
+        <PageHeader title="商家后台" />
+        <div className="flex-1 p-6 text-center text-sm text-muted-foreground">加载中…</div>
+        <MerchantBottomNav />
+      </div>
+    );
+  }
   if (!merchant) return <div className="h5-shell flex min-h-screen flex-col"><PageHeader title="商家后台" /><div className="flex-1 p-6 text-center text-sm text-muted-foreground">您还不是商家。<Link to="/merchant/apply" className="text-info">去申请 ›</Link></div><MerchantBottomNav /></div>;
 
   return (

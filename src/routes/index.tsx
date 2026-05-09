@@ -22,12 +22,15 @@ type State =
   | { kind: "no-default" };
 
 function HomeRouter() {
-  const { user, loading: authLoading, hasRole } = useAuth();
+  const { user, loading: authLoading, rolesLoaded, hasRole } = useAuth();
   const search = useSearch({ from: "/" });
   const [state, setState] = useState<State>({ kind: "loading" });
 
   useEffect(() => {
     if (authLoading) return;
+    // 已登录但 roles 还没加载完时不能下结论，否则会先把商家/管理员当成普通用户
+    // 走默认店铺分支，闪现「正在为您准备店铺…」。
+    if (user && !rolesLoaded) return;
 
     (async () => {
       // A) 未带 ref 且未登录 → 跳转登录页（登录后回首页继续解析默认店铺）
@@ -117,7 +120,9 @@ function HomeRouter() {
       setState({ kind: "no-default" });
       void refResolved;
     })();
-  }, [authLoading, user?.id, search.ref, hasRole]);
+    // 注意：依赖 roles 数组而不是 hasRole 函数，避免每次 render 重跑
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, rolesLoaded, user?.id, search.ref]);
 
   if (state.kind === "loading") {
     return (
