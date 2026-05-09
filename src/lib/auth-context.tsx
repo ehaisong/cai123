@@ -9,6 +9,8 @@ interface AuthContextValue {
   user: User | null;
   roles: AppRole[];
   loading: boolean;
+  /** roles 是否已经从数据库加载完成（区分"未登录/无角色"与"加载中"） */
+  rolesLoaded: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
   hasRole: (r: AppRole) => boolean;
