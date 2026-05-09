@@ -44,8 +44,8 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
   const merchant = merchantRes.data;
 
   if (roles.includes("admin")) return { path: "/admin" };
-  if (roles.includes("agent")) return { path: "/agent" };
 
+  // 商家优先于代理：同时持有 agent + merchant 时应进入商家后台
   if (merchant?.status === "approved") {
     if (!roles.includes("merchant")) {
       // 必须等角色写入完成，否则 /merchant 的 RouteGuard 立刻判无权限
@@ -54,6 +54,7 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
     return { path: "/merchant" };
   }
   if (roles.includes("merchant")) return { path: "/merchant" };
+  if (roles.includes("agent")) return { path: "/agent" };
 
   if (tab === "staff") {
     const { data: app } = await supabase
