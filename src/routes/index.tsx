@@ -106,7 +106,9 @@ function HomeRouter() {
         return;
       }
 
-      // 2) 已登录买家若有绑定商家，优先使用
+      // 2) 已登录用户：优先使用 localStorage 记录的"上次访问店铺"，
+      //    其次回退到 agent_relations.bound_merchant_id（代理绑定关系）。
+      if (!target && lastShopId) target = lastShopId;
       if (!target && user) {
         const { data: ar } = await supabase
           .from("agent_relations")
