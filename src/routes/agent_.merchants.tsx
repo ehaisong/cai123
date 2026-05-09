@@ -17,7 +17,7 @@ import { Plus, Store } from "lucide-react";
 import { toast } from "sonner";
 import { reportRpcError } from "@/lib/error-logger";
 
-export const Route = createFileRoute("/agent/merchants")({
+export const Route = createFileRoute("/agent_/merchants")({
   component: AgentMerchantsGuarded,
 });
 
@@ -123,9 +123,7 @@ function AgentMerchants() {
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-background">
       <PageHeader title="多商家管理" />
-
       <div className="px-3 pt-3 pb-1 text-xs text-muted-foreground">已绑定商家</div>
-
       <div className="px-3 space-y-2 flex-1">
         {loading && <p className="text-center py-10 text-sm text-muted-foreground">加载中…</p>}
         {!loading && rows.length === 0 && (
@@ -170,7 +168,6 @@ function AgentMerchants() {
           </div>
         ))}
       </div>
-
       {/* FAB 添加 */}
       <button
         type="button"
@@ -180,7 +177,6 @@ function AgentMerchants() {
       >
         <Plus className="h-7 w-7" />
       </button>
-
       {/* 添加对话框 */}
       <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setPhone(""); setCode(""); setSid(""); setCooldown(0); } }}>
         <DialogContent className="max-w-[360px]">
@@ -221,7 +217,6 @@ function AgentMerchants() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* 切换确认 */}
       <AlertDialog open={!!confirmSwitch} onOpenChange={(o) => !o && setConfirmSwitch(null)}>
         <AlertDialogContent>
@@ -239,7 +234,6 @@ function AgentMerchants() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       {/* 解绑确认 */}
       <AlertDialog open={!!confirmUnbind} onOpenChange={(o) => !o && setConfirmUnbind(null)}>
         <AlertDialogContent>
@@ -258,5 +252,5 @@ function AgentMerchants() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

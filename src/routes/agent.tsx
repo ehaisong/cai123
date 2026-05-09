@@ -187,6 +187,9 @@ function AgentPage() {
     <div className="h5-shell flex min-h-screen flex-col bg-background">
       <PageHeader title="代理中心" />
 
+      {/* 当前活跃商家 + 切换入口 */}
+      <ActiveMerchantCard userId={user.id} />
+
       {/* 累计分成 */}
       <div className="m-3 rounded-2xl p-5 text-white" style={{ background: "var(--gradient-orange)" }}>
         <div className="text-sm opacity-90">累计分成（元）</div>
