@@ -89,6 +89,14 @@ function ShopPage() {
     const { data: m } = await supabase
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
     setIsShopOwner(!!m);
+
+    // 记住归属：登录的非代理用户访问任意店铺，即把它设为默认归属店铺。
+    // 这样无论从二维码 /shop/MID 还是商品页进入，之后点击「主页」都会回到这个店铺，
+    // 不会再被回退到 default_shop_id（DEMO）。
+    // bind_referrer 内部对 is_agent=true 用户不会修改 bound_merchant_id，安全。
+    if (!m && (!ar?.is_agent || ar?.bound_merchant_id !== merchantId)) {
+      await supabase.rpc("bind_referrer", { _agent_code: `M_${merchantId}` });
+    }
   };
 
   useEffect(() => {
