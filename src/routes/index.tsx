@@ -50,6 +50,17 @@ function HomeRouter() {
           setState({ kind: "redirect-merchant" });
           return;
         }
+        // 兜底：roles 表可能尚未写入 merchant 角色，但 merchants 表已存在已审核记录
+        const { data: ownMerchant } = await supabase
+          .from("merchants")
+          .select("id, status")
+          .eq("user_id", user.id)
+          .eq("status", "approved")
+          .maybeSingle();
+        if (ownMerchant?.id) {
+          setState({ kind: "redirect-merchant" });
+          return;
+        }
       }
 
       // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
