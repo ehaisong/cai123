@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     if (!sid) return j({ ok: false, message: "会话已失效，请重新获取验证码" });
 
     // verify
-    const verify = await relay("/api/public/sms/verify", { sid, phone, code });
+    const verify = await relay("/api/public/sms/verify", { sid, phone: `+86${phone}`, code });
     if (!verify.json?.ok || !verify.json?.ticket) {
       const map: Record<string, string> = {
         bad_code: "验证码错误",
