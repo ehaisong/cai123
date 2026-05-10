@@ -129,10 +129,6 @@ function AgentPage() {
     [recentInvitees],
   );
 
-  const filtered = useMemo(
-    () => (tab === "all" ? commissions : commissions.filter((c) => String(c.level) === tab)),
-    [commissions, tab],
-  );
 
   if (authLoading || loading) {
     return <div className="h5-shell"><PageHeader title="代理推广" /><p className="text-center py-12 text-sm text-muted-foreground">加载中…</p></div>;
