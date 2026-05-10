@@ -69,14 +69,13 @@ function AgentPage() {
     setCommissions(cRes.data ?? []);
     setConfig(cfgRes.data ?? null);
 
-    // 邀请人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
+    // 引流人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
     if (pRes.data?.id) {
-      const [l1, l2, recentRel] = await Promise.all([
+      const [l1, recentRel] = await Promise.all([
         supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_id", pRes.data.id),
-        supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_l2_id", pRes.data.id),
-        supabase.from("agent_relations").select("created_at").or(`upline_id.eq.${pRes.data.id},upline_l2_id.eq.${pRes.data.id}`).gte("created_at", since14.toISOString()),
+        supabase.from("agent_relations").select("created_at").eq("upline_id", pRes.data.id).gte("created_at", since14.toISOString()),
       ]);
-      setCounts({ l1: l1.count ?? 0, l2: l2.count ?? 0 });
+      setCounts({ l1: l1.count ?? 0 });
 
       // 按日聚合
       const buckets: Record<string, number> = {};
