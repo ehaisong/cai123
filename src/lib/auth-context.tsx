@@ -35,11 +35,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // listener first
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       // defer to avoid deadlock
       setTimeout(() => loadRoles(sess?.user?.id), 0);
+      // 登录/注册成功时，消费匿名期间暂存的代理推广码（pending_referrer），
+      // 把"客户 → 代理"绑定关系写入数据库。任何登录路径（短信、密码、微信、
+      // 邮箱）都会触发，确保不会因登录跳转目标不是首页而漏绑。
+      if (event === "SIGNED_IN" && sess?.user) {
+        setTimeout(async () => {
+          try {
+            const code = typeof window !== "undefined" ? localStorage.getItem("pending_referrer") : null;
+            if (!code) return;
+            await supabase.rpc("bind_referrer", { _agent_code: code });
+            try { localStorage.removeItem("pending_referrer"); } catch {}
+          } catch {}
+        }, 0);
+      }
     });
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
