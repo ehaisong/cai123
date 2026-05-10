@@ -54,7 +54,13 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
     return { path: "/merchant" };
   }
   if (roles.includes("merchant")) return { path: "/merchant" };
-  if (roles.includes("agent")) return { path: "/agent" };
+  // 代理用户：若携带 ref（扫了别人的推广码），应走 /?ref=... 让首页完成绑定 + 跳转店铺，
+  // 而不是直接进自己的代理中心，否则会"代理扫别人码却进自己后台"。
+  if (roles.includes("agent")) {
+    const back = safeRedirect(redirect) ?? (ref ? `/?ref=${encodeURIComponent(ref)}` : null);
+    if (back) return { path: back, hard: !!ref };
+    return { path: "/agent" };
+  }
 
   if (tab === "staff") {
     const { data: app } = await supabase
