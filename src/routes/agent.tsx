@@ -316,34 +316,19 @@ function AgentPage() {
       </div>
 
       <div className="px-3 pt-3 text-[11px] text-muted-foreground">
-        当前分成规则：一级 <span className="text-primary font-semibold">{l1Pct}%</span> · 二级 <span className="text-primary font-semibold">{l2Pct}%</span> · 推广码 <span className="font-mono">{code}</span>
+        当前分成规则：代理 <span className="text-primary font-semibold">{l1Pct}%</span> · 推广码 <span className="font-mono">{code}</span>
       </div>
 
       {/* 分成记录 */}
-      <div className="px-3 pt-1 pb-2 flex items-center justify-between">
+      <div className="px-3 pt-3 pb-2">
         <div className="text-sm text-muted-foreground">分成记录</div>
-        <div className="flex gap-1 text-xs">
-          {([
-            { k: "all", l: "全部" },
-            { k: "1", l: "一级" },
-            { k: "2", l: "二级" },
-          ] as const).map((t) => (
-            <button
-              key={t.k}
-              onClick={() => setTab(t.k)}
-              className={`px-2 py-0.5 rounded ${tab === t.k ? "bg-primary text-primary-foreground" : "text-muted-foreground bg-muted"}`}
-            >
-              {t.l}
-            </button>
-          ))}
-        </div>
       </div>
       <div className="bg-card mx-3 mb-6 rounded-xl divide-y divide-border">
-        {filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无分成记录</p>}
-        {filtered.map((c, i) => (
+        {commissions.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无分成记录</p>}
+        {commissions.map((c, i) => (
           <div key={i} className="p-3 flex items-center justify-between">
             <div>
-              <div className="text-sm">{c.level === 1 ? "一级分成" : "二级分成"}</div>
+              <div className="text-sm">代理分成</div>
               <div className="text-xs text-muted-foreground">{fmtDate(c.created_at)}</div>
             </div>
             <div className="text-success font-semibold">+{fmtMoney(c.amount)}</div>
