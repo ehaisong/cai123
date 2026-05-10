@@ -46,6 +46,7 @@ function SharePage() {
     const load = async () => {
       if (!user) { setLoading(false); return; }
       setOrigin(window.location.origin);
+      preloadRelayBase();
       const [arRes, pRes, cfgRes] = await Promise.all([
         supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
