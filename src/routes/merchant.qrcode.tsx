@@ -22,17 +22,16 @@ function MerchantQR() {
 function MerchantQRInner() {
   const { user } = useAuth();
   const [merchant, setMerchant] = useState<any>(null);
-  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
-    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
+    preloadRelayBase();
     if (!user) return;
     supabase.from("merchants").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => setMerchant(data));
   }, [user?.id]);
 
   if (!merchant) return <div className="h5-shell"><PageHeader title="推广二维码" /><p className="text-center py-12 text-sm text-muted-foreground">加载中…</p></div>;
 
-  const url = `${origin}/shop/${merchant.id}?ref=M_${merchant.id}`;
+  const url = buildShareUrl({ ref: `M_${merchant.id}`, to: `/shop/${merchant.id}` });
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
