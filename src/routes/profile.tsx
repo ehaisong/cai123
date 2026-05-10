@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useLogout } from "@/lib/use-logout";
 import { BottomNav } from "@/components/h5/bottom-nav";
-import { ChevronRight, UserCircle2, Sparkles, Store, Shield } from "lucide-react";
+import { ChevronRight, UserCircle2, Sparkles, Store, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
@@ -64,6 +64,7 @@ function ProfilePage() {
 
   const isMerchant = roles.includes("merchant");
   const isAdmin = roles.includes("admin");
+  const isAgent = roles.includes("agent");
 
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-background">
@@ -85,8 +86,14 @@ function ProfilePage() {
       </div>
 
       {/* 后台入口（仅角色可见） */}
-      {(isMerchant || isAdmin) && (
+      {(isAgent || isMerchant || isAdmin) && (
         <div className="mt-3 bg-card divide-y divide-border">
+          {isAgent && (
+            <Link to="/agent" className="flex items-center justify-between px-4 py-4 text-sm">
+              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-success" /> 进入代理中心</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          )}
           {isMerchant && (
             <Link to="/merchant" className="flex items-center justify-between px-4 py-4 text-sm">
               <span className="flex items-center gap-2"><Store className="w-4 h-4 text-info" /> 进入商家后台</span>
