@@ -76,14 +76,32 @@ function HomeRouter() {
         }
       }
 
+      // 0) 取出待绑定推广码：URL ref 优先，其次 localStorage 中暂存的 pending_referrer
+      //    场景：未登录用户扫了代理二维码 → 我们先把 ref 存到 localStorage，
+      //    然后跳店铺/登录页；用户完成登录后再消费它，确保上线绑定不丢失。
+      let pendingRef: string | null = null;
+      try { pendingRef = localStorage.getItem("pending_referrer"); } catch {}
+
+      // 未登录但带了 ref：暂存，待登录后再绑
+      if (search.ref && !user) {
+        try { localStorage.setItem("pending_referrer", search.ref); } catch {}
+      }
+
       // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
       let target: string | null = null;
       let refResolved = true; // 没有 ref 时视为"无需解析"，不算失败
+
+      // 已登录但 URL 无 ref：尝试消费 pending_referrer（不重定向，绑定后清掉）
+      if (!search.ref && user && pendingRef) {
+        try { await supabase.rpc("bind_referrer", { _agent_code: pendingRef }); } catch {}
+        try { localStorage.removeItem("pending_referrer"); } catch {}
+      }
 
       if (search.ref) {
         refResolved = false;
         if (user) {
           await supabase.rpc("bind_referrer", { _agent_code: search.ref });
+          try { localStorage.removeItem("pending_referrer"); } catch {}
         }
         // 通过 SECURITY DEFINER 函数解析推广码，避免 RLS 限制（未登录或非本人时无法读取 agent_relations）
         const { data: resolved } = await supabase.rpc("resolve_ref_to_merchant", { _ref: search.ref });
