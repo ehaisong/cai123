@@ -1,8 +1,9 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { PaymentService } from "@/lib/payment-service";
+import { bumpInAppNav } from "@/lib/nav-history";
 
 import appCss from "../styles.css?url";
 
