@@ -22,7 +22,60 @@ function Inner() {
       <main className="flex-1 px-3 py-3 space-y-3">
         <WalletPurchaseToggle />
         <DefaultShopSelector />
+        <ShareRelaySetting />
       </main>
+    </div>
+  );
+}
+
+function ShareRelaySetting() {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase.from("app_settings").select("value").eq("key", "share_relay_base_url").maybeSingle()
+      .then(({ data }) => {
+        const v = (data?.value as any)?.url;
+        setUrl(typeof v === "string" ? v : "https://wx.lovclaw.com");
+        setLoading(false);
+      });
+  }, []);
+
+  const save = async () => {
+    const trimmed = url.trim().replace(/\/+$/, "");
+    if (!/^https?:\/\//i.test(trimmed)) { toast.error("请输入完整 URL（含 https://）"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("app_settings").upsert(
+      { key: "share_relay_base_url", value: { url: trimmed } as any, updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+    setSaving(false);
+    if (error) { reportRpcError(error, { op: "app_settings.upsert(share_relay_base_url)", scope: "AdminSettings" }); toast.error("保存失败"); return; }
+    toast.success("已保存，下次生成的二维码会指向新中转站");
+  };
+
+  return (
+    <div className="bg-card rounded-md p-4 space-y-2">
+      <h3 className="text-sm font-medium">分享中转站</h3>
+      <p className="text-xs text-muted-foreground">
+        所有商家/代理/招募二维码都会先指向中转站，再由中转站 302 跳转到当前生效的生产域名。
+        当某个生产域名被微信屏蔽时，在中转站后台切换主域名即可，已发出的二维码依然可用。
+      </p>
+      {loading ? <p className="text-xs text-muted-foreground">加载中…</p> : (
+        <div className="flex gap-2">
+          <input
+            className="flex-1 px-3 py-2 text-sm rounded-md border border-border bg-background"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://wx.lovclaw.com"
+          />
+          <Button size="sm" onClick={save} disabled={saving}>{saving ? "保存中…" : "保存"}</Button>
+        </div>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        二维码格式：<code>{url || "https://wx.lovclaw.com"}/r?ref=&lt;推广码&gt;&amp;to=&lt;路径&gt;</code>
+      </p>
     </div>
   );
 }

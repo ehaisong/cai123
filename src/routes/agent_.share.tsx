@@ -9,6 +9,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
 import { Copy, Share2, Download, Store, Users, ArrowRightLeft } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
+import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/agent_/share")({
   component: SharePageGuarded,
@@ -37,14 +38,14 @@ function SharePage() {
   const [profile, setProfile] = useState<any>(null);
   const [merchant, setMerchant] = useState<MerchantBrief | null>(null);
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number } | null>(null);
-  const [origin, setOrigin] = useState("");
+  
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>("agent");
 
   useEffect(() => {
     const load = async () => {
       if (!user) { setLoading(false); return; }
-      setOrigin(window.location.origin);
+      preloadRelayBase();
       const [arRes, pRes, cfgRes] = await Promise.all([
         supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
@@ -90,10 +91,12 @@ function SharePage() {
   }
 
   const code = info.agent_code ?? profile?.user_code ?? "";
-  // 代理推广码：?ref=<user_code>，会自动绑定为我的下级 + 解析到我的归属商家
+  // 二维码统一指向中转站，由中转站 302 到当前生效的生产域名，
+  // 这样即使某个生产域名被微信屏蔽，已发出的二维码依然可用。
+  // 代理推广码：?ref=<user_code>，登陆后自动绑定为我的下级 + 解析到归属商家
   // 店铺直码：?ref=M_<merchant_id>，仅导流到店铺，不建立分销关系
-  const agentUrl = `${origin}/?ref=${code}`;
-  const shopUrl = merchant ? `${origin}/?ref=M_${merchant.id}` : "";
+  const agentUrl = buildShareUrl({ ref: code });
+  const shopUrl = merchant ? buildShareUrl({ ref: `M_${merchant.id}`, to: `/shop/${merchant.id}` }) : "";
   const url = mode === "agent" ? agentUrl : shopUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";

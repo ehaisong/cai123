@@ -1,77 +1,88 @@
-# 直接对接 3ypay 支付接入计划
+## 目标
 
-不再依赖中转网关 `gw.nrnc.net`，直接从我们自己的 TanStack Start 服务端调用 3ypay `https://openapi.3ypay.com`，签名/验签都在本站完成。
+把所有商家 / 代理 / 招募二维码从"直接指向生产域名"改为"指向中转站 wx.lovclaw.com"，再由中转站 302 到当前生效的生产域名。这样即使某个生产域名被微信屏蔽，运营在中转站后台切换主域名后，**之前已发出去的二维码依然有效**。
 
-## 一、最终用户流程
+---
 
-### 微信内（JSAPI）
-1. 用户在微信内点"立即购买"。
-2. 前端 → `GET /api/public/pay/wx-start?orderNo=…` ，服务端 302 跳转到微信 OAuth：
-   `https://open.weixin.qq.com/connect/oauth2/authorize?appid={公众号AppId}&redirect_uri={站点}/api/public/pay/wx-callback&response_type=code&scope=snsapi_base&state={orderNo}#wechat_redirect`
-3. 微信回调 `/api/public/pay/wx-callback?code=…&state=orderNo`：
-   - 用 code 换 `openid`（缓存 5 分钟，避免来回扫表）
-   - 用 RSA2 签名调用 3ypay `/openapi/order/pay/create`，参数：
-     `productCode=WeChat-PAY, paySubType=JSAPI, extra:{ subAppId, userId: openid }`
-   - 取响应 `data.payInfo`（含 appId/timeStamp/nonceStr/package/signType/paySign）
-   - 302 跳转到 `/pay/invoke?orderNo=…&payInfo=…`
-4. `/pay/invoke` 页面执行 `WeixinJSBridge.invoke('getBrandWCPayRequest', payInfo)` 唤起微信支付；成功后跳到 `/pay/success?orderNo=…`，前端继续轮询订单状态。
+## 一、本站这边要做的改动
 
-### 微信外浏览器（支付宝 APP / H5）
-1. 前端 → `POST /api/public/pay/create { orderNo, payType:'alipay' }`。
-2. 服务端签名调用 3ypay：`productCode=Ali-PAY, paySubType=H5`，得到 `payDataType=payUrl, payInfo={alipayUrl}`。
-3. 服务端返回 `{ payUrl }`，前端 `location.href = payUrl` → 自动唤起支付宝 APP（无 APP 时降级到 H5 网页）。
+### 1. 新增统一二维码 URL 生成函数
+新建 `src/lib/share-url.ts`，导出：
 
-### 异步通知
-- 3ypay → `POST /api/public/pay-notify`：用平台公钥 RSA2 验签 → 校验金额 → 调用现有 `mark_payment_paid` RPC → 返回 `{"code":"SUCCESS"}`。
+```ts
+buildShareUrl({ ref?, to? })  // 返回 https://wx.lovclaw.com/r?ref=XXX&to=%2Fshop%2Fxxx
+```
 
-## 二、需要用户提供的密钥（用 `secrets--add_secret` 收集）
+- 中转站 base 默认硬编码 `https://wx.lovclaw.com`，同时支持通过 `app_settings.share_relay_base_url` 覆盖（管理员可改，方便将来更换中转站）
+- `ref`：代理推广码 / `M_<merchantId>` / `admin`
+- `to`：可选目标相对路径（如 `/shop/<merchantId>`、`/apply`）；中转站会拼到选中的生产域名后
 
-| 名称 | 用途 | 哪里取 |
+### 2. 改造现有 4 个二维码生成入口
+全部改用 `buildShareUrl`：
+
+| 文件 | 当前 URL | 改为 |
 |---|---|---|
-| `THREEYPAY_APP_ID` | 3ypay 应用 ID | 商户后台-应用管理 |
-| `THREEYPAY_MCH_PRIVATE_KEY` | 商户 RSA2 私钥（PKCS#8 PEM） | 自己生成密钥对，公钥上传到 3ypay |
-| `THREEYPAY_PLATFORM_PUBLIC_KEY` | 3ypay 平台 RSA 公钥 | 商户后台-密钥管理 |
-| `WECHAT_OA_APPID` | 微信公众号 AppId（用作 subAppId + OAuth） | 微信公众平台 |
-| `WECHAT_OA_SECRET` | 公众号 AppSecret（换 openid） | 微信公众平台 |
+| `src/routes/agent_.share.tsx`（代理推广码） | `${origin}/?ref=<code>` | `buildShareUrl({ ref: code })` |
+| `src/routes/agent_.share.tsx`（店铺直推码） | `${origin}/?ref=M_<mid>` | `buildShareUrl({ ref: 'M_'+mid, to: '/shop/'+mid })` |
+| `src/routes/merchant.qrcode.tsx` | `${origin}/shop/<mid>?ref=M_<mid>` | `buildShareUrl({ ref: 'M_'+mid, to: '/shop/'+mid })` |
+| `src/routes/admin.merchant-recruit.tsx` | `${origin}/apply?ref=admin` | `buildShareUrl({ ref: 'admin', to: '/apply' })` |
 
-## 三、要写/改的文件
+显示在二维码下方的"链接预览"也同步改成中转站 URL。
 
-新增：
-- `src/lib/threeypay.server.ts` — RSA2 签名/验签、`createOrder()`、`queryOrder()`、`exchangeWxOpenid()`
-- `src/routes/api.public.pay.create.ts` — 支付宝 H5 创建订单
-- `src/routes/api.public.pay.wx-start.ts` — 跳转微信 OAuth
-- `src/routes/api.public.pay.wx-callback.ts` — 拿 code → openid → 创建 JSAPI 订单 → 跳 /pay/invoke
-- `src/routes/pay.invoke.tsx` — 执行 `WeixinJSBridge.invoke`
+### 3. 管理后台加一个迷你设置入口（可选但推荐）
+在 `admin.settings.tsx` 增加一个"分享中转站"小卡片，仅一个字段：
+- **分享中转站 Base URL**（默认 `https://wx.lovclaw.com`）
 
-改动：
-- `src/lib/payment-service.ts` — 删除 `gw.nrnc.net` 调用；微信走 `wx-start`，支付宝走 `pay/create`
-- `src/routes/api.public.pay-notify.ts` — 接收 3ypay 通知字段（`mchOrderNo, payOrderNo, state, payAmount, sign`），RSA2 验签，按 state=3 标记 paid
-- `src/routes/pay.test.tsx` — 文案微调（提示直接对接 3ypay）
+存到 `app_settings` 的 `share_relay_base_url` key。万一以后要换中转站域名，不用发版。
 
-不动：
-- 数据库（`payment_orders`、`mark_payment_paid` RPC、`create_payment_order`）保持现状
-- `/pay/success` 轮询逻辑保持现状
-- `/product/$productId` 购买逻辑（走钱包余额）保持现状 —— 等测试支付通过后再决定是否改造为"先充值再下单"或"下单直接拉起 3ypay"
+### 4. 不动的部分
+- 生产域名上现有的 `/?ref=` 解析逻辑（`src/routes/index.tsx`）保持不变 —— 中转站 302 过来时依旧带 `ref`，已有的"匿名暂存 → 登录后 bind_referrer"链路完全复用
+- `auth-context` 里的 `SIGNED_IN` 自动绑定逻辑不动
+- 微信/手机登录走中转站的现有流程不动
 
-## 四、技术细节
+---
 
-- 签名：把 appId/version/timestamp/requestId/signType/charset/bizContent(JSON 字符串) 按字典序拼 `key=value&…`，RSA2(SHA256withRSA) 私钥签名 → base64
-- 验签同理，平台公钥
-- `clientIp`：从 `x-forwarded-for` 取
-- `notifyUrl`：固定为 `https://66cai.site/api/public/pay-notify`
-- WeChat JSAPI subject 不能含特殊字符；保留前 32 字
-- `redirectUrl`：`/pay/success?orderNo=…`
+## 二、中转站 wx.lovclaw.com 这边的最小实现规范（交给中转站项目实现）
 
-## 五、验收
+### 路由：`GET /r`
 
-1. 微信内打开 `/pay/test` → 微信支付 → 走完 OAuth → 唤起微信支付窗 → 成功后 /pay/success 显示已支付
-2. 浏览器（非微信）打开 `/pay/test` → 支付宝支付 → 唤起支付宝 APP → 成功后回跳 /pay/success
-3. 服务端日志能看到 3ypay 通知，并且订单在数据库被标记 `paid`
+**入参（query）：**
+- `ref`（可选）：推广码，原样透传
+- `to`（可选）：目标相对路径，如 `/shop/abc123`、`/apply`。若缺省则视为 `/`
+- 其它 query 参数全部原样透传
 
-测试通过后再把同样的 `PaymentService.pay()` 接到 `/product/$productId` 的购买按钮。
+**逻辑：**
+1. 从中转站自身配置读取 `domains` 列表 + `active` 当前主域名（例：`["66cai.site","cai123.lovable.app"]`，active = `66cai.site`）
+2. 拼接目标 URL：`https://{active}{to || '/'}` + 合并所有 query
+3. 返回 `302` 跳转
+4. 如果检测到 UA 是微信浏览器，可在中转页停留半秒展示一段"正在跳转，请稍候…"防止某些微信版本对 302 的拦截（可选优化）
 
-## 六、待你确认
+**中转站需要的后台能力（中转站自己实现，不在本站）：**
+- 一个域名列表配置：`[{ domain, enabled, isPrimary }]`
+- 切换主域名一键操作；被屏蔽的域名置为 `enabled=false`
+- 建议加一个简单的探活：定期请求每个域名的 `/health`，自动把 5xx/超时的域名标灰，但**只切换主域名要求人工确认**
 
-1. 五个密钥（上表）是否都已就绪？我会在你确认计划后用安全表单逐个收集。
-2. 微信公众号 OAuth 回调域名需要在公众号后台"网页授权域名"白名单里加 `66cai.site`（不带协议、不带路径）—— 你那边能配置吗？
-3. 3ypay 后台需要配置授权目录 `https://66cai.site/`，并在商户后台绑定上面那个公众号 AppId 作为 subAppId。
+**安全：**
+- `to` 必须以 `/` 开头且不含 `://`，防止开放跳转漏洞
+- `to` 长度限制（≤ 200 字符）
+- query 透传时丢弃 `Host`、`Origin` 等敏感字段（query 本就不会有，主要是 header 不要透传）
+
+### 可选附加路由：`GET /health`
+返回 `{ ok: true, active: "66cai.site", ts: ... }`，方便人工/监控查看当前指向。
+
+---
+
+## 三、回滚 / 兼容性
+
+- 旧二维码：按你的选择，**不做兼容**。生产域名上 `/?ref=` 解析逻辑保留（不删除），所以未被屏蔽的旧域名上的旧码还能用；被屏蔽的旧码自然失效
+- 本次发版后，所有"分享/下载/复制"得到的链接都自动是中转站链接
+
+---
+
+## 技术细节备忘
+
+- 中转站 base 取值优先级：`app_settings.share_relay_base_url` > 硬编码 `https://wx.lovclaw.com`
+- `buildShareUrl` 内部用 `URL` + `searchParams` 组装，避免拼接错误
+- `share-url.ts` 异步读取 setting 一次后缓存到 module 级变量，避免每次生成二维码都查库；首次未加载完用默认值
+- 二维码下方"链接预览"展示中转站短链，让用户/代理一眼看出指向的是中转站
+- 不需要数据库迁移（除非你希望把 `share_relay_base_url` 显式插入一条默认值；用 `useSettingObject` 的 defaults 机制就够了）

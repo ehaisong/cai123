@@ -6,6 +6,7 @@ import { RouteGuard } from "@/components/route-guard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
+import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/admin/merchant-recruit")({
   component: () => (
@@ -16,13 +17,13 @@ export const Route = createFileRoute("/admin/merchant-recruit")({
 });
 
 function Inner() {
-  const [origin, setOrigin] = useState("");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
+    preloadRelayBase().finally(() => setReady(true));
   }, []);
 
-  const url = `${origin}/apply?ref=admin`;
+  const url = buildShareUrl({ ref: "admin", to: "/apply" });
 
   const copy = async () => {
     try {
@@ -42,7 +43,7 @@ function Inner() {
         <p className="text-xs text-muted-foreground mb-4 text-center">
           分享给意向商家，扫码即可登录并提交开店申请
         </p>
-        {origin && (
+        {ready && (
           <div className="bg-white p-4 rounded-xl border border-border">
             <QRCodeSVG value={url} size={240} level="M" />
           </div>
