@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       sid = start.json.sid as string;
     }
 
-    const send = await relay("/api/public/sms/send", { sid, phone });
+    const send = await relay("/api/public/sms/send", { sid, phone: `+86${phone}` });
     if (!send.json?.ok) {
       console.error("[sms-send] send fail", send);
       const msg = send.json?.error === "rate_limited"

@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     if (!jwt) return j({ ok: false, message: "未登录" }, 401);
 
     // 验证短信
-    const verify = await relay("/api/public/sms/verify", { sid, phone, code });
+    const verify = await relay("/api/public/sms/verify", { sid, phone: `+86${phone}`, code });
     if (!verify.json?.ok || !verify.json?.ticket) {
       const map: Record<string, string> = {
         bad_code: "验证码错误", too_many_attempts: "尝试次数过多，请重新获取",
