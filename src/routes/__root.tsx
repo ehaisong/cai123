@@ -1,8 +1,9 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { PaymentService } from "@/lib/payment-service";
+import { bumpInAppNav } from "@/lib/nav-history";
 
 import appCss from "../styles.css?url";
 
@@ -62,10 +63,18 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const router = useRouter();
   useEffect(() => {
     void PaymentService.resumeFromWxOAuthIfAny();
     PaymentService.checkPendingAlipay();
   }, []);
+  useEffect(() => {
+    // 每次站内 SPA 导航完成后 +1，作为"是否可安全 history.back()"的判据
+    const unsub = router.subscribe("onResolved", () => {
+      bumpInAppNav();
+    });
+    return () => unsub();
+  }, [router]);
   return (
     <AuthProvider>
       <Outlet />
