@@ -17,13 +17,13 @@ export const Route = createFileRoute("/admin/merchant-recruit")({
 });
 
 function Inner() {
-  const [origin, setOrigin] = useState("");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
+    preloadRelayBase().finally(() => setReady(true));
   }, []);
 
-  const url = `${origin}/apply?ref=admin`;
+  const url = buildShareUrl({ ref: "admin", to: "/apply" });
 
   const copy = async () => {
     try {
