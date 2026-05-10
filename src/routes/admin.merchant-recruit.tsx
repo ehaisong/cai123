@@ -6,6 +6,7 @@ import { RouteGuard } from "@/components/route-guard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
+import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/admin/merchant-recruit")({
   component: () => (
