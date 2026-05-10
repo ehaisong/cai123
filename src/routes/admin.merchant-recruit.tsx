@@ -43,7 +43,7 @@ function Inner() {
         <p className="text-xs text-muted-foreground mb-4 text-center">
           分享给意向商家，扫码即可登录并提交开店申请
         </p>
-        {origin && (
+        {ready && (
           <div className="bg-white p-4 rounded-xl border border-border">
             <QRCodeSVG value={url} size={240} level="M" />
           </div>
