@@ -9,6 +9,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
 import { Copy, Share2, Download, Store, Users, ArrowRightLeft } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
+import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/agent_/share")({
   component: SharePageGuarded,
