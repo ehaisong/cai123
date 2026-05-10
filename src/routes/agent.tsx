@@ -32,8 +32,6 @@ function AgentPageGuarded() {
   );
 }
 
-type Tab = "all" | "1" | "2";
-
 function AgentPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -41,10 +39,9 @@ function AgentPage() {
   const [profile, setProfile] = useState<any>(null);
   const [commissions, setCommissions] = useState<any[]>([]);
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
-  const [counts, setCounts] = useState<{ l1: number; l2: number }>({ l1: 0, l2: 0 });
+  const [counts, setCounts] = useState<{ l1: number }>({ l1: 0 });
   const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
-  
-  const [tab, setTab] = useState<Tab>("all");
+
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
