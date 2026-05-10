@@ -190,55 +190,30 @@ function AgentPage() {
       <div className="m-3 rounded-2xl p-5 text-white" style={{ background: "var(--gradient-orange)" }}>
         <div className="text-sm opacity-90">累计分成（元）</div>
         <div className="text-3xl font-bold mt-1">{totals.all.toFixed(2)}</div>
-        <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
-          <div className="bg-white/15 rounded-lg p-2">
-            <div className="opacity-80">一级</div>
-            <div className="text-base font-semibold mt-0.5">¥{totals.l1.toFixed(2)}</div>
-          </div>
-          <div className="bg-white/15 rounded-lg p-2">
-            <div className="opacity-80">二级</div>
-            <div className="text-base font-semibold mt-0.5">¥{totals.l2.toFixed(2)}</div>
-          </div>
-        </div>
       </div>
 
-      {/* 业绩看板：4 个 KPI */}
-      <div className="mx-3 grid grid-cols-2 gap-3">
-        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-warning/10 text-warning flex items-center justify-center">
-            <Wallet className="h-5 w-5" />
+      {/* 业绩看板：3 个 KPI（仅一级代理） */}
+      <div className="mx-3 grid grid-cols-3 gap-3">
+        <div className="bg-card rounded-xl p-3 flex flex-col gap-1">
+          <div className="h-9 w-9 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+            <Wallet className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">累计返佣</div>
-            <div className="text-lg font-bold">¥{totals.all.toFixed(2)}</div>
-          </div>
+          <div className="text-[11px] text-muted-foreground">累计返佣</div>
+          <div className="text-base font-bold">¥{totals.all.toFixed(2)}</div>
         </div>
-        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
-            <CalendarDays className="h-5 w-5" />
+        <div className="bg-card rounded-xl p-3 flex flex-col gap-1">
+          <div className="h-9 w-9 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <CalendarDays className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">今日收益</div>
-            <div className="text-lg font-bold">¥{todayEarnings.toFixed(2)}</div>
-          </div>
+          <div className="text-[11px] text-muted-foreground">今日收益</div>
+          <div className="text-base font-bold">¥{todayEarnings.toFixed(2)}</div>
         </div>
-        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex items-center gap-3 active:opacity-70">
-          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-            <Users className="h-5 w-5" />
+        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex flex-col gap-1 active:opacity-70">
+          <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Users className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">直接邀请</div>
-            <div className="text-lg font-bold">{counts.l1}</div>
-          </div>
-        </Link>
-        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex items-center gap-3 active:opacity-70">
-          <div className="h-10 w-10 rounded-full bg-success/10 text-success flex items-center justify-center">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">间接邀请</div>
-            <div className="text-lg font-bold">{counts.l2}</div>
-          </div>
+          <div className="text-[11px] text-muted-foreground">引流客户</div>
+          <div className="text-base font-bold">{counts.l1}</div>
         </Link>
       </div>
 
