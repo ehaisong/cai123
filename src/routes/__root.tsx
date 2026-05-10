@@ -63,10 +63,18 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const router = useRouter();
   useEffect(() => {
     void PaymentService.resumeFromWxOAuthIfAny();
     PaymentService.checkPendingAlipay();
   }, []);
+  useEffect(() => {
+    // 每次站内 SPA 导航完成后 +1，作为"是否可安全 history.back()"的判据
+    const unsub = router.subscribe("onResolved", () => {
+      bumpInAppNav();
+    });
+    return () => unsub();
+  }, [router]);
   return (
     <AuthProvider>
       <Outlet />
