@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
-import { Users, TrendingUp, Share2, Wallet, CalendarDays, ArrowRightLeft, Store, ShieldCheck } from "lucide-react";
+import { Users, Share2, Wallet, CalendarDays, ArrowRightLeft, Store, ShieldCheck } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -32,8 +32,6 @@ function AgentPageGuarded() {
   );
 }
 
-type Tab = "all" | "1" | "2";
-
 function AgentPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -41,10 +39,9 @@ function AgentPage() {
   const [profile, setProfile] = useState<any>(null);
   const [commissions, setCommissions] = useState<any[]>([]);
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
-  const [counts, setCounts] = useState<{ l1: number; l2: number }>({ l1: 0, l2: 0 });
+  const [counts, setCounts] = useState<{ l1: number }>({ l1: 0 });
   const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
-  
-  const [tab, setTab] = useState<Tab>("all");
+
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -72,14 +69,13 @@ function AgentPage() {
     setCommissions(cRes.data ?? []);
     setConfig(cfgRes.data ?? null);
 
-    // 邀请人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
+    // 引流人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
     if (pRes.data?.id) {
-      const [l1, l2, recentRel] = await Promise.all([
+      const [l1, recentRel] = await Promise.all([
         supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_id", pRes.data.id),
-        supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_l2_id", pRes.data.id),
-        supabase.from("agent_relations").select("created_at").or(`upline_id.eq.${pRes.data.id},upline_l2_id.eq.${pRes.data.id}`).gte("created_at", since14.toISOString()),
+        supabase.from("agent_relations").select("created_at").eq("upline_id", pRes.data.id).gte("created_at", since14.toISOString()),
       ]);
-      setCounts({ l1: l1.count ?? 0, l2: l2.count ?? 0 });
+      setCounts({ l1: l1.count ?? 0 });
 
       // 按日聚合
       const buckets: Record<string, number> = {};
@@ -133,10 +129,6 @@ function AgentPage() {
     [recentInvitees],
   );
 
-  const filtered = useMemo(
-    () => (tab === "all" ? commissions : commissions.filter((c) => String(c.level) === tab)),
-    [commissions, tab],
-  );
 
   if (authLoading || loading) {
     return <div className="h5-shell"><PageHeader title="代理推广" /><p className="text-center py-12 text-sm text-muted-foreground">加载中…</p></div>;
@@ -162,14 +154,10 @@ function AgentPage() {
             请先进入您要代理的商家店铺，在店铺页点击「申请成为本店代理」。<br />
             一个代理只能归属一家商家。
           </p>
-          <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
-            <div className="bg-muted rounded-lg p-3">
-              <div className="text-muted-foreground">一级分成</div>
+          <div className="mb-4 text-xs">
+            <div className="bg-muted rounded-lg p-3 inline-block">
+              <div className="text-muted-foreground">代理分成比例</div>
               <div className="text-primary text-lg font-bold mt-1">{l1Pct}%</div>
-            </div>
-            <div className="bg-muted rounded-lg p-3">
-              <div className="text-muted-foreground">二级分成</div>
-              <div className="text-primary text-lg font-bold mt-1">{l2Pct}%</div>
             </div>
           </div>
           <Button className="w-full" onClick={() => navigate({ to: "/" })}>前往店铺</Button>
@@ -194,55 +182,30 @@ function AgentPage() {
       <div className="m-3 rounded-2xl p-5 text-white" style={{ background: "var(--gradient-orange)" }}>
         <div className="text-sm opacity-90">累计分成（元）</div>
         <div className="text-3xl font-bold mt-1">{totals.all.toFixed(2)}</div>
-        <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
-          <div className="bg-white/15 rounded-lg p-2">
-            <div className="opacity-80">一级</div>
-            <div className="text-base font-semibold mt-0.5">¥{totals.l1.toFixed(2)}</div>
-          </div>
-          <div className="bg-white/15 rounded-lg p-2">
-            <div className="opacity-80">二级</div>
-            <div className="text-base font-semibold mt-0.5">¥{totals.l2.toFixed(2)}</div>
-          </div>
-        </div>
       </div>
 
-      {/* 业绩看板：4 个 KPI */}
-      <div className="mx-3 grid grid-cols-2 gap-3">
-        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-warning/10 text-warning flex items-center justify-center">
-            <Wallet className="h-5 w-5" />
+      {/* 业绩看板：3 个 KPI（仅一级代理） */}
+      <div className="mx-3 grid grid-cols-3 gap-3">
+        <div className="bg-card rounded-xl p-3 flex flex-col gap-1">
+          <div className="h-9 w-9 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+            <Wallet className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">累计返佣</div>
-            <div className="text-lg font-bold">¥{totals.all.toFixed(2)}</div>
-          </div>
+          <div className="text-[11px] text-muted-foreground">累计返佣</div>
+          <div className="text-base font-bold">¥{totals.all.toFixed(2)}</div>
         </div>
-        <div className="bg-card rounded-xl p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
-            <CalendarDays className="h-5 w-5" />
+        <div className="bg-card rounded-xl p-3 flex flex-col gap-1">
+          <div className="h-9 w-9 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <CalendarDays className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">今日收益</div>
-            <div className="text-lg font-bold">¥{todayEarnings.toFixed(2)}</div>
-          </div>
+          <div className="text-[11px] text-muted-foreground">今日收益</div>
+          <div className="text-base font-bold">¥{todayEarnings.toFixed(2)}</div>
         </div>
-        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex items-center gap-3 active:opacity-70">
-          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-            <Users className="h-5 w-5" />
+        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex flex-col gap-1 active:opacity-70">
+          <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Users className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">直接邀请</div>
-            <div className="text-lg font-bold">{counts.l1}</div>
-          </div>
-        </Link>
-        <Link to="/agent/invitees" className="bg-card rounded-xl p-3 flex items-center gap-3 active:opacity-70">
-          <div className="h-10 w-10 rounded-full bg-success/10 text-success flex items-center justify-center">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">间接邀请</div>
-            <div className="text-lg font-bold">{counts.l2}</div>
-          </div>
+          <div className="text-[11px] text-muted-foreground">引流客户</div>
+          <div className="text-base font-bold">{counts.l1}</div>
         </Link>
       </div>
 
@@ -345,34 +308,19 @@ function AgentPage() {
       </div>
 
       <div className="px-3 pt-3 text-[11px] text-muted-foreground">
-        当前分成规则：一级 <span className="text-primary font-semibold">{l1Pct}%</span> · 二级 <span className="text-primary font-semibold">{l2Pct}%</span> · 推广码 <span className="font-mono">{code}</span>
+        当前分成规则：代理 <span className="text-primary font-semibold">{l1Pct}%</span> · 推广码 <span className="font-mono">{code}</span>
       </div>
 
       {/* 分成记录 */}
-      <div className="px-3 pt-1 pb-2 flex items-center justify-between">
+      <div className="px-3 pt-3 pb-2">
         <div className="text-sm text-muted-foreground">分成记录</div>
-        <div className="flex gap-1 text-xs">
-          {([
-            { k: "all", l: "全部" },
-            { k: "1", l: "一级" },
-            { k: "2", l: "二级" },
-          ] as const).map((t) => (
-            <button
-              key={t.k}
-              onClick={() => setTab(t.k)}
-              className={`px-2 py-0.5 rounded ${tab === t.k ? "bg-primary text-primary-foreground" : "text-muted-foreground bg-muted"}`}
-            >
-              {t.l}
-            </button>
-          ))}
-        </div>
       </div>
       <div className="bg-card mx-3 mb-6 rounded-xl divide-y divide-border">
-        {filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无分成记录</p>}
-        {filtered.map((c, i) => (
+        {commissions.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无分成记录</p>}
+        {commissions.map((c, i) => (
           <div key={i} className="p-3 flex items-center justify-between">
             <div>
-              <div className="text-sm">{c.level === 1 ? "一级分成" : "二级分成"}</div>
+              <div className="text-sm">代理分成</div>
               <div className="text-xs text-muted-foreground">{fmtDate(c.created_at)}</div>
             </div>
             <div className="text-success font-semibold">+{fmtMoney(c.amount)}</div>
