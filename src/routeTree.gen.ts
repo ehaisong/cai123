@@ -44,6 +44,7 @@ import { Route as LoginIframeBridgeRouteImport } from './routes/login.iframe-bri
 import { Route as LoginDoneRouteImport } from './routes/login.done'
 import { Route as AuthStaffLoginRouteImport } from './routes/auth.staff-login'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
+import { Route as ApplyAgentMerchantIdRouteImport } from './routes/apply-agent.$merchantId'
 import { Route as AgentShareRouteImport } from './routes/agent_.share'
 import { Route as AgentMerchantsRouteImport } from './routes/agent_.merchants'
 import { Route as AgentInviteesRouteImport } from './routes/agent_.invitees'
@@ -245,6 +246,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplyAgentMerchantIdRoute = ApplyAgentMerchantIdRouteImport.update({
+  id: '/apply-agent/$merchantId',
+  path: '/apply-agent/$merchantId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentShareRoute = AgentShareRouteImport.update({
   id: '/agent_/share',
   path: '/agent/share',
@@ -406,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
+  '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
   '/login/done': typeof LoginDoneRoute
@@ -468,6 +475,7 @@ export interface FileRoutesByTo {
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
+  '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
   '/login/done': typeof LoginDoneRoute
@@ -531,6 +539,7 @@ export interface FileRoutesById {
   '/agent_/invitees': typeof AgentInviteesRoute
   '/agent_/merchants': typeof AgentMerchantsRoute
   '/agent_/share': typeof AgentShareRoute
+  '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
   '/login/done': typeof LoginDoneRoute
@@ -595,6 +604,7 @@ export interface FileRouteTypes {
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
+    | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
     | '/login/done'
@@ -657,6 +667,7 @@ export interface FileRouteTypes {
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
+    | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
     | '/login/done'
@@ -719,6 +730,7 @@ export interface FileRouteTypes {
     | '/agent_/invitees'
     | '/agent_/merchants'
     | '/agent_/share'
+    | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
     | '/login/done'
@@ -782,6 +794,7 @@ export interface RootRouteChildren {
   AgentInviteesRoute: typeof AgentInviteesRoute
   AgentMerchantsRoute: typeof AgentMerchantsRoute
   AgentShareRoute: typeof AgentShareRoute
+  ApplyAgentMerchantIdRoute: typeof ApplyAgentMerchantIdRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthStaffLoginRoute: typeof AuthStaffLoginRoute
   LoginDoneRoute: typeof LoginDoneRoute
@@ -1060,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apply-agent/$merchantId': {
+      id: '/apply-agent/$merchantId'
+      path: '/apply-agent/$merchantId'
+      fullPath: '/apply-agent/$merchantId'
+      preLoaderRoute: typeof ApplyAgentMerchantIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agent_/share': {
       id: '/agent_/share'
       path: '/agent/share'
@@ -1281,6 +1301,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentInviteesRoute: AgentInviteesRoute,
   AgentMerchantsRoute: AgentMerchantsRoute,
   AgentShareRoute: AgentShareRoute,
+  ApplyAgentMerchantIdRoute: ApplyAgentMerchantIdRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthStaffLoginRoute: AuthStaffLoginRoute,
   LoginDoneRoute: LoginDoneRoute,
