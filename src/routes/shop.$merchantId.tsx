@@ -381,12 +381,7 @@ function AgentCTA({
       </div>
     );
   }
-  return (
-    <div className="mx-3 mt-3 rounded-xl bg-primary/5 px-3 py-3 text-xs">
-      <p className="text-foreground/80 mb-2">想分享本店商品赚取佣金？</p>
-      <Button size="sm" disabled={busy} onClick={onBecome} className="w-full">
-        申请成为本店代理
-      </Button>
-    </div>
-  );
+  // 普通用户：不再展示「申请成为本店代理」入口；
+  // 代理只能由商家的「代理招募二维码」走审核流程产生。
+  return null;
 }

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2 } from "lucide-react";
+import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
 import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
@@ -86,6 +86,8 @@ function MerchantHomeInner() {
         <Cell icon={<Package className="w-6 h-6 text-info" />} label="商品管理" to="/merchant/products" />
         
         <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
+        <Cell icon={<UserPlus className="w-6 h-6 text-primary" />} label="代理招募码" to="/merchant/agent-recruit" />
+        <Cell icon={<ClipboardCheck className="w-6 h-6 text-warning" />} label="代理申请审核" to="/merchant/agent-applications" />
         <Cell icon={<Users className="w-6 h-6 text-info" />} label="代理管理" to="/merchant/agents" />
         <Cell icon={<Percent className="w-6 h-6 text-warning" />} label="分成设置" to="/merchant/commission" />
         <Cell icon={<Link2 className="w-6 h-6 text-info" />} label="挂靠商家" to="/merchant/affiliations" />

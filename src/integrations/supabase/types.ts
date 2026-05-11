@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_applications: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          note: string | null
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          note?: string | null
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          note?: string | null
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_merchant_bindings: {
         Row: {
           created_at: string
@@ -1367,6 +1406,10 @@ export type Database = {
         Args: { _host_merchant_id: string; _note?: string }
         Returns: string
       }
+      apply_agent_for_merchant: {
+        Args: { _merchant_id: string; _note?: string }
+        Returns: string
+      }
       become_agent: { Args: never; Returns: string }
       become_agent_for_merchant: {
         Args: { _merchant_id: string }
@@ -1467,6 +1510,10 @@ export type Database = {
       review_affiliation: {
         Args: { _approve: boolean; _id: string }
         Returns: undefined
+      }
+      review_agent_application: {
+        Args: { _approve: boolean; _id: string; _reason?: string }
+        Returns: boolean
       }
       shop_source_merchant_ids: {
         Args: { _merchant_id: string }
