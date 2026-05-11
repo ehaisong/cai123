@@ -42,6 +42,14 @@ function ProductDetailPage() {
       .eq("id", productId).maybeSingle();
     setProduct(p as Product | null);
 
+    let owner = false;
+    if (user && p) {
+      const { data: m } = await supabase.from("merchants")
+        .select("id").eq("id", (p as Product).merchant_id).eq("user_id", user.id).maybeSingle();
+      owner = !!m;
+    }
+    setIsOwner(owner);
+
     const { data: issues } = await supabase.from("product_issues")
       .select("id, issue_no, paid_content, publish_at, reveal_at, result, result_note")
       .eq("product_id", productId)
@@ -53,7 +61,7 @@ function ProductDetailPage() {
     setCurrent(list[0] ?? null);
     setHistory(list.slice(1));
 
-    if (user && list[0]) {
+    if (user && list[0] && !owner) {
       const { data: ord } = await supabase.from("orders").select("id")
         .eq("buyer_id", user.id).eq("issue_id", list[0].id).eq("status", "paid").maybeSingle();
       setPurchased(!!ord);
