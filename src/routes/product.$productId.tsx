@@ -146,8 +146,9 @@ function ProductDetailPage() {
         <div className="mb-2"><span className="text-xs text-primary bg-accent px-2 py-1 rounded">付费内容</span></div>
         {!current ? (
           <div className="py-4 text-center text-sm text-muted-foreground">商家暂未发布最新一期</div>
-        ) : purchased ? (
+        ) : purchased || isOwner ? (
           <div className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
+            {isOwner && <div className="mb-2 text-xs text-success bg-success/10 inline-block px-2 py-0.5 rounded">商家本人预览</div>}
             {current.paid_content ?? "（暂无内容）"}
           </div>
         ) : (
