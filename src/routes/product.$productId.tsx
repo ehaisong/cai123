@@ -33,6 +33,7 @@ function ProductDetailPage() {
   const [current, setCurrent] = useState<Issue | null>(null);
   const [history, setHistory] = useState<Issue[]>([]);
   const [purchased, setPurchased] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [buying, setBuying] = useState(false);
 
   const load = async () => {
@@ -40,6 +41,14 @@ function ProductDetailPage() {
       .select("id, merchant_id, title, subtitle, is_recommended, price, disclaimer")
       .eq("id", productId).maybeSingle();
     setProduct(p as Product | null);
+
+    let owner = false;
+    if (user && p) {
+      const { data: m } = await supabase.from("merchants")
+        .select("id").eq("id", (p as Product).merchant_id).eq("user_id", user.id).maybeSingle();
+      owner = !!m;
+    }
+    setIsOwner(owner);
 
     const { data: issues } = await supabase.from("product_issues")
       .select("id, issue_no, paid_content, publish_at, reveal_at, result, result_note")
@@ -52,7 +61,7 @@ function ProductDetailPage() {
     setCurrent(list[0] ?? null);
     setHistory(list.slice(1));
 
-    if (user && list[0]) {
+    if (user && list[0] && !owner) {
       const { data: ord } = await supabase.from("orders").select("id")
         .eq("buyer_id", user.id).eq("issue_id", list[0].id).eq("status", "paid").maybeSingle();
       setPurchased(!!ord);
@@ -137,8 +146,9 @@ function ProductDetailPage() {
         <div className="mb-2"><span className="text-xs text-primary bg-accent px-2 py-1 rounded">付费内容</span></div>
         {!current ? (
           <div className="py-4 text-center text-sm text-muted-foreground">商家暂未发布最新一期</div>
-        ) : purchased ? (
+        ) : purchased || isOwner ? (
           <div className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
+            {isOwner && <div className="mb-2 text-xs text-success bg-success/10 inline-block px-2 py-0.5 rounded">商家本人预览</div>}
             {current.paid_content ?? "（暂无内容）"}
           </div>
         ) : (
