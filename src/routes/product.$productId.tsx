@@ -33,6 +33,7 @@ function ProductDetailPage() {
   const [current, setCurrent] = useState<Issue | null>(null);
   const [history, setHistory] = useState<Issue[]>([]);
   const [purchased, setPurchased] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [buying, setBuying] = useState(false);
 
   const load = async () => {
