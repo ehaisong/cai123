@@ -38,6 +38,7 @@ import { Route as MerchantMessagesRouteImport } from './routes/merchant.messages
 import { Route as MerchantCommissionRouteImport } from './routes/merchant.commission'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
+import { Route as MerchantAgentRecruitRouteImport } from './routes/merchant.agent-recruit'
 import { Route as MerchantAffiliationsRouteImport } from './routes/merchant.affiliations'
 import { Route as LoginWechatDoneRouteImport } from './routes/login.wechat-done'
 import { Route as LoginIframeBridgeRouteImport } from './routes/login.iframe-bridge'
@@ -214,6 +215,11 @@ const MerchantApplyRoute = MerchantApplyRouteImport.update({
 const MerchantAgentsRoute = MerchantAgentsRouteImport.update({
   id: '/merchant/agents',
   path: '/merchant/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantAgentRecruitRoute = MerchantAgentRecruitRouteImport.update({
+  id: '/merchant/agent-recruit',
+  path: '/merchant/agent-recruit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantAffiliationsRoute = MerchantAffiliationsRouteImport.update({
@@ -419,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/affiliations': typeof MerchantAffiliationsRoute
+  '/merchant/agent-recruit': typeof MerchantAgentRecruitRoute
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByTo {
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/affiliations': typeof MerchantAffiliationsRoute
+  '/merchant/agent-recruit': typeof MerchantAgentRecruitRoute
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
@@ -546,6 +554,7 @@ export interface FileRoutesById {
   '/login/iframe-bridge': typeof LoginIframeBridgeRoute
   '/login/wechat-done': typeof LoginWechatDoneRoute
   '/merchant/affiliations': typeof MerchantAffiliationsRoute
+  '/merchant/agent-recruit': typeof MerchantAgentRecruitRoute
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
@@ -611,6 +620,7 @@ export interface FileRouteTypes {
     | '/login/iframe-bridge'
     | '/login/wechat-done'
     | '/merchant/affiliations'
+    | '/merchant/agent-recruit'
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
@@ -674,6 +684,7 @@ export interface FileRouteTypes {
     | '/login/iframe-bridge'
     | '/login/wechat-done'
     | '/merchant/affiliations'
+    | '/merchant/agent-recruit'
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
@@ -737,6 +748,7 @@ export interface FileRouteTypes {
     | '/login/iframe-bridge'
     | '/login/wechat-done'
     | '/merchant/affiliations'
+    | '/merchant/agent-recruit'
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
@@ -801,6 +813,7 @@ export interface RootRouteChildren {
   LoginIframeBridgeRoute: typeof LoginIframeBridgeRoute
   LoginWechatDoneRoute: typeof LoginWechatDoneRoute
   MerchantAffiliationsRoute: typeof MerchantAffiliationsRoute
+  MerchantAgentRecruitRoute: typeof MerchantAgentRecruitRoute
   MerchantAgentsRoute: typeof MerchantAgentsRouteWithChildren
   MerchantApplyRoute: typeof MerchantApplyRoute
   MerchantCommissionRoute: typeof MerchantCommissionRoute
@@ -1029,6 +1042,13 @@ declare module '@tanstack/react-router' {
       path: '/merchant/agents'
       fullPath: '/merchant/agents'
       preLoaderRoute: typeof MerchantAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/agent-recruit': {
+      id: '/merchant/agent-recruit'
+      path: '/merchant/agent-recruit'
+      fullPath: '/merchant/agent-recruit'
+      preLoaderRoute: typeof MerchantAgentRecruitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/merchant/affiliations': {
@@ -1308,6 +1328,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginIframeBridgeRoute: LoginIframeBridgeRoute,
   LoginWechatDoneRoute: LoginWechatDoneRoute,
   MerchantAffiliationsRoute: MerchantAffiliationsRoute,
+  MerchantAgentRecruitRoute: MerchantAgentRecruitRoute,
   MerchantAgentsRoute: MerchantAgentsRouteWithChildren,
   MerchantApplyRoute: MerchantApplyRoute,
   MerchantCommissionRoute: MerchantCommissionRoute,
