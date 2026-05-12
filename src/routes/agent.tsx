@@ -167,7 +167,6 @@ function AgentPage() {
   const code = info.agent_code ?? profile?.user_code ?? "";
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
-  const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
 
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-background">
