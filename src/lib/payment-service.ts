@@ -40,6 +40,28 @@ function buildReturnUrl(orderNo: string): string {
   return `${origin}/pay/success?orderNo=${encodeURIComponent(orderNo)}`;
 }
 
+/**
+ * 清洗支付 subject / body：
+ * 微信支付商户接口 + 大多数聚合网关（13pay / PayBeaver 等）会把 body 转 GBK 给微信。
+ * 含 emoji（4 字节 UTF-8 / surrogate pair）会触发上游 PB500098
+ * 「请求内容传入了非UTF8参数」直接 HTTP 400。
+ *   1. 删除所有 surrogate pair（emoji、特殊符号）
+ *   2. 删除 GBK 不收的杂项符号区
+ *   3. 折叠空白并截断到 60 字符（微信 body 限 128 字节，中文按 2 字节估算）
+ */
+function sanitizePaySubject(raw: string): string {
+  if (!raw) return "支付订单";
+  let s = raw
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")
+    .replace(/[\uD800-\uDFFF]/g, "")
+    .replace(/[\u2600-\u27BF\uE000-\uF8FF\uFE00-\uFE0F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!s) s = "支付订单";
+  if (s.length > 60) s = s.slice(0, 60);
+  return s;
+}
+
 const OPENID_KEY = "wx_openid";
 const PENDING_WX_PAY_KEY = "pending_wx_pay";
 
@@ -261,7 +283,9 @@ export const PaymentService = {
     payType: PayType;
     subject: string;
   }): Promise<void> {
-    const { orderNo, amountYuan, payType, subject } = opts;
+    const { orderNo, amountYuan, payType } = opts;
+    // 关键：先清洗 subject，去掉 emoji 等导致上游 PB500098 的字符
+    const subject = sanitizePaySubject(opts.subject);
     const inWechat = this.isWechat();
 
     // 微信内 + 微信支付：必须先有 openid，否则跳网关 OAuth
@@ -284,6 +308,7 @@ export const PaymentService = {
         }
       }
       if (!openId) {
+        // 注意：保存 sanitize 后的 subject，避免 oauth 回跳后续单又把 emoji 写回去
         savePendingWxPay({ orderNo, amountYuan, payType: "wechat", subject });
         logPayment({
           orderNo,
