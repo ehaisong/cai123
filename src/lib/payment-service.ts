@@ -32,7 +32,12 @@ interface CreateOrderResponse {
     pay_info?: string;
   };
   message?: string;
-  raw?: { pay_info?: string; pay_type?: "qrcode" | "jump"; failReason?: string; failCode?: string } & Record<string, unknown>;
+  raw?: {
+    pay_info?: string;
+    pay_type?: "qrcode" | "jump";
+    failReason?: string;
+    failCode?: string;
+  } & Record<string, unknown>;
 }
 
 function buildReturnUrl(orderNo: string): string {
@@ -54,7 +59,8 @@ function sanitizePaySubject(raw: string): string {
   let s = raw
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")
     .replace(/[\uD800-\uDFFF]/g, "")
-    .replace(/[\u2600-\u27BF\uE000-\uF8FF\uFE00-\uFE0F]/g, "")
+    .replace(/[\u2600-\u27BF\uE000-\uF8FF]/g, "")
+    .replace(/\p{Variation_Selector}/gu, "")
     .replace(/\s+/g, " ")
     .trim();
   if (!s) s = "支付订单";
@@ -75,7 +81,10 @@ type PendingWxPay = {
 
 function savePendingWxPay(pending: Omit<PendingWxPay, "createdAt">): void {
   try {
-    sessionStorage.setItem(PENDING_WX_PAY_KEY, JSON.stringify({ ...pending, createdAt: Date.now() }));
+    sessionStorage.setItem(
+      PENDING_WX_PAY_KEY,
+      JSON.stringify({ ...pending, createdAt: Date.now() }),
+    );
   } catch {
     // ignore
   }
@@ -115,7 +124,11 @@ function consumeOpenIdFromUrl(): string | null {
   params.delete("wx_openid");
   params.delete("wx_oauth_error");
   const cleanSearch = params.toString() ? `?${params.toString()}` : "";
-  window.history.replaceState({}, "", window.location.pathname + cleanSearch + window.location.hash);
+  window.history.replaceState(
+    {},
+    "",
+    window.location.pathname + cleanSearch + window.location.hash,
+  );
   if (oauthErr) {
     console.error("[wx oauth] gateway error:", decodeURIComponent(oauthErr));
     return null;
@@ -132,10 +145,7 @@ function redirectToGatewayOAuth(): void {
 let cachedClientIp: string | null = null;
 async function fetchClientIp(): Promise<string | null> {
   if (cachedClientIp) return cachedClientIp;
-  const sources = [
-    "https://api.ipify.org?format=json",
-    "https://ipapi.co/json/",
-  ];
+  const sources = ["https://api.ipify.org?format=json", "https://ipapi.co/json/"];
   for (const url of sources) {
     try {
       const ctrl = new AbortController();
@@ -158,6 +168,10 @@ async function fetchClientIp(): Promise<string | null> {
 function gatewayFailureDetail(j: CreateOrderResponse): string {
   const raw = j.raw as { failReason?: string; failCode?: string } | undefined;
   return j.message || raw?.failReason || raw?.failCode || "创建支付订单失败";
+}
+
+function isJsonPayInfo(payInfo: string): boolean {
+  return payInfo.trim().startsWith("{");
 }
 
 /** 全屏 Loading 遮罩，避免微信 OAuth 回跳/跳转支付间隙露出原页面 */
@@ -417,6 +431,20 @@ export const PaymentService = {
       (inWechat && payType === "wechat");
 
     if (isJump) {
+      if (isJsonPayInfo(payInfo)) {
+        logPayment({
+          orderNo,
+          stage: "create_error",
+          level: "error",
+          message: "网关返回了 JSAPI 参数 JSON，不是可跳转 pay_info URL",
+          payload: { payInfoPreview: payInfo.slice(0, 500), payMethod: j.payMethod, payTypeResp },
+        });
+        hideLoadingMask();
+        throw new Error(
+          "支付中转站返回的是 JSAPI 参数 JSON，不是跳转 URL。请中转站按 13pay 跳转方式返回 pay_info URL。",
+        );
+      }
+
       // 微信内 JSAPI 跳转前清理 pending
       if (inWechat && payType === "wechat") clearPendingWxPay();
 
