@@ -37,7 +37,7 @@ function SharePage() {
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [merchant, setMerchant] = useState<MerchantBrief | null>(null);
-  const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number } | null>(null);
+  const [config, setConfig] = useState<{ l1_rate: number } | null>(null);
   
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +48,7 @@ function SharePage() {
       const [arRes, pRes, cfgRes] = await Promise.all([
         supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
-        supabase.from("commission_config").select("l1_rate, l2_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("commission_config").select("l1_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "SharePage" });
       setInfo(arRes.data);
@@ -97,7 +97,6 @@ function SharePage() {
   const url = agentUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
-  const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
 
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); toast.success("已复制"); }
@@ -208,12 +207,8 @@ function SharePage() {
         <div className="text-sm font-medium mb-3">分成规则</div>
         <div className="space-y-2 text-xs text-muted-foreground">
           <div className="flex items-center justify-between">
-            <span>· 一级代理（直接推广）</span>
+            <span>· 推广分成（直接邀请）</span>
             <span className="text-primary font-semibold">{l1Pct}%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>· 二级代理（间接推广）</span>
-            <span className="text-primary font-semibold">{l2Pct}%</span>
           </div>
           <p className="pt-2 border-t border-border leading-relaxed">
             好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。

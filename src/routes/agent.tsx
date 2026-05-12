@@ -38,7 +38,7 @@ function AgentPage() {
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [commissions, setCommissions] = useState<any[]>([]);
-  const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
+  const [config, setConfig] = useState<{ l1_rate: number; platform_rate: number } | null>(null);
   const [counts, setCounts] = useState<{ l1: number }>({ l1: 0 });
   const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
 
@@ -57,7 +57,7 @@ function AgentPage() {
       supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
       supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
       supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(500),
-      supabase.from("commission_config").select("l1_rate, l2_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("commission_config").select("l1_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
 
     if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "AgentPage" });
@@ -94,9 +94,8 @@ function AgentPage() {
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user?.id]);
 
   const totals = useMemo(() => {
-    const l1 = commissions.filter((c) => c.level === 1).reduce((s, r) => s + Number(r.amount), 0);
-    const l2 = commissions.filter((c) => c.level === 2).reduce((s, r) => s + Number(r.amount), 0);
-    return { all: l1 + l2, l1, l2 };
+    const all = commissions.reduce((s, r) => s + Number(r.amount), 0);
+    return { all };
   }, [commissions]);
 
   const todayEarnings = useMemo(() => {
@@ -143,7 +142,6 @@ function AgentPage() {
 
   if (!info?.is_agent) {
     const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
-    const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
     return (
       <div className="h5-shell flex min-h-screen flex-col">
         <PageHeader title="代理推广" />
@@ -169,7 +167,6 @@ function AgentPage() {
   const code = info.agent_code ?? profile?.user_code ?? "";
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
-  const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
 
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-background">

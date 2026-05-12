@@ -1496,16 +1496,14 @@ export type Database = {
         Returns: undefined
       }
       purchase_package: { Args: { _package_id: string }; Returns: string }
-      purchase_product:
-        | { Args: { _product_id: string }; Returns: string }
-        | {
-            Args: {
-              _issue_id?: string
-              _product_id: string
-              _shop_merchant_id?: string
-            }
-            Returns: string
-          }
+      purchase_product: {
+        Args: {
+          _issue_id?: string
+          _product_id: string
+          _shop_merchant_id?: string
+        }
+        Returns: string
+      }
       resolve_ref_to_merchant: { Args: { _ref: string }; Returns: string }
       review_affiliation: {
         Args: { _approve: boolean; _id: string }
