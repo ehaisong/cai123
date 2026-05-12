@@ -23,7 +23,7 @@ function SharePageGuarded() {
   );
 }
 
-type Mode = "agent" | "shop";
+
 
 interface MerchantBrief {
   id: string;
