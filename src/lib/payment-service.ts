@@ -54,7 +54,8 @@ function sanitizePaySubject(raw: string): string {
   let s = raw
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")
     .replace(/[\uD800-\uDFFF]/g, "")
-    .replace(/[\u2600-\u27BF\uE000-\uF8FF\uFE00-\uFE0F]/g, "")
+    .replace(/[\u2600-\u27BF\uE000-\uF8FF]/g, "")
+    .replace(/\p{Variation_Selector}/gu, "")
     .replace(/\s+/g, " ")
     .trim();
   if (!s) s = "支付订单";
@@ -430,7 +431,9 @@ export const PaymentService = {
           payload: { payInfoPreview: payInfo.slice(0, 500), payMethod: j.payMethod, payTypeResp },
         });
         hideLoadingMask();
-        throw new Error("支付中转站返回的是 JSAPI 参数 JSON，不是跳转 URL。请中转站按 13pay 跳转方式返回 pay_info URL。");
+        throw new Error(
+          "支付中转站返回的是 JSAPI 参数 JSON，不是跳转 URL。请中转站按 13pay 跳转方式返回 pay_info URL。",
+        );
       }
 
       // 微信内 JSAPI 跳转前清理 pending
