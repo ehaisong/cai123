@@ -57,7 +57,7 @@ function AgentPage() {
       supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
       supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
       supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(500),
-      supabase.from("commission_config").select("l1_rate, l2_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("commission_config").select("l1_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
 
     if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "AgentPage" });
