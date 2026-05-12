@@ -283,7 +283,9 @@ export const PaymentService = {
     payType: PayType;
     subject: string;
   }): Promise<void> {
-    const { orderNo, amountYuan, payType, subject } = opts;
+    const { orderNo, amountYuan, payType } = opts;
+    // 关键：先清洗 subject，去掉 emoji 等导致上游 PB500098 的字符
+    const subject = sanitizePaySubject(opts.subject);
     const inWechat = this.isWechat();
 
     // 微信内 + 微信支付：必须先有 openid，否则跳网关 OAuth
@@ -306,6 +308,7 @@ export const PaymentService = {
         }
       }
       if (!openId) {
+        // 注意：保存 sanitize 后的 subject，避免 oauth 回跳后续单又把 emoji 写回去
         savePendingWxPay({ orderNo, amountYuan, payType: "wechat", subject });
         logPayment({
           orderNo,
