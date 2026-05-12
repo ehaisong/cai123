@@ -184,33 +184,16 @@ function SharePage() {
         )}
       </div>
 
-      {/* 模式切换 */}
-      <div className="mx-3 mt-3 inline-flex bg-muted rounded-lg p-0.5 text-xs self-stretch">
-        <button
-          onClick={() => setMode("agent")}
-          className={`flex-1 px-3 py-2 rounded-md transition ${mode === "agent" ? "bg-card text-foreground shadow-sm font-medium" : "text-muted-foreground"}`}
-        >
-          代理推广（含分成）
-        </button>
-        <button
-          onClick={() => setMode("shop")}
-          disabled={!merchant}
-          className={`flex-1 px-3 py-2 rounded-md transition disabled:opacity-40 ${mode === "shop" ? "bg-card text-foreground shadow-sm font-medium" : "text-muted-foreground"}`}
-        >
-          店铺直推
-        </button>
-      </div>
-
       {/* 二维码 */}
       <div className="bg-card mx-3 mt-3 p-5 rounded-2xl flex flex-col items-center">
         <p className="text-xs text-muted-foreground mb-3">
-          {mode === "agent" ? "扫码邀请好友注册（自动绑定为下级）" : "扫码进入店铺（不建立分销关系）"}
+          扫码邀请好友注册（自动绑定为下级，享分成）
         </p>
         <div id="agent-share-qr" className="bg-white p-3 rounded-xl border border-border">
-          <QRCodeSVG value={url || agentUrl} size={220} level="M" />
+          <QRCodeSVG value={agentUrl} size={220} level="M" />
         </div>
         <div className="mt-3 text-xs text-muted-foreground">
-          {mode === "agent" ? <>推广码：<span className="font-mono">{code}</span></> : <>店铺码：<span className="font-mono">M_{merchant?.id.slice(0, 8)}…</span></>}
+          推广码：<span className="font-mono">{code}</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 w-full mt-4">
