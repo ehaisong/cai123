@@ -239,9 +239,31 @@ function LoginDonePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-muted text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted px-6 text-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
       <p className="mt-4 text-sm text-muted-foreground">{hint}</p>
+      {slow ? (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            网络似乎较慢，可重试或返回登录页重新进入。
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              重试
+            </button>
+            <Link
+              to="/auth/login"
+              className="inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs"
+            >
+              返回登录
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
