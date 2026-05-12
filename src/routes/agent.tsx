@@ -94,9 +94,8 @@ function AgentPage() {
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user?.id]);
 
   const totals = useMemo(() => {
-    const l1 = commissions.filter((c) => c.level === 1).reduce((s, r) => s + Number(r.amount), 0);
-    const l2 = commissions.filter((c) => c.level === 2).reduce((s, r) => s + Number(r.amount), 0);
-    return { all: l1 + l2, l1, l2 };
+    const all = commissions.reduce((s, r) => s + Number(r.amount), 0);
+    return { all };
   }, [commissions]);
 
   const todayEarnings = useMemo(() => {
