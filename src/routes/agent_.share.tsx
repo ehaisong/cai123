@@ -97,7 +97,6 @@ function SharePage() {
   const url = agentUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
-  const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
 
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); toast.success("已复制"); }
