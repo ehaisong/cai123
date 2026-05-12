@@ -63,47 +63,38 @@ function HomeRouter() {
           setState({ kind: "redirect-merchant" });
           return;
         }
-        // 兜底：roles 表可能尚未写入 merchant 角色，但 merchants 表已存在已审核记录
-        const { data: ownMerchant } = await supabase
-          .from("merchants")
-          .select("id, status")
-          .eq("user_id", user.id)
-          .eq("status", "approved")
-          .maybeSingle();
-        if (ownMerchant?.id) {
-          setState({ kind: "redirect-merchant" });
-          return;
-        }
+        // rolesLoaded 之后还没有 merchant 角色，几乎不可能是商家。
+        // 之前这里跑一次 merchants 兜底查询，导致每个普通用户登录都多一次 RTT。
+        // 真正的"已审核但 roles 未写入"是极小概率，由 /merchant 路由再处理即可。
       }
 
       // 0) 取出待绑定推广码：URL ref 优先，其次 localStorage 中暂存的 pending_referrer
-      //    场景：未登录用户扫了代理二维码 → 我们先把 ref 存到 localStorage，
-      //    然后跳店铺/登录页；用户完成登录后再消费它，确保上线绑定不丢失。
       let pendingRef: string | null = null;
       try { pendingRef = localStorage.getItem("pending_referrer"); } catch {}
 
-      // 未登录但带了 ref：暂存，待登录后再绑
       if (search.ref && !user) {
         try { localStorage.setItem("pending_referrer", search.ref); } catch {}
       }
 
-      // 1) 若带 ref：先尝试绑定（仅登录用户），再解析目标商家
       let target: string | null = null;
-      let refResolved = true; // 没有 ref 时视为"无需解析"，不算失败
+      let refResolved = true;
 
-      // 已登录但 URL 无 ref：尝试消费 pending_referrer（不重定向，绑定后清掉）
       if (!search.ref && user && pendingRef) {
-        try { await supabase.rpc("bind_referrer", { _agent_code: pendingRef }); } catch {}
-        try { localStorage.removeItem("pending_referrer"); } catch {}
+        // 不阻塞跳转，绑定在后台完成
+        void (async () => {
+          try { await supabase.rpc("bind_referrer", { _agent_code: pendingRef! }); } catch {}
+          try { localStorage.removeItem("pending_referrer"); } catch {}
+        })();
       }
 
       if (search.ref) {
         refResolved = false;
         if (user) {
-          await supabase.rpc("bind_referrer", { _agent_code: search.ref });
-          try { localStorage.removeItem("pending_referrer"); } catch {}
+          // bind_referrer 与解析并行，绑定失败不影响店铺跳转
+          void supabase.rpc("bind_referrer", { _agent_code: search.ref }).then(() => {
+            try { localStorage.removeItem("pending_referrer"); } catch {}
+          });
         }
-        // 通过 SECURITY DEFINER 函数解析推广码，避免 RLS 限制（未登录或非本人时无法读取 agent_relations）
         const { data: resolved } = await supabase.rpc("resolve_ref_to_merchant", { _ref: search.ref });
         target = (resolved as string | null) ?? null;
 
@@ -112,7 +103,6 @@ function HomeRouter() {
           return;
         }
 
-        // ref 无法解析为有效商家 → 显示兜底页（带默认店铺入口）
         const { data: s } = await supabase
           .from("app_settings")
           .select("value")
@@ -124,30 +114,31 @@ function HomeRouter() {
         return;
       }
 
-      // 2) 已登录用户：优先使用 localStorage 记录的"上次访问店铺"，
-      //    其次回退到 agent_relations.bound_merchant_id（代理绑定关系）。
-      if (!target && lastShopId) target = lastShopId;
-      if (!target && user) {
-        const { data: ar } = await supabase
-          .from("agent_relations")
-          .select("bound_merchant_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        target = ar?.bound_merchant_id ?? null;
-      }
+      // 2) 已登录用户：lastShopId / agent_relations / default_shop_id 三者并行查询，
+      //    再按优先级挑选第一个有效的商家，避免串行多次 RTT。
+      const [arRes, settingsRes, lastShopValid] = await Promise.all([
+        user
+          ? supabase.from("agent_relations").select("bound_merchant_id").eq("user_id", user.id).maybeSingle()
+          : Promise.resolve({ data: null } as const),
+        supabase.from("app_settings").select("value").eq("key", "default_shop_id").maybeSingle(),
+        lastShopId
+          ? supabase.from("merchants").select("id").eq("id", lastShopId).eq("status", "approved").maybeSingle()
+          : Promise.resolve({ data: null } as const),
+      ]);
 
-      // 3) 回退到管理员配置的默认店铺
+      // 优先级：lastShopId(已校验) > agent 绑定商家 > 默认店铺
+      if ((lastShopValid as any)?.data?.id) {
+        setState({ kind: "shop", merchantId: (lastShopValid as any).data.id });
+        return;
+      }
+      const agentBound = (arRes as any)?.data?.bound_merchant_id ?? null;
+      if (agentBound) target = agentBound;
       if (!target) {
-        const { data: s } = await supabase
-          .from("app_settings")
-          .select("value")
-          .eq("key", "default_shop_id")
-          .maybeSingle();
-        const v = s?.value;
+        const v = (settingsRes as any)?.data?.value;
         if (typeof v === "string" && v.length > 0) target = v;
       }
 
-      // 4) 校验商家存在且已通过审核
+      // 4) 校验未校验过的目标商家
       if (target) {
         const { data: m } = await supabase
           .from("merchants")
@@ -164,7 +155,6 @@ function HomeRouter() {
       setState({ kind: "no-default" });
       void refResolved;
     })();
-    // 注意：依赖 roles 数组而不是 hasRole 函数，避免每次 render 重跑
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, rolesLoaded, user?.id, search.ref]);
 

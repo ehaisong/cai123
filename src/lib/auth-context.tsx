@@ -25,24 +25,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [rolesLoaded, setRolesLoaded] = useState(false);
 
+  // 记录最近一次正在加载 roles 的 uid，避免并发请求把 rolesLoaded 反复 toggle，
+  // 也避免老请求覆盖新结果。
+  const loadingUidRef = (typeof window !== "undefined" ? (window as any) : {}) as { __loadRolesUid?: string };
   const loadRoles = async (uid: string | undefined) => {
     if (!uid) { setRoles([]); setRolesLoaded(true); return; }
-    setRolesLoaded(false);
+    // 如果同一个 uid 正在加载，跳过重复请求
+    if (loadingUidRef.__loadRolesUid === uid) return;
+    loadingUidRef.__loadRolesUid = uid;
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+    // 只有当本次请求仍是最新的才提交结果
+    if (loadingUidRef.__loadRolesUid !== uid) return;
     setRoles((data ?? []).map((r) => r.role as AppRole));
     setRolesLoaded(true);
   };
 
   useEffect(() => {
-    // listener first
+    let initialized = false;
+    // listener first：onAuthStateChange 在订阅后会立刻触发 INITIAL_SESSION，
+    // 因此不必再额外调用 getSession() 重复加载一次 roles。
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
-      // defer to avoid deadlock
-      setTimeout(() => loadRoles(sess?.user?.id), 0);
-      // 登录/注册成功时，消费匿名期间暂存的代理推广码（pending_referrer），
-      // 把"客户 → 代理"绑定关系写入数据库。任何登录路径（短信、密码、微信、
-      // 邮箱）都会触发，确保不会因登录跳转目标不是首页而漏绑。
+      const uid = sess?.user?.id;
+      // uid 变更时才重置 rolesLoaded，避免 INITIAL_SESSION 与后续重复事件
+      // 把 rolesLoaded 频繁来回切换，导致首页 effect 反复 bail-out。
+      if (loadingUidRef.__loadRolesUid !== uid) {
+        loadingUidRef.__loadRolesUid = undefined;
+        setRolesLoaded(false);
+      }
+      setTimeout(() => {
+        loadRoles(uid).finally(() => {
+          if (!initialized) { initialized = true; setLoading(false); }
+        });
+      }, 0);
       if (event === "SIGNED_IN" && sess?.user) {
         setTimeout(async () => {
           try {
@@ -53,11 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch {}
         }, 0);
       }
-    });
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      loadRoles(sess?.user?.id).finally(() => setLoading(false));
     });
     return () => sub.subscription.unsubscribe();
   }, []);
