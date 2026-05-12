@@ -32,7 +32,12 @@ interface CreateOrderResponse {
     pay_info?: string;
   };
   message?: string;
-  raw?: { pay_info?: string; pay_type?: "qrcode" | "jump"; failReason?: string; failCode?: string } & Record<string, unknown>;
+  raw?: {
+    pay_info?: string;
+    pay_type?: "qrcode" | "jump";
+    failReason?: string;
+    failCode?: string;
+  } & Record<string, unknown>;
 }
 
 function buildReturnUrl(orderNo: string): string {
@@ -76,7 +81,10 @@ type PendingWxPay = {
 
 function savePendingWxPay(pending: Omit<PendingWxPay, "createdAt">): void {
   try {
-    sessionStorage.setItem(PENDING_WX_PAY_KEY, JSON.stringify({ ...pending, createdAt: Date.now() }));
+    sessionStorage.setItem(
+      PENDING_WX_PAY_KEY,
+      JSON.stringify({ ...pending, createdAt: Date.now() }),
+    );
   } catch {
     // ignore
   }
@@ -116,7 +124,11 @@ function consumeOpenIdFromUrl(): string | null {
   params.delete("wx_openid");
   params.delete("wx_oauth_error");
   const cleanSearch = params.toString() ? `?${params.toString()}` : "";
-  window.history.replaceState({}, "", window.location.pathname + cleanSearch + window.location.hash);
+  window.history.replaceState(
+    {},
+    "",
+    window.location.pathname + cleanSearch + window.location.hash,
+  );
   if (oauthErr) {
     console.error("[wx oauth] gateway error:", decodeURIComponent(oauthErr));
     return null;
@@ -133,10 +145,7 @@ function redirectToGatewayOAuth(): void {
 let cachedClientIp: string | null = null;
 async function fetchClientIp(): Promise<string | null> {
   if (cachedClientIp) return cachedClientIp;
-  const sources = [
-    "https://api.ipify.org?format=json",
-    "https://ipapi.co/json/",
-  ];
+  const sources = ["https://api.ipify.org?format=json", "https://ipapi.co/json/"];
   for (const url of sources) {
     try {
       const ctrl = new AbortController();
