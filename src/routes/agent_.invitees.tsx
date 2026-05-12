@@ -21,15 +21,12 @@ function InviteesGuarded() {
   );
 }
 
-type Tab = "1" | "2";
-
 interface Invitee {
   user_id: string;
   profile_id: string;
   nickname: string | null;
   user_code: string;
   joined_at: string;
-  level: 1 | 2;
   orders_count: number;
   spent_total: number;
   commission_total: number;
@@ -39,9 +36,7 @@ function InviteesPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [info, setInfo] = useState<any>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
   const [items, setItems] = useState<Invitee[]>([]);
-  const [tab, setTab] = useState<Tab>("1");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,30 +50,27 @@ function InviteesPage() {
       ]);
       if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "Invitees" });
       setInfo(arRes.data);
-      setProfileId(pRes.data?.id ?? null);
 
       if (!pRes.data?.id || !arRes.data?.is_agent) { setLoading(false); return; }
       const myPid = pRes.data.id;
 
-      // 拉取下级 agent_relations（L1 + L2）
+      // 拉取直接下级 agent_relations（仅 L1）
       const { data: rels, error: rErr } = await supabase
         .from("agent_relations")
-        .select("user_id, upline_id, upline_l2_id, created_at")
-        .or(`upline_id.eq.${myPid},upline_l2_id.eq.${myPid}`)
+        .select("user_id, upline_id, created_at")
+        .eq("upline_id", myPid)
         .order("created_at", { ascending: false });
       if (rErr) reportRpcError(rErr, { op: "agent_relations.list_invitees", scope: "Invitees" });
 
       const userIds = (rels ?? []).map((r) => r.user_id);
       if (userIds.length === 0) { setItems([]); setLoading(false); return; }
 
-      // 个人资料
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, user_id, nickname, user_code")
         .in("user_id", userIds);
       const profMap = new Map((profs ?? []).map((p) => [p.user_id, p]));
 
-      // 订单聚合（仅已支付）
       const { data: ords } = await supabase
         .from("orders")
         .select("buyer_id, amount")
@@ -92,8 +84,6 @@ function InviteesPage() {
         orderAgg.set(o.buyer_id, cur);
       });
 
-      // 我从该下级身上累计获得的分成
-      // commission_records.beneficiary_id = me.user_id, 关联 order.buyer_id
       const { data: comms } = await supabase
         .from("commission_records")
         .select("amount, order_id, orders!commission_records_order_id_fkey(buyer_id)")
@@ -108,14 +98,12 @@ function InviteesPage() {
       const list: Invitee[] = (rels ?? []).map((r) => {
         const p = profMap.get(r.user_id);
         const agg = orderAgg.get(r.user_id);
-        const level: 1 | 2 = r.upline_id === myPid ? 1 : 2;
         return {
           user_id: r.user_id,
           profile_id: p?.id ?? "",
           nickname: p?.nickname ?? null,
           user_code: p?.user_code ?? "",
           joined_at: r.created_at,
-          level,
           orders_count: agg?.count ?? 0,
           spent_total: agg?.spent ?? 0,
           commission_total: commByBuyer.get(r.user_id) ?? 0,
@@ -128,21 +116,11 @@ function InviteesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const filtered = useMemo(
-    () => items.filter((i) => String(i.level) === tab),
-    [items, tab],
-  );
-
-  const totals = useMemo(() => {
-    const l1 = items.filter((i) => i.level === 1);
-    const l2 = items.filter((i) => i.level === 2);
-    const sum = (arr: Invitee[]) => ({
-      count: arr.length,
-      orders: arr.reduce((s, x) => s + x.orders_count, 0),
-      commission: arr.reduce((s, x) => s + x.commission_total, 0),
-    });
-    return { l1: sum(l1), l2: sum(l2) };
-  }, [items]);
+  const totals = useMemo(() => ({
+    count: items.length,
+    orders: items.reduce((s, x) => s + x.orders_count, 0),
+    commission: items.reduce((s, x) => s + x.commission_total, 0),
+  }), [items]);
 
   if (authLoading || loading) {
     return <div className="h5-shell"><PageHeader title="我邀请的买家" /><p className="text-center py-12 text-sm text-muted-foreground">加载中…</p></div>;
@@ -165,8 +143,6 @@ function InviteesPage() {
     );
   }
 
-  const cur = tab === "1" ? totals.l1 : totals.l2;
-
   return (
     <div className="h5-shell flex min-h-screen flex-col bg-background">
       <PageHeader
@@ -182,45 +158,29 @@ function InviteesPage() {
       <div className="mx-3 mt-3 grid grid-cols-3 gap-3">
         <div className="bg-card rounded-xl p-3">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Users className="h-3.5 w-3.5" /> {tab === "1" ? "直接" : "间接"}
+            <Users className="h-3.5 w-3.5" /> 客户数
           </div>
-          <div className="text-lg font-bold mt-1">{cur.count}</div>
+          <div className="text-lg font-bold mt-1">{totals.count}</div>
         </div>
         <div className="bg-card rounded-xl p-3">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <ShoppingBag className="h-3.5 w-3.5" /> 总订单
           </div>
-          <div className="text-lg font-bold mt-1">{cur.orders}</div>
+          <div className="text-lg font-bold mt-1">{totals.orders}</div>
         </div>
         <div className="bg-card rounded-xl p-3">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Wallet className="h-3.5 w-3.5" /> 我的分成
           </div>
-          <div className="text-lg font-bold mt-1 text-success">¥{cur.commission.toFixed(2)}</div>
+          <div className="text-lg font-bold mt-1 text-success">¥{totals.commission.toFixed(2)}</div>
         </div>
-      </div>
-
-      {/* Tab 切换 */}
-      <div className="mx-3 mt-3 inline-flex bg-muted rounded-lg p-0.5 text-xs self-start">
-        {([
-          { k: "1", l: `一级 (${totals.l1.count})` },
-          { k: "2", l: `二级 (${totals.l2.count})` },
-        ] as const).map((t) => (
-          <button
-            key={t.k}
-            onClick={() => setTab(t.k)}
-            className={`px-3 py-1.5 rounded-md transition ${tab === t.k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-          >
-            {t.l}
-          </button>
-        ))}
       </div>
 
       {/* 列表 */}
       <div className="bg-card mx-3 mt-3 mb-6 rounded-2xl divide-y divide-border">
-        {filtered.length === 0 && (
+        {items.length === 0 && (
           <div className="text-center py-12 text-sm text-muted-foreground">
-            {tab === "1" ? "还没有人通过你的推广码注册" : "还没有间接邀请"}
+            还没有人通过你的推广码注册
             <div className="mt-3">
               <Button size="sm" onClick={() => navigate({ to: "/agent/share" })}>
                 <Share2 className="h-3.5 w-3.5 mr-1" /> 立即推广
@@ -228,7 +188,7 @@ function InviteesPage() {
             </div>
           </div>
         )}
-        {filtered.map((inv) => (
+        {items.map((inv) => (
           <div key={inv.user_id} className="p-3">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
