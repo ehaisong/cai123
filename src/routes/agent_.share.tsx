@@ -37,7 +37,7 @@ function SharePage() {
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [merchant, setMerchant] = useState<MerchantBrief | null>(null);
-  const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number } | null>(null);
+  const [config, setConfig] = useState<{ l1_rate: number } | null>(null);
   
   const [loading, setLoading] = useState(true);
 
