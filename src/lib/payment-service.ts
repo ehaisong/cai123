@@ -161,6 +161,88 @@ function gatewayFailureDetail(j: CreateOrderResponse): string {
 }
 
 /** 全屏 Loading 遮罩，避免微信 OAuth 回跳/跳转支付间隙露出原页面 */
+/**
+ * 微信内 JSAPI 原生调起：网关返回 JSON 形态 pay_info（含 appId/timeStamp/nonceStr/package/paySign/signType）
+ * 时使用，避免被当成 URL 拼到 /pay/{...} 触发 SPA 404。
+ */
+function invokeWeixinJSAPI(
+  params: Record<string, string>,
+  orderNo: string,
+  returnUrl: string,
+): Promise<void> {
+  return new Promise((resolve) => {
+    const w = window as unknown as {
+      WeixinJSBridge?: {
+        invoke: (
+          api: string,
+          payload: Record<string, string>,
+          cb: (res: { err_msg?: string; errMsg?: string }) => void,
+        ) => void;
+      };
+    };
+    const doInvoke = () => {
+      if (!w.WeixinJSBridge) {
+        hideLoadingMask();
+        logPayment({
+          orderNo,
+          stage: "jsapi_invoke",
+          level: "error",
+          message: "WeixinJSBridge 不可用（请在微信内打开）",
+        });
+        resolve();
+        return;
+      }
+      w.WeixinJSBridge.invoke(
+        "getBrandWCPayRequest",
+        {
+          appId: params.appId,
+          timeStamp: params.timeStamp,
+          nonceStr: params.nonceStr,
+          package: params.package,
+          signType: params.signType || "RSA",
+          paySign: params.paySign,
+        },
+        (res) => {
+          const msg = res.err_msg || res.errMsg || "";
+          logPayment({
+            orderNo,
+            stage: "jsapi_result",
+            level: msg.includes("ok") ? "info" : "error",
+            message: `JSAPI 返回：${msg}`,
+            payload: res,
+          });
+          if (msg.includes("ok")) {
+            window.location.href = returnUrl;
+          } else if (msg.includes("cancel")) {
+            hideLoadingMask();
+          } else {
+            hideLoadingMask();
+          }
+          resolve();
+        },
+      );
+    };
+    if (w.WeixinJSBridge) {
+      doInvoke();
+    } else {
+      document.addEventListener("WeixinJSBridgeReady", doInvoke, { once: true });
+      // 兜底：3s 内仍未 ready，关闭遮罩
+      setTimeout(() => {
+        if (!w.WeixinJSBridge) {
+          hideLoadingMask();
+          logPayment({
+            orderNo,
+            stage: "jsapi_invoke",
+            level: "error",
+            message: "WeixinJSBridgeReady 等待超时",
+          });
+          resolve();
+        }
+      }, 3000);
+    }
+  });
+}
+
 function showLoadingMask(text = "正在拉起微信支付…", subText = "请稍候，不要关闭页面"): void {
   if (typeof document === "undefined") return;
   const id = "pay-loading-mask";
@@ -434,8 +516,34 @@ export const PaymentService = {
         return;
       }
 
-      // 在 pay_info URL 上追加 redirect_url，确保 13pay jspay 收银台支付完成
-      // 后能跳回站内 /pay/success，而不是只能由用户手动关闭微信网页（会直接关掉整个 webview）
+      // pay_info 可能是：
+      //   1) JSON 字符串（微信原生 JSAPI 参数：appId/timeStamp/nonceStr/package/paySign/signType）
+      //   2) http(s):// 收银台 URL（13pay jspay 等）
+      //   3) weixin:// 等自定义 scheme
+      const trimmed = typeof payInfo === "string" ? payInfo.trim() : "";
+      const looksLikeJson = trimmed.startsWith("{") && trimmed.endsWith("}");
+      if (looksLikeJson && inWechat && payType === "wechat") {
+        let params: Record<string, string> | null = null;
+        try {
+          params = JSON.parse(trimmed) as Record<string, string>;
+        } catch {
+          params = null;
+        }
+        if (params && params.paySign && params.package) {
+          logPayment({
+            orderNo,
+            stage: "jsapi_invoke",
+            message: "调用 WeixinJSBridge.getBrandWCPayRequest",
+            payload: { hasAppId: !!params.appId, signType: params.signType },
+          });
+          await invokeWeixinJSAPI(params, orderNo, returnUrl);
+          return;
+        }
+        hideLoadingMask();
+        throw new Error("网关返回的支付参数无法解析（缺少 paySign）");
+      }
+
+      // 在 pay_info URL 上追加 redirect_url，确保收银台完成后能跳回站内 /pay/success
       let target = payInfo;
       try {
         const u = new URL(payInfo);
