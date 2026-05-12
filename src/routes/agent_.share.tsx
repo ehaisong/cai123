@@ -97,7 +97,7 @@ function SharePage() {
   // 店铺直码：?ref=M_<merchant_id>，仅导流到店铺，不建立分销关系
   const agentUrl = buildShareUrl({ ref: code });
   const shopUrl = merchant ? buildShareUrl({ ref: `M_${merchant.id}`, to: `/shop/${merchant.id}` }) : "";
-  const url = mode === "agent" ? agentUrl : shopUrl;
+  const url = agentUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
   const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
@@ -109,10 +109,8 @@ function SharePage() {
 
   const share = async () => {
     const shareData = {
-      title: mode === "agent" ? "邀请你加入" : `推荐店铺：${merchant?.shop_name ?? ""}`,
-      text: mode === "agent"
-        ? "扫码或点击链接加入，享受专属预测内容"
-        : `进入${merchant?.shop_name ?? "店铺"}查看最新预测`,
+      title: "邀请你加入",
+      text: "扫码或点击链接加入，享受专属预测内容",
       url,
     };
     if (typeof navigator !== "undefined" && (navigator as any).share) {
@@ -139,8 +137,7 @@ function SharePage() {
       ctx.fillRect(0, 0, size, size);
       ctx.drawImage(img, 0, 0, size, size);
       const a = document.createElement("a");
-      const fname = mode === "agent" ? `推广二维码_${code}.png` : `店铺二维码_${merchant?.shop_name ?? "shop"}.png`;
-      a.download = fname;
+      a.download = `推广二维码_${code}.png`;
       a.href = canvas.toDataURL("image/png");
       a.click();
       URL.revokeObjectURL(urlObj);
