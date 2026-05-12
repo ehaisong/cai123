@@ -160,6 +160,10 @@ function gatewayFailureDetail(j: CreateOrderResponse): string {
   return j.message || raw?.failReason || raw?.failCode || "创建支付订单失败";
 }
 
+function isJsonPayInfo(payInfo: string): boolean {
+  return payInfo.trim().startsWith("{");
+}
+
 /** 全屏 Loading 遮罩，避免微信 OAuth 回跳/跳转支付间隙露出原页面 */
 
 function showLoadingMask(text = "正在拉起微信支付…", subText = "请稍候，不要关闭页面"): void {
@@ -417,6 +421,18 @@ export const PaymentService = {
       (inWechat && payType === "wechat");
 
     if (isJump) {
+      if (isJsonPayInfo(payInfo)) {
+        logPayment({
+          orderNo,
+          stage: "create_error",
+          level: "error",
+          message: "网关返回了 JSAPI 参数 JSON，不是可跳转 pay_info URL",
+          payload: { payInfoPreview: payInfo.slice(0, 500), payMethod: j.payMethod, payTypeResp },
+        });
+        hideLoadingMask();
+        throw new Error("支付中转站返回的是 JSAPI 参数 JSON，不是跳转 URL。请中转站按 13pay 跳转方式返回 pay_info URL。");
+      }
+
       // 微信内 JSAPI 跳转前清理 pending
       if (inWechat && payType === "wechat") clearPendingWxPay();
 
