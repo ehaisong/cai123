@@ -120,30 +120,66 @@ Deno.serve(async (req) => {
   }
 
   // 1. 用 ticket 换取用户信息（先走统一接口；404/未知则回退老接口，兼容微信旧 ticket）
-  async function callHub(url: string): Promise<Response> {
-    return fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ticket,
-        client: "66cai",
-        client_secret: HUB_SECRET,
-      }),
-    });
+  //    单次 fetch 设 8s 超时，避免中转站偶发 TCP 不可达时把前端"正在创建会话…"卡到 ~110s。
+  //    失败/超时自动重试一次（先重试同一地址，再回退老地址）。
+  async function callHub(url: string, timeoutMs = 8000): Promise<Response> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      return await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticket,
+          client: "66cai",
+          client_secret: HUB_SECRET,
+        }),
+        signal: ctrl.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function callHubWithRetry(): Promise<Response> {
+    const urls = [HUB_EXCHANGE, HUB_EXCHANGE, HUB_EXCHANGE_LEGACY];
+    let lastErr: unknown = null;
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        const res = await callHub(urls[i]);
+        // 404 立刻切到老接口
+        if (res.status === 404 && urls[i] !== HUB_EXCHANGE_LEGACY) {
+          log("hub.fallback_legacy", { ticketTail, attempt: i + 1 });
+          continue;
+        }
+        // 5xx 也重试一次
+        if (res.status >= 500 && i < urls.length - 1) {
+          log("hub.retry_5xx", { ticketTail, attempt: i + 1, status: res.status });
+          continue;
+        }
+        if (i > 0) log("hub.retry_ok", { ticketTail, attempt: i + 1 });
+        return res;
+      } catch (e) {
+        lastErr = e;
+        logErr("hub.fetch.attempt", {
+          ticketTail,
+          attempt: i + 1,
+          error: String((e as Error)?.message ?? e),
+        });
+        if (i === urls.length - 1) throw e;
+      }
+    }
+    throw lastErr ?? new Error("hub_unreachable");
   }
 
   let hubRes: Response;
   try {
-    hubRes = await callHub(HUB_EXCHANGE);
-    if (hubRes.status === 404) {
-      log("hub.fallback_legacy", { ticketTail });
-      hubRes = await callHub(HUB_EXCHANGE_LEGACY);
-    }
+    hubRes = await callHubWithRetry();
   } catch (e) {
-    logErr("hub.fetch", { ticketTail, error: String(e?.message ?? e) });
+    logErr("hub.fetch", { ticketTail, error: String((e as Error)?.message ?? e) });
     return jsonResponse(502, {
       step: "hub.fetch",
-      message: `中转站请求失败: ${e?.message ?? "network error"}`,
+      message: `中转站请求失败，请稍后重试`,
     });
   }
 
