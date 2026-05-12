@@ -210,24 +210,22 @@ function SharePage() {
       </div>
 
       {/* 分成规则 */}
-      {mode === "agent" && (
-        <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
-          <div className="text-sm font-medium mb-3">分成规则</div>
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <div className="flex items-center justify-between">
-              <span>· 一级代理（直接推广）</span>
-              <span className="text-primary font-semibold">{l1Pct}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>· 二级代理（间接推广）</span>
-              <span className="text-primary font-semibold">{l2Pct}%</span>
-            </div>
-            <p className="pt-2 border-t border-border leading-relaxed">
-              好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。
-            </p>
+      <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
+        <div className="text-sm font-medium mb-3">分成规则</div>
+        <div className="space-y-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <span>· 一级代理（直接推广）</span>
+            <span className="text-primary font-semibold">{l1Pct}%</span>
           </div>
+          <div className="flex items-center justify-between">
+            <span>· 二级代理（间接推广）</span>
+            <span className="text-primary font-semibold">{l2Pct}%</span>
+          </div>
+          <p className="pt-2 border-t border-border leading-relaxed">
+            好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。
+          </p>
         </div>
-      )}
+      </div>
 
       {/* 分享话术 */}
       <div className="bg-card mx-3 mt-3 mb-6 p-4 rounded-2xl">
@@ -236,19 +234,13 @@ function SharePage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => copy(
-              mode === "agent"
-                ? `【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 ${url}`
-                : `【${merchant?.shop_name ?? "推荐店铺"}】专业彩票预测，每期精选推荐 👉 ${url}`
-            )}
+            onClick={() => copy(`【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 ${agentUrl}`)}
           >
             <Copy className="h-3 w-3 mr-1" /> 复制
           </Button>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed bg-muted rounded-lg p-3">
-          {mode === "agent"
-            ? <>【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 {url}</>
-            : <>【{merchant?.shop_name ?? "推荐店铺"}】专业彩票预测，每期精选推荐 👉 {url}</>}
+          【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 {agentUrl}
         </p>
       </div>
     </div>
