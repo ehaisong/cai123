@@ -56,8 +56,15 @@ function LoginDonePage() {
   const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [slow, setSlow] = useState(false);
   const ranRef = useRef(false);
   const [hint, setHint] = useState("正在完成登录，请稍候…");
+
+  useEffect(() => {
+    // 超过 12s 仍在转圈，提示用户网络较慢并提供"重试"
+    const slowTimer = setTimeout(() => setSlow(true), 12000);
+    return () => clearTimeout(slowTimer);
+  }, []);
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -232,9 +239,31 @@ function LoginDonePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-muted text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted px-6 text-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
       <p className="mt-4 text-sm text-muted-foreground">{hint}</p>
+      {slow ? (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            网络似乎较慢，可重试或返回登录页重新进入。
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              重试
+            </button>
+            <Link
+              to="/auth/login"
+              className="inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs"
+            >
+              返回登录
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
