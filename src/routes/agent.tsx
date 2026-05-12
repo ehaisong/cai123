@@ -38,7 +38,7 @@ function AgentPage() {
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [commissions, setCommissions] = useState<any[]>([]);
-  const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number; platform_rate: number } | null>(null);
+  const [config, setConfig] = useState<{ l1_rate: number; platform_rate: number } | null>(null);
   const [counts, setCounts] = useState<{ l1: number }>({ l1: 0 });
   const [recentInvitees, setRecentInvitees] = useState<{ date: string; count: number }[]>([]);
 
