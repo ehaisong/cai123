@@ -56,8 +56,15 @@ function LoginDonePage() {
   const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [slow, setSlow] = useState(false);
   const ranRef = useRef(false);
   const [hint, setHint] = useState("正在完成登录，请稍候…");
+
+  useEffect(() => {
+    // 超过 12s 仍在转圈，提示用户网络较慢并提供"重试"
+    const slowTimer = setTimeout(() => setSlow(true), 12000);
+    return () => clearTimeout(slowTimer);
+  }, []);
 
   useEffect(() => {
     if (ranRef.current) return;
