@@ -516,33 +516,9 @@ export const PaymentService = {
         return;
       }
 
-      // pay_info 可能是：
-      //   1) JSON 字符串（微信原生 JSAPI 参数：appId/timeStamp/nonceStr/package/paySign/signType）
-      //   2) http(s):// 收银台 URL（13pay jspay 等）
-      //   3) weixin:// 等自定义 scheme
-      const trimmed = typeof payInfo === "string" ? payInfo.trim() : "";
-      const looksLikeJson = trimmed.startsWith("{") && trimmed.endsWith("}");
-      if (looksLikeJson && inWechat && payType === "wechat") {
-        let params: Record<string, string> | null = null;
-        try {
-          params = JSON.parse(trimmed) as Record<string, string>;
-        } catch {
-          params = null;
-        }
-        if (params && params.paySign && params.package) {
-          logPayment({
-            orderNo,
-            stage: "jsapi_invoke",
-            message: "调用 WeixinJSBridge.getBrandWCPayRequest",
-            payload: { hasAppId: !!params.appId, signType: params.signType },
-          });
-          await invokeWeixinJSAPI(params, orderNo, returnUrl);
-          return;
-        }
-        hideLoadingMask();
-        throw new Error("网关返回的支付参数无法解析（缺少 paySign）");
-      }
-
+      // 13pay 微信支付走跳转方式：直接 window.location.href = pay_info，
+      // 不调用 wx.config / WeixinJSBridge.getBrandWCPayRequest，避免触发
+      // "当前页面URL未注册" 弹窗（无需 JS 接口安全域名 / JSAPI 支付授权目录）。
       // 在 pay_info URL 上追加 redirect_url，确保收银台完成后能跳回站内 /pay/success
       let target = payInfo;
       try {
