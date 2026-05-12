@@ -207,12 +207,8 @@ function SharePage() {
         <div className="text-sm font-medium mb-3">分成规则</div>
         <div className="space-y-2 text-xs text-muted-foreground">
           <div className="flex items-center justify-between">
-            <span>· 一级代理（直接推广）</span>
+            <span>· 推广分成（直接邀请）</span>
             <span className="text-primary font-semibold">{l1Pct}%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>· 二级代理（间接推广）</span>
-            <span className="text-primary font-semibold">{l2Pct}%</span>
           </div>
           <p className="pt-2 border-t border-border leading-relaxed">
             好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。
