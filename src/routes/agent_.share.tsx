@@ -23,7 +23,7 @@ function SharePageGuarded() {
   );
 }
 
-type Mode = "agent" | "shop";
+
 
 interface MerchantBrief {
   id: string;
@@ -40,7 +40,6 @@ function SharePage() {
   const [config, setConfig] = useState<{ l1_rate: number; l2_rate: number } | null>(null);
   
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<Mode>("agent");
 
   useEffect(() => {
     const load = async () => {
@@ -94,10 +93,8 @@ function SharePage() {
   // 二维码统一指向中转站，由中转站 302 到当前生效的生产域名，
   // 这样即使某个生产域名被微信屏蔽，已发出的二维码依然可用。
   // 代理推广码：?ref=<user_code>，登陆后自动绑定为我的下级 + 解析到归属商家
-  // 店铺直码：?ref=M_<merchant_id>，仅导流到店铺，不建立分销关系
   const agentUrl = buildShareUrl({ ref: code });
-  const shopUrl = merchant ? buildShareUrl({ ref: `M_${merchant.id}`, to: `/shop/${merchant.id}` }) : "";
-  const url = mode === "agent" ? agentUrl : shopUrl;
+  const url = agentUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
   const l2Pct = config ? (config.l2_rate * 100).toFixed(0) : "—";
@@ -109,10 +106,8 @@ function SharePage() {
 
   const share = async () => {
     const shareData = {
-      title: mode === "agent" ? "邀请你加入" : `推荐店铺：${merchant?.shop_name ?? ""}`,
-      text: mode === "agent"
-        ? "扫码或点击链接加入，享受专属预测内容"
-        : `进入${merchant?.shop_name ?? "店铺"}查看最新预测`,
+      title: "邀请你加入",
+      text: "扫码或点击链接加入，享受专属预测内容",
       url,
     };
     if (typeof navigator !== "undefined" && (navigator as any).share) {
@@ -139,8 +134,7 @@ function SharePage() {
       ctx.fillRect(0, 0, size, size);
       ctx.drawImage(img, 0, 0, size, size);
       const a = document.createElement("a");
-      const fname = mode === "agent" ? `推广二维码_${code}.png` : `店铺二维码_${merchant?.shop_name ?? "shop"}.png`;
-      a.download = fname;
+      a.download = `推广二维码_${code}.png`;
       a.href = canvas.toDataURL("image/png");
       a.click();
       URL.revokeObjectURL(urlObj);
@@ -184,33 +178,16 @@ function SharePage() {
         )}
       </div>
 
-      {/* 模式切换 */}
-      <div className="mx-3 mt-3 inline-flex bg-muted rounded-lg p-0.5 text-xs self-stretch">
-        <button
-          onClick={() => setMode("agent")}
-          className={`flex-1 px-3 py-2 rounded-md transition ${mode === "agent" ? "bg-card text-foreground shadow-sm font-medium" : "text-muted-foreground"}`}
-        >
-          代理推广（含分成）
-        </button>
-        <button
-          onClick={() => setMode("shop")}
-          disabled={!merchant}
-          className={`flex-1 px-3 py-2 rounded-md transition disabled:opacity-40 ${mode === "shop" ? "bg-card text-foreground shadow-sm font-medium" : "text-muted-foreground"}`}
-        >
-          店铺直推
-        </button>
-      </div>
-
       {/* 二维码 */}
       <div className="bg-card mx-3 mt-3 p-5 rounded-2xl flex flex-col items-center">
         <p className="text-xs text-muted-foreground mb-3">
-          {mode === "agent" ? "扫码邀请好友注册（自动绑定为下级）" : "扫码进入店铺（不建立分销关系）"}
+          扫码邀请好友注册（自动绑定为下级，享分成）
         </p>
         <div id="agent-share-qr" className="bg-white p-3 rounded-xl border border-border">
-          <QRCodeSVG value={url || agentUrl} size={220} level="M" />
+          <QRCodeSVG value={agentUrl} size={220} level="M" />
         </div>
         <div className="mt-3 text-xs text-muted-foreground">
-          {mode === "agent" ? <>推广码：<span className="font-mono">{code}</span></> : <>店铺码：<span className="font-mono">M_{merchant?.id.slice(0, 8)}…</span></>}
+          推广码：<span className="font-mono">{code}</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 w-full mt-4">
@@ -227,24 +204,22 @@ function SharePage() {
       </div>
 
       {/* 分成规则 */}
-      {mode === "agent" && (
-        <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
-          <div className="text-sm font-medium mb-3">分成规则</div>
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <div className="flex items-center justify-between">
-              <span>· 一级代理（直接推广）</span>
-              <span className="text-primary font-semibold">{l1Pct}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>· 二级代理（间接推广）</span>
-              <span className="text-primary font-semibold">{l2Pct}%</span>
-            </div>
-            <p className="pt-2 border-t border-border leading-relaxed">
-              好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。
-            </p>
+      <div className="bg-card mx-3 mt-3 p-4 rounded-2xl">
+        <div className="text-sm font-medium mb-3">分成规则</div>
+        <div className="space-y-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <span>· 一级代理（直接推广）</span>
+            <span className="text-primary font-semibold">{l1Pct}%</span>
           </div>
+          <div className="flex items-center justify-between">
+            <span>· 二级代理（间接推广）</span>
+            <span className="text-primary font-semibold">{l2Pct}%</span>
+          </div>
+          <p className="pt-2 border-t border-border leading-relaxed">
+            好友通过你的二维码注册并购买商品，你将自动获得对应比例分成。分成实时到账钱包，可随时申请提现。
+          </p>
         </div>
-      )}
+      </div>
 
       {/* 分享话术 */}
       <div className="bg-card mx-3 mt-3 mb-6 p-4 rounded-2xl">
@@ -253,19 +228,13 @@ function SharePage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => copy(
-              mode === "agent"
-                ? `【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 ${url}`
-                : `【${merchant?.shop_name ?? "推荐店铺"}】专业彩票预测，每期精选推荐 👉 ${url}`
-            )}
+            onClick={() => copy(`【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 ${agentUrl}`)}
           >
             <Copy className="h-3 w-3 mr-1" /> 复制
           </Button>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed bg-muted rounded-lg p-3">
-          {mode === "agent"
-            ? <>【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 {url}</>
-            : <>【{merchant?.shop_name ?? "推荐店铺"}】专业彩票预测，每期精选推荐 👉 {url}</>}
+          【独家预测】发现一个超准的预测平台，注册即可查看专家精选内容，扫我的码立享专属优惠 👉 {agentUrl}
         </p>
       </div>
     </div>
