@@ -1,0 +1,60 @@
+// 3ypay 异步通知验签（服务端使用，Web Crypto API）
+// 必须与 supabase/functions/_shared/threeypay.ts 保持算法一致
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem
+    .replace(/-----BEGIN [^-]+-----/g, "")
+    .replace(/-----END [^-]+-----/g, "")
+    .replace(/\s+/g, "");
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function base64ToBytes(b64: string): ArrayBuffer {
+  const bin = atob(b64.replace(/\s+/g, ""));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+export function buildSignContent(params: Record<string, unknown>): string {
+  const keys = Object.keys(params)
+    .filter((k) => k !== "sign" && k !== "signType")
+    .filter((k) => {
+      const v = params[k];
+      return v !== undefined && v !== null && v !== "";
+    })
+    .sort();
+  return keys.map((k) => `${k}=${params[k]}`).join("&");
+}
+
+export async function verifyRSA2(
+  params: Record<string, unknown>,
+  sign: string,
+  publicKeyPem: string,
+): Promise<boolean> {
+  try {
+    const wrapped = publicKeyPem.includes("BEGIN")
+      ? publicKeyPem
+      : `-----BEGIN PUBLIC KEY-----\n${publicKeyPem.match(/.{1,64}/g)?.join("\n") ?? publicKeyPem}\n-----END PUBLIC KEY-----`;
+    const key = await crypto.subtle.importKey(
+      "spki",
+      pemToArrayBuffer(wrapped),
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+    const content = buildSignContent(params);
+    return await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5",
+      key,
+      base64ToBytes(sign),
+      new TextEncoder().encode(content),
+    );
+  } catch (e) {
+    console.error("[3ypay verify] error", e);
+    return false;
+  }
+}
