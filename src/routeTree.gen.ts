@@ -32,6 +32,7 @@ import { Route as ProfileKycRouteImport } from './routes/profile_.kyc'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as PcUsersRouteImport } from './routes/pc.users'
+import { Route as PcPaymentsRouteImport } from './routes/pc.payments'
 import { Route as PcLoginRouteImport } from './routes/pc.login'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
@@ -194,6 +195,11 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
 const PcUsersRoute = PcUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => PcRoute,
+} as any)
+const PcPaymentsRoute = PcPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
   getParentRoute: () => PcRoute,
 } as any)
 const PcLoginRoute = PcLoginRouteImport.update({
@@ -494,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/login': typeof PcLoginRoute
+  '/pc/payments': typeof PcPaymentsRoute
   '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
@@ -566,6 +573,7 @@ export interface FileRoutesByTo {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/login': typeof PcLoginRoute
+  '/pc/payments': typeof PcPaymentsRoute
   '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
@@ -640,6 +648,7 @@ export interface FileRoutesById {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/login': typeof PcLoginRoute
+  '/pc/payments': typeof PcPaymentsRoute
   '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
@@ -715,6 +724,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/pc/login'
+    | '/pc/payments'
     | '/pc/users'
     | '/product/$productId'
     | '/profile/bind-phone'
@@ -787,6 +797,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/pc/login'
+    | '/pc/payments'
     | '/pc/users'
     | '/product/$productId'
     | '/profile/bind-phone'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/pay/test'
     | '/pc/login'
+    | '/pc/payments'
     | '/pc/users'
     | '/product/$productId'
     | '/profile_/bind-phone'
@@ -1111,6 +1123,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/pc/users'
       preLoaderRoute: typeof PcUsersRouteImport
+      parentRoute: typeof PcRoute
+    }
+    '/pc/payments': {
+      id: '/pc/payments'
+      path: '/payments'
+      fullPath: '/pc/payments'
+      preLoaderRoute: typeof PcPaymentsRouteImport
       parentRoute: typeof PcRoute
     }
     '/pc/login': {
@@ -1469,12 +1488,14 @@ const PcUsersRouteWithChildren =
 
 interface PcRouteChildren {
   PcLoginRoute: typeof PcLoginRoute
+  PcPaymentsRoute: typeof PcPaymentsRoute
   PcUsersRoute: typeof PcUsersRouteWithChildren
   PcIndexRoute: typeof PcIndexRoute
 }
 
 const PcRouteChildren: PcRouteChildren = {
   PcLoginRoute: PcLoginRoute,
+  PcPaymentsRoute: PcPaymentsRoute,
   PcUsersRoute: PcUsersRouteWithChildren,
   PcIndexRoute: PcIndexRoute,
 }
