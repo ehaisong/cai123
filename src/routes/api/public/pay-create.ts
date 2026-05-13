@@ -120,7 +120,12 @@ export const Route = createFileRoute("/api/public/pay-create")({
         let supabase: AppSupabase;
         let supabaseMode: "service" | "user";
         try {
-          const client = getSupabaseForRequest(request);
+          const client = getSupabaseForRequest(request, {
+            supabaseUrl: process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL,
+            serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            publishableKey:
+              process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          });
           supabase = client.supabase;
           supabaseMode = client.mode;
         } catch (e) {
