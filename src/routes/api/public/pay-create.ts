@@ -115,15 +115,27 @@ export const Route = createFileRoute("/api/public/pay-create")({
           return json({ success: false, error: "缺少 orderNo / payType" }, 200);
         }
 
+        let supabase: AppSupabase;
+        let supabaseMode: "service" | "user";
+        try {
+          const client = getSupabaseForRequest(request);
+          supabase = client.supabase;
+          supabaseMode = client.mode;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.error("[pay-create] supabase init failed", msg);
+          return json({ success: false, error: msg }, 200);
+        }
+
         // 1. 取订单
-        const { data: order, error: orderErr } = await supabaseAdmin
+        const { data: order, error: orderErr } = await supabase
           .from("payment_orders")
           .select("order_no, amount, subject, status, user_id")
           .eq("order_no", orderNo)
           .maybeSingle();
         if (orderErr || !order) {
-          await logPay(orderNo, "create_error", "error", "订单不存在", {
-            orderErr,
+          await logPay(supabase, orderNo, "create_error", "error", "订单不存在", {
+            orderErr, supabaseMode,
           });
           return json({ success: false, error: "订单不存在" }, 200);
         }
@@ -135,7 +147,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
         }
 
         // 2. 取 3ypay 通道配置
-        const { data: chans } = await supabaseAdmin
+        const { data: chans } = await supabase
           .from("payment_channels")
           .select("provider, config, is_enabled")
           .eq("is_enabled", true);
@@ -143,7 +155,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           (chans ?? []).find((c: { provider: string }) => c.provider === "3ypay") ??
           (chans ?? []).find((c: { provider: string }) => c.provider === payType);
         if (!chan) {
-          await logPay(orderNo, "create_error", "error", "未配置 3ypay 通道", {});
+          await logPay(supabase, orderNo, "create_error", "error", "未配置 3ypay 通道", {});
           return json(
             { success: false, error: "未配置 3ypay 支付通道，请联系管理员" },
             200,
@@ -157,7 +169,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
         const productCode = sub.productCode;
         const paySubType = sub.paySubType || "NATIVE";
         if (!appId || !merchantPrivateKey || !platformPublicKey || !productCode) {
-          await logPay(orderNo, "create_error", "error", "通道配置不完整", {
+          await logPay(supabase, orderNo, "create_error", "error", "通道配置不完整", {
             hasAppId: !!appId,
             hasPriv: !!merchantPrivateKey,
             hasPub: !!platformPublicKey,
@@ -202,17 +214,18 @@ export const Route = createFileRoute("/api/public/pay-create")({
           sign = await signRSA2(common, merchantPrivateKey);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          await logPay(orderNo, "create_error", "error", `RSA2 签名失败：${msg}`, {});
+          await logPay(supabase, orderNo, "create_error", "error", `RSA2 签名失败：${msg}`, {});
           return json({ success: false, error: `签名失败：${msg}` }, 200);
         }
         const reqBody = { ...common, sign };
 
         // 5. 调用 3ypay
-        await logPay(orderNo, "create_request", "info", "POST 3ypay openapi (同源)", {
+        await logPay(supabase, orderNo, "create_request", "info", "POST 3ypay openapi (同源)", {
           requestId,
           productCode,
           paySubType,
           bizContent: bizContentObj,
+          supabaseMode,
         });
         let resp: Response;
         try {
@@ -223,13 +236,13 @@ export const Route = createFileRoute("/api/public/pay-create")({
           });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          await logPay(orderNo, "create_error", "error", `网络错误：${msg}`, {});
+          await logPay(supabase, orderNo, "create_error", "error", `网络错误：${msg}`, {});
           return json({ success: false, error: `请求 3ypay 失败：${msg}` }, 200);
         }
 
         const respText = await resp.text();
         const respCt = resp.headers.get("content-type") || "";
-        await logPay(orderNo, "create_response", "info", `3ypay HTTP ${resp.status}`, {
+        await logPay(supabase, orderNo, "create_response", "info", `3ypay HTTP ${resp.status}`, {
           httpStatus: resp.status,
           contentType: respCt,
           bodyPreview: respText.slice(0, 1500),
@@ -242,7 +255,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           const errMsg = blocked
             ? `3ypay 拒绝访问（HTTP ${resp.status}）：服务器出口 IP 被风控拦截。请确认 66cai.site 服务器 IP 已加入 3ypay 白名单，或联系 3ypay 客服解封。`
             : `3ypay 返回非 JSON 响应（HTTP ${resp.status}）`;
-          await logPay(orderNo, "create_error", "error", errMsg, {
+          await logPay(supabase, orderNo, "create_error", "error", errMsg, {
             httpStatus: resp.status,
           });
           return json(
@@ -256,7 +269,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           respJson = JSON.parse(respText);
         } catch {
           const errMsg = `3ypay 响应非 JSON（HTTP ${resp.status})`;
-          await logPay(orderNo, "create_error", "error", errMsg, {
+          await logPay(supabase, orderNo, "create_error", "error", errMsg, {
             body: respText.slice(0, 1500),
           });
           return json({ success: false, error: errMsg }, 200);
@@ -264,7 +277,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
 
         if (respJson.code !== 200 || !respJson.data) {
           const errMsg = `3ypay 返回失败：${respJson.msg || respJson.subMsg || "未知错误"}（code=${respJson.code}）`;
-          await logPay(orderNo, "create_error", "error", errMsg, {
+          await logPay(supabase, orderNo, "create_error", "error", errMsg, {
             code: respJson.code,
             raw: respJson,
           });
@@ -279,7 +292,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
             platformPublicKey,
           );
           if (!ok) {
-            await logPay(orderNo, "create_error", "error", "响应验签失败（仅告警）", {
+            await logPay(supabase, orderNo, "create_error", "error", "响应验签失败（仅告警）", {
               raw: respJson,
             });
           }
@@ -293,7 +306,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
               ? JSON.parse(respJson.data as string)
               : (respJson.data as Record<string, unknown>);
         } catch {
-          await logPay(orderNo, "create_error", "error", "data 解析失败", {
+          await logPay(supabase, orderNo, "create_error", "error", "data 解析失败", {
             data: respJson.data,
           });
           return json({ success: false, error: "3ypay data 解析失败" }, 200);
@@ -308,7 +321,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
             (dataObj.failReason as string) ||
             (dataObj.failCode as string) ||
             "未取到收银台 URL";
-          await logPay(orderNo, "create_error", "error", String(failReason), {
+          await logPay(supabase, orderNo, "create_error", "error", String(failReason), {
             dataObj,
           });
           return json(
@@ -317,7 +330,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           );
         }
 
-        await logPay(orderNo, "create_response", "info", "已获取收银台 URL", {
+        await logPay(supabase, orderNo, "create_response", "info", "已获取收银台 URL", {
           payDataType: dataObj.payDataType,
           payOrderNo: dataObj.payOrderNo,
           payUrlPreview: payUrl.slice(0, 200),
