@@ -57,6 +57,7 @@ import { Route as LoginDoneRouteImport } from './routes/login.done'
 import { Route as AuthStaffLoginRouteImport } from './routes/auth.staff-login'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as ApplyAgentMerchantIdRouteImport } from './routes/apply-agent.$merchantId'
+import { Route as ApiPayCreateRouteImport } from './routes/api/pay-create'
 import { Route as AgentShareRouteImport } from './routes/agent_.share'
 import { Route as AgentMerchantsRouteImport } from './routes/agent_.merchants'
 import { Route as AgentInviteesRouteImport } from './routes/agent_.invitees'
@@ -328,6 +329,11 @@ const ApplyAgentMerchantIdRoute = ApplyAgentMerchantIdRouteImport.update({
   path: '/apply-agent/$merchantId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPayCreateRoute = ApiPayCreateRouteImport.update({
+  id: '/api/pay-create',
+  path: '/api/pay-create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentShareRoute = AgentShareRouteImport.update({
   id: '/agent_/share',
   path: '/agent/share',
@@ -511,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
+  '/api/pay-create': typeof ApiPayCreateRoute
   '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -589,6 +596,7 @@ export interface FileRoutesByTo {
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
+  '/api/pay-create': typeof ApiPayCreateRoute
   '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -669,6 +677,7 @@ export interface FileRoutesById {
   '/agent_/invitees': typeof AgentInviteesRoute
   '/agent_/merchants': typeof AgentMerchantsRoute
   '/agent_/share': typeof AgentShareRoute
+  '/api/pay-create': typeof ApiPayCreateRoute
   '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -750,6 +759,7 @@ export interface FileRouteTypes {
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
+    | '/api/pay-create'
     | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
+    | '/api/pay-create'
     | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
@@ -907,6 +918,7 @@ export interface FileRouteTypes {
     | '/agent_/invitees'
     | '/agent_/merchants'
     | '/agent_/share'
+    | '/api/pay-create'
     | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
@@ -987,6 +999,7 @@ export interface RootRouteChildren {
   AgentInviteesRoute: typeof AgentInviteesRoute
   AgentMerchantsRoute: typeof AgentMerchantsRoute
   AgentShareRoute: typeof AgentShareRoute
+  ApiPayCreateRoute: typeof ApiPayCreateRoute
   ApplyAgentMerchantIdRoute: typeof ApplyAgentMerchantIdRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthStaffLoginRoute: typeof AuthStaffLoginRoute
@@ -1360,6 +1373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplyAgentMerchantIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pay-create': {
+      id: '/api/pay-create'
+      path: '/api/pay-create'
+      fullPath: '/api/pay-create'
+      preLoaderRoute: typeof ApiPayCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agent_/share': {
       id: '/agent_/share'
       path: '/agent/share'
@@ -1642,6 +1662,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentInviteesRoute: AgentInviteesRoute,
   AgentMerchantsRoute: AgentMerchantsRoute,
   AgentShareRoute: AgentShareRoute,
+  ApiPayCreateRoute: ApiPayCreateRoute,
   ApplyAgentMerchantIdRoute: ApplyAgentMerchantIdRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthStaffLoginRoute: AuthStaffLoginRoute,
