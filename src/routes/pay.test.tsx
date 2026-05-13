@@ -20,14 +20,11 @@ function PayTestPage() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
-  // 必须在客户端检测，避免 SSR 期间 navigator 不存在导致 hydration 后一直显示"外部浏览器"
-  const [isWechat, setIsWechat] = useState(false);
-  const [envReady, setEnvReady] = useState(false);
-
-  useEffect(() => {
-    setIsWechat(PaymentService.isWechat());
-    setEnvReady(true);
-  }, []);
+  // 同步判断 UA：SSR 时 navigator 不存在 → false（外部浏览器布局）；
+  // 客户端首次渲染立即拿到真实 UA，不再依赖 useEffect 才解锁按钮，
+  // 避免任何 hydration 异常导致按钮永远停在"环境检测中"。
+  const isWechat =
+    typeof navigator !== "undefined" && /micromessenger/i.test(navigator.userAgent);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth/login" });
