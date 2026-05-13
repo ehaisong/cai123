@@ -19,6 +19,24 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 } as const;
 
+async function getServerEgressIp(): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2500);
+  try {
+    const resp = await fetch("https://api.ipify.org?format=json", {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as { ip?: unknown };
+    return typeof data.ip === "string" ? data.ip : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 type AppSupabase = SupabaseClient<Database>;
 const WsTransport = WebSocket as unknown as WebSocketLikeConstructor;
 
@@ -106,8 +124,19 @@ export const Route = createFileRoute("/api/public/pay-create")({
     handlers: {
       OPTIONS: async () =>
         new Response(null, { status: 204, headers: CORS_HEADERS }),
-      GET: async () =>
-        json({ ok: true, endpoint: "pay-create", method: "POST" }),
+      GET: async ({ request }) => {
+        const diagnose = new URL(request.url).searchParams.get("diagnose");
+        if (diagnose === "egress") {
+          return json({
+            ok: true,
+            endpoint: "pay-create",
+            serverEgressIp: await getServerEgressIp(),
+            expectedWhitelistIp: "103.87.9.218",
+            note: "此 IP 是 66cai.site Node 服务调用 3ypay 时对方看到的出口 IP，不是 Supabase 出口 IP。",
+          });
+        }
+        return json({ ok: true, endpoint: "pay-create", method: "POST" });
+      },
       POST: async ({ request }) => {
         let body: { orderNo?: string; payType?: string } = {};
         try {
@@ -263,11 +292,14 @@ export const Route = createFileRoute("/api/public/pay-create")({
           respCt.includes("text/html") || /^\s*<(!doctype|html)/i.test(respText);
         if (isHtml || resp.status === 403) {
           const blocked = /you have been blocked|被阻止访问|forbidden/i.test(respText);
+          const serverEgressIp = await getServerEgressIp();
           const errMsg = blocked
-            ? `3ypay 拒绝访问（HTTP ${resp.status}）：服务器出口 IP 被风控拦截。请确认 66cai.site 服务器 IP 已加入 3ypay 白名单，或联系 3ypay 客服解封。`
+            ? `3ypay 拒绝访问（HTTP ${resp.status}）：服务器出口 IP ${serverEgressIp ?? "检测失败"} 被风控拦截。请将此 IP 加入 3ypay 白名单，或联系 3ypay 客服解封。`
             : `3ypay 返回非 JSON 响应（HTTP ${resp.status}）`;
           await logPay(supabase, orderNo, "create_error", "error", errMsg, {
             httpStatus: resp.status,
+            serverEgressIp,
+            expectedWhitelistIp: "103.87.9.218",
           });
           return json(
             { success: false, error: errMsg, httpStatus: resp.status },
