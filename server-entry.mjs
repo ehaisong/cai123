@@ -3,9 +3,31 @@
 // Wraps TanStack Start's Web Fetch API handler to listen on a Node.js HTTP port
 import http from "node:http";
 import { Buffer } from "node:buffer";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const HOST = process.env.HOST || "0.0.0.0";
+const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const CLIENT_DIR = path.join(ROOT_DIR, "dist", "client");
+
+const MIME_TYPES = {
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".txt": "text/plain; charset=utf-8",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+};
 
 // Dynamically import the built server bundle (ES module with default export { fetch })
 const { default: app } = await import("./dist/server/server.js");
@@ -18,7 +40,6 @@ if (typeof fetchHandler !== "function") {
 
 // Convert Node IncomingMessage -> Web Request
 function nodeToWebRequest(req) {
-  const protocol = "https";
   const host = req.headers["host"] || `localhost:${PORT}`;
   const url = `http://${host}${req.url}`;
 
@@ -43,6 +64,35 @@ function nodeToWebRequest(req) {
   return new Request(url, { method, headers, body, duplex: "half" });
 }
 
+async function tryServeStatic(req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") return false;
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  if (!url.pathname.startsWith("/assets/") && !url.pathname.startsWith("/favicon")) {
+    return false;
+  }
+
+  const decodedPath = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
+  const filePath = path.resolve(CLIENT_DIR, decodedPath);
+  if (!filePath.startsWith(CLIENT_DIR + path.sep)) return false;
+
+  try {
+    const fileStat = await stat(filePath);
+    if (!fileStat.isFile()) return false;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", MIME_TYPES[path.extname(filePath)] || "application/octet-stream");
+    res.setHeader("Content-Length", fileStat.size);
+    res.setHeader("Cache-Control", url.pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "public, max-age=300");
+    if (req.method === "HEAD") {
+      res.end();
+      return true;
+    }
+    createReadStream(filePath).pipe(res);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Convert Web Response -> Node ServerResponse
 async function webToNodeResponse(webRes, res) {
   res.statusCode = webRes.status;
@@ -62,6 +112,7 @@ async function webToNodeResponse(webRes, res) {
 
 const server = http.createServer(async (req, res) => {
   try {
+    if (await tryServeStatic(req, res)) return;
     const webReq = nodeToWebRequest(req);
     const webRes = await fetchHandler(webReq);
     await webToNodeResponse(webRes, res);
