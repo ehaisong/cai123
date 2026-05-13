@@ -111,9 +111,14 @@ export const PaymentService = {
     let data: { success?: boolean; payUrl?: string; error?: string } | null = null;
     let fetchErr: Error | null = null;
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
       const resp = await fetch("/api/public/pay-create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ orderNo, payType }),
       });
       try {
