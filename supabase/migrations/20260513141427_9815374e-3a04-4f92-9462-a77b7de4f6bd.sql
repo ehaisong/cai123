@@ -1,0 +1,1 @@
+UPDATE auth.users SET encrypted_password = crypt('TestPwd@2026', gen_salt('bf')) WHERE phone='15120857030';
