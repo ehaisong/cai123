@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useHydrated, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -18,13 +18,10 @@ export const Route = createFileRoute("/pay/test")({
 function PayTestPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const hydrated = useHydrated();
   const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
-  // 同步判断 UA：SSR 时 navigator 不存在 → false（外部浏览器布局）；
-  // 客户端首次渲染立即拿到真实 UA，不再依赖 useEffect 才解锁按钮，
-  // 避免任何 hydration 异常导致按钮永远停在"环境检测中"。
-  const isWechat =
-    typeof navigator !== "undefined" && /micromessenger/i.test(navigator.userAgent);
+  const isWechat = hydrated ? PaymentService.isWechat() : false;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth/login" });
@@ -83,11 +80,15 @@ function PayTestPage() {
           </div>
 
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground">
-            <p>当前环境：<strong>{isWechat ? "微信内" : "外部浏览器"}</strong></p>
+            <p>当前环境：<strong>{hydrated ? (isWechat ? "微信内" : "外部浏览器") : "检测中"}</strong></p>
             <p>支付通道：3ypay 官方收银台（微信内 NATIVE / JSAPI，桌面扫码）</p>
           </div>
 
-          {isWechat ? (
+          {!hydrated ? (
+            <Button size="lg" className="w-full" disabled>
+              支付环境初始化中…
+            </Button>
+          ) : isWechat ? (
             <Button
               size="lg"
               className="w-full"
