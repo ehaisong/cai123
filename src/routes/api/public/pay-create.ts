@@ -2,8 +2,9 @@
 // 出口 IP 即站点白名单 IP，避免被 3ypay 风控拦截）。
 // 替代原 supabase/functions/pay-create。
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { signRSA2, verifyRSA2 } from "@/lib/threeypay-verify";
+import type { Database } from "@/integrations/supabase/types";
 
 const GATEWAY_URL = "https://openapi.3ypay.com/openapi/order/pay/create";
 const NOTIFY_URL = "https://66cai.site/api/public/pay-notify";
@@ -15,6 +16,36 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400",
 } as const;
+
+type AppSupabase = SupabaseClient<Database>;
+
+function getSupabaseForRequest(request: Request): { supabase: AppSupabase; mode: "service" | "user" } {
+  const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const publishableKey =
+    process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || (!serviceRoleKey && !publishableKey)) {
+    throw new Error("服务器缺少 Supabase 环境变量");
+  }
+
+  const authHeader = request.headers.get("authorization") || "";
+  if (!serviceRoleKey && !authHeader) {
+    throw new Error("服务器缺少 service role，且请求未携带用户登录态");
+  }
+
+  return {
+    mode: serviceRoleKey ? "service" : "user",
+    supabase: createClient<Database>(supabaseUrl, serviceRoleKey || publishableKey, {
+      auth: {
+        storage: undefined,
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: authHeader && !serviceRoleKey ? { headers: { Authorization: authHeader } } : undefined,
+    }),
+  };
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -41,6 +72,7 @@ function sanitizeSubject(raw: string): string {
 }
 
 async function logPay(
+  supabase: AppSupabase,
   orderNo: string | null,
   stage: string,
   level: "info" | "error",
@@ -48,7 +80,7 @@ async function logPay(
   payload: Record<string, unknown>,
 ) {
   try {
-    await supabaseAdmin.from("payment_logs").insert([
+    await supabase.from("payment_logs").insert([
       {
         order_no: orderNo,
         source: "tanstack-pay-create",
