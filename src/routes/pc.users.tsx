@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, ChevronRight, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/pc/users")({
   component: UsersPage,
@@ -185,6 +185,7 @@ function UsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8"></TableHead>
                 <TableHead>店铺</TableHead>
                 <TableHead>负责人/手机</TableHead>
                 <TableHead>状态</TableHead>
@@ -196,36 +197,17 @@ function UsersPage() {
             </TableHeader>
             <TableBody>
               {loading && (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-muted-foreground">加载中…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">加载中…</TableCell></TableRow>
               )}
               {!loading && filtered.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-muted-foreground">暂无数据</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">暂无数据</TableCell></TableRow>
               )}
               {filtered.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell className="font-medium">{m.shop_name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{m.real_name ?? "—"} / {m.phone ?? "—"}</TableCell>
-                  <TableCell>
-                    {m.is_disabled
-                      ? <span className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive">已关店</span>
-                      : m.status === "approved"
-                        ? <span className="text-xs px-2 py-0.5 rounded bg-success/10 text-success">营业中</span>
-                        : <span className="text-xs px-2 py-0.5 rounded bg-warning/10 text-warning">{m.status}</span>}
-                  </TableCell>
-                  <TableCell className="text-right">{fmtMoney(m.total_sales)}</TableCell>
-                  <TableCell className="text-right text-sm">{m.agents} / {m.customers}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{fmtDate(m.created_at)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Link to="/pc/users/merchant/$merchantId" params={{ merchantId: m.id }}>
-                        <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
-                      </Link>
-                      <Button size="sm" variant={m.is_disabled ? "default" : "outline"} onClick={() => toggleDisable(m)}>
-                        {m.is_disabled ? "重新开店" : "关店"}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <MerchantTreeRow
+                  key={m.id}
+                  m={m}
+                  onToggleDisable={() => toggleDisable(m)}
+                />
               ))}
             </TableBody>
           </Table>
