@@ -30,6 +30,33 @@ export function buildSignContent(params: Record<string, unknown>): string {
   return keys.map((k) => `${k}=${params[k]}`).join("&");
 }
 
+function bytesToBase64(bytes: ArrayBuffer): string {
+  const b = new Uint8Array(bytes);
+  let s = "";
+  for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+  return btoa(s);
+}
+
+export async function signRSA2(
+  params: Record<string, unknown>,
+  privateKeyPem: string,
+): Promise<string> {
+  const content = buildSignContent(params);
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(privateKeyPem),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(content),
+  );
+  return bytesToBase64(sig);
+}
+
 export async function verifyRSA2(
   params: Record<string, unknown>,
   sign: string,
