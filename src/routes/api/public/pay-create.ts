@@ -3,6 +3,7 @@
 // 替代原 supabase/functions/pay-create。
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import { signRSA2, verifyRSA2 } from "@/lib/threeypay-verify";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -44,6 +45,7 @@ function getSupabaseForRequest(
         persistSession: false,
         autoRefreshToken: false,
       },
+      realtime: { transport: WebSocket },
       global: authHeader && !serviceRoleKey ? { headers: { Authorization: authHeader } } : undefined,
     }),
   };
