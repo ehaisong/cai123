@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin/payment")({
   ),
 });
 
-type Provider = "wechat" | "alipay" | "custom";
+type Provider = "3ypay" | "wechat" | "alipay" | "custom";
 type Channel = {
   id: string;
   code: string;
@@ -31,12 +31,23 @@ type Channel = {
 };
 
 const PROVIDER_LABEL: Record<Provider, string> = {
-  wechat: "微信支付",
-  alipay: "支付宝",
+  "3ypay": "3ypay 聚合（微信+支付宝）",
+  wechat: "微信支付（直连）",
+  alipay: "支付宝（直连）",
   custom: "自定义",
 };
 
 const PROVIDER_FIELDS: Record<Provider, { key: string; label: string; type?: "password" | "textarea"; placeholder?: string }[]> = {
+  "3ypay": [
+    { key: "appId", label: "商户应用 AppID", placeholder: "APP_..." },
+    { key: "mchNo", label: "商户号 MCHID", placeholder: "M..." },
+    { key: "merchantPrivateKey", label: "商户私钥（PKCS#8 PEM）", type: "textarea", placeholder: "-----BEGIN PRIVATE KEY-----\n..." },
+    { key: "platformPublicKey", label: "平台公钥（PEM）", type: "textarea", placeholder: "-----BEGIN PUBLIC KEY-----\n..." },
+    { key: "wechat.productCode", label: "微信 AUT 编号 productCode", placeholder: "T001930749833" },
+    { key: "wechat.paySubType", label: "微信 paySubType", placeholder: "NATIVE（默认）" },
+    { key: "alipay.productCode", label: "支付宝 AUT 编号 productCode", placeholder: "A000558443631" },
+    { key: "alipay.paySubType", label: "支付宝 paySubType", placeholder: "NATIVE（默认）" },
+  ],
   wechat: [
     { key: "app_id", label: "AppID", placeholder: "wx... 公众号/小程序 AppID" },
     { key: "mch_id", label: "商户号 MCHID" },
@@ -53,6 +64,23 @@ const PROVIDER_FIELDS: Record<Provider, { key: string; label: string; type?: "pa
   ],
   custom: [],
 };
+
+// 支持嵌套 key（如 "wechat.productCode"）的读写
+function getNested(obj: Record<string, any>, path: string): any {
+  return path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), obj);
+}
+function setNested(obj: Record<string, any>, path: string, value: any): Record<string, any> {
+  const next = { ...obj };
+  const keys = path.split(".");
+  let cur: any = next;
+  for (let i = 0; i < keys.length - 1; i++) {
+    cur[keys[i]] = { ...(cur[keys[i]] ?? {}) };
+    cur = cur[keys[i]];
+  }
+  cur[keys[keys.length - 1]] = value;
+  return next;
+}
+
 
 function Inner() {
   const [list, setList] = useState<Channel[]>([]);
@@ -79,8 +107,8 @@ function Inner() {
       id: "",
       code: "",
       name: "",
-      provider: "wechat",
-      config: {},
+      provider: "3ypay",
+      config: { wechat: { paySubType: "NATIVE" }, alipay: { paySubType: "NATIVE" } },
       is_enabled: true,
       sort_order: list.length,
       remark: "",
@@ -280,26 +308,36 @@ function EditDialog({
           {form.provider !== "custom" && (
             <div className="border-t border-border pt-3 space-y-3">
               <div className="text-xs font-medium">{PROVIDER_LABEL[form.provider]}参数</div>
-              {fields.map((f) => (
-                <div key={f.key}>
-                  <label className="text-xs">{f.label}</label>
-                  {f.type === "textarea" ? (
-                    <textarea
-                      className="w-full mt-1 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono min-h-[100px]"
-                      value={form.config[f.key] ?? ""}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setForm({ ...form, config: { ...form.config, [f.key]: e.target.value } })}
-                    />
-                  ) : (
-                    <Input
-                      type={f.type}
-                      value={form.config[f.key] ?? ""}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setForm({ ...form, config: { ...form.config, [f.key]: e.target.value } })}
-                    />
-                  )}
-                </div>
-              ))}
+              {fields.map((f) => {
+                const value = f.key.includes(".") ? getNested(form.config, f.key) : form.config[f.key];
+                const onChange = (val: string) =>
+                  setForm({
+                    ...form,
+                    config: f.key.includes(".")
+                      ? setNested(form.config, f.key, val)
+                      : { ...form.config, [f.key]: val },
+                  });
+                return (
+                  <div key={f.key}>
+                    <label className="text-xs">{f.label}</label>
+                    {f.type === "textarea" ? (
+                      <textarea
+                        className="w-full mt-1 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono min-h-[100px]"
+                        value={value ?? ""}
+                        placeholder={f.placeholder}
+                        onChange={(e) => onChange(e.target.value)}
+                      />
+                    ) : (
+                      <Input
+                        type={f.type}
+                        value={value ?? ""}
+                        placeholder={f.placeholder}
+                        onChange={(e) => onChange(e.target.value)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

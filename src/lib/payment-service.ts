@@ -1,14 +1,8 @@
-// 通过 3ypay 中转支付网关 gw.nrnc.net 发起支付（v2 协议）。
-// 微信内：跳转网关统一 OAuth 中转 → 回跳带 ?wx_openid → method=jsapi 创建 → 直接跳 pay_info
-// 浏览器内：jump → 直跳 pay_info；qrcode → 渲染二维码
-// 网关异步回调到 Supabase Edge Function pay-notify 更新订单状态。
+// 直连 3ypay 收银台。前端只负责调用 Edge Function pay-create 拿到 payUrl 后跳转，
+// 微信内/外的 JSAPI 拉起完全交给 3ypay 收银台页面。
 import QRCode from "qrcode";
+import { supabase } from "@/integrations/supabase/client";
 import { logPayment } from "./payment-logger";
-
-const GATEWAY_BASE = "https://gw.nrnc.net";
-
-// 网关异步通知地址（Supabase Edge Function 公开 URL）
-const NOTIFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pay-notify`;
 
 export type PayType = "wechat" | "alipay";
 
@@ -19,164 +13,7 @@ export interface QueryOrderResponse {
   tradeNo?: string;
 }
 
-interface CreateOrderResponse {
-  success: boolean;
-  provider?: string;
-  payType?: PayType;
-  payMethod?: "jsapi" | "qrcode" | "jump";
-  // 网关有时把 pay_info / pay_type 放在顶层，有时放在 data 中，做兼容
-  pay_info?: string;
-  pay_type?: "qrcode" | "jump";
-  data?: {
-    pay_type?: "qrcode" | "jump";
-    pay_info?: string;
-  };
-  message?: string;
-  raw?: {
-    pay_info?: string;
-    pay_type?: "qrcode" | "jump";
-    failReason?: string;
-    failCode?: string;
-  } & Record<string, unknown>;
-}
-
-function buildReturnUrl(orderNo: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://66cai.site";
-  return `${origin}/pay/success?orderNo=${encodeURIComponent(orderNo)}`;
-}
-
-/**
- * 清洗支付 subject / body：
- * 微信支付商户接口 + 大多数聚合网关（13pay / PayBeaver 等）会把 body 转 GBK 给微信。
- * 含 emoji（4 字节 UTF-8 / surrogate pair）会触发上游 PB500098
- * 「请求内容传入了非UTF8参数」直接 HTTP 400。
- *   1. 删除所有 surrogate pair（emoji、特殊符号）
- *   2. 删除 GBK 不收的杂项符号区
- *   3. 折叠空白并截断到 60 字符（微信 body 限 128 字节，中文按 2 字节估算）
- */
-function sanitizePaySubject(raw: string): string {
-  if (!raw) return "支付订单";
-  let s = raw
-    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")
-    .replace(/[\uD800-\uDFFF]/g, "")
-    .replace(/[\u2600-\u27BF\uE000-\uF8FF]/g, "")
-    .replace(/\p{Variation_Selector}/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!s) s = "支付订单";
-  if (s.length > 60) s = s.slice(0, 60);
-  return s;
-}
-
-const OPENID_KEY = "wx_openid";
-const PENDING_WX_PAY_KEY = "pending_wx_pay";
-
-type PendingWxPay = {
-  orderNo: string;
-  amountYuan: number;
-  payType: "wechat";
-  subject: string;
-  createdAt: number;
-};
-
-function savePendingWxPay(pending: Omit<PendingWxPay, "createdAt">): void {
-  try {
-    sessionStorage.setItem(
-      PENDING_WX_PAY_KEY,
-      JSON.stringify({ ...pending, createdAt: Date.now() }),
-    );
-  } catch {
-    // ignore
-  }
-}
-
-function consumePendingWxPay(): PendingWxPay | null {
-  try {
-    const raw = sessionStorage.getItem(PENDING_WX_PAY_KEY);
-    if (!raw) return null;
-    const pending = JSON.parse(raw) as PendingWxPay;
-    const fresh = Date.now() - Number(pending.createdAt || 0) < 10 * 60 * 1000;
-    if (!fresh || !pending.orderNo || pending.payType !== "wechat") {
-      sessionStorage.removeItem(PENDING_WX_PAY_KEY);
-      return null;
-    }
-    return pending;
-  } catch {
-    return null;
-  }
-}
-
-function clearPendingWxPay(): void {
-  try {
-    sessionStorage.removeItem(PENDING_WX_PAY_KEY);
-  } catch {
-    // ignore
-  }
-}
-
-/** 从 URL 读取并清理 wx_openid / wx_oauth_error，返回 openid */
-function consumeOpenIdFromUrl(): string | null {
-  if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
-  const openid = params.get("wx_openid");
-  const oauthErr = params.get("wx_oauth_error");
-  if (!openid && !oauthErr) return null;
-  params.delete("wx_openid");
-  params.delete("wx_oauth_error");
-  const cleanSearch = params.toString() ? `?${params.toString()}` : "";
-  window.history.replaceState(
-    {},
-    "",
-    window.location.pathname + cleanSearch + window.location.hash,
-  );
-  if (oauthErr) {
-    console.error("[wx oauth] gateway error:", decodeURIComponent(oauthErr));
-    return null;
-  }
-  return openid;
-}
-
-/** 跳转到网关统一 OAuth 中转入口 */
-function redirectToGatewayOAuth(): void {
-  const target = encodeURIComponent(window.location.href);
-  window.location.href = `${GATEWAY_BASE}/api/wx/oauth/redirect?target=${target}`;
-}
-
-let cachedClientIp: string | null = null;
-async function fetchClientIp(): Promise<string | null> {
-  if (cachedClientIp) return cachedClientIp;
-  const sources = ["https://api.ipify.org?format=json", "https://ipapi.co/json/"];
-  for (const url of sources) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 2500);
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(t);
-      if (!r.ok) continue;
-      const j = (await r.json()) as { ip?: string };
-      if (j.ip && /^[\d.]+$|:/.test(j.ip)) {
-        cachedClientIp = j.ip;
-        return j.ip;
-      }
-    } catch {
-      // try next
-    }
-  }
-  return null;
-}
-
-function gatewayFailureDetail(j: CreateOrderResponse): string {
-  const raw = j.raw as { failReason?: string; failCode?: string } | undefined;
-  return j.message || raw?.failReason || raw?.failCode || "创建支付订单失败";
-}
-
-function isJsonPayInfo(payInfo: string): boolean {
-  return payInfo.trim().startsWith("{");
-}
-
-/** 全屏 Loading 遮罩，避免微信 OAuth 回跳/跳转支付间隙露出原页面 */
-
-function showLoadingMask(text = "正在拉起微信支付…", subText = "请稍候，不要关闭页面"): void {
+function showLoadingMask(text = "正在拉起支付…", subText = "请稍候，不要关闭页面"): void {
   if (typeof document === "undefined") return;
   const id = "pay-loading-mask";
   if (document.getElementById(id)) return;
@@ -198,7 +35,6 @@ function hideLoadingMask(): void {
   document.getElementById("pay-loading-mask")?.remove();
 }
 
-/** 渲染二维码到全屏遮罩层 */
 async function showQrCodeMask(qrContent: string, subject: string): Promise<void> {
   const dataUrl = await QRCode.toDataURL(qrContent, {
     width: 256,
@@ -227,69 +63,32 @@ export const PaymentService = {
     return /micromessenger/i.test(navigator.userAgent);
   },
 
-  /** App 入口调用：把网关回跳带回的 wx_openid 写入缓存并清理 URL */
+  /** 兼容旧入口：3ypay 直连模式下不再需要 OAuth resume，直接 no-op。 */
   async resumeFromWxOAuthIfAny(): Promise<void> {
-    if (typeof window === "undefined") return;
-    // 若 URL 上带有 wx_openid，立即显示 loading，避免露出原页面让用户误判
-    const hasOpenidInUrl =
-      typeof window !== "undefined" && /[?&]wx_openid=/.test(window.location.search);
-    if (hasOpenidInUrl) showLoadingMask("正在拉起微信支付…", "正在恢复支付流程，请稍候");
-    const openid = consumeOpenIdFromUrl();
-    if (openid) {
-      try {
-        sessionStorage.setItem(OPENID_KEY, openid);
-      } catch {
-        // ignore
-      }
-      const pending = consumePendingWxPay();
-      logPayment({
-        orderNo: pending?.orderNo,
-        stage: "oauth_resume",
-        message: "OAuth 回跳，已获取 openid",
-        payload: { openidPrefix: openid.slice(0, 6), hasPending: !!pending },
-      });
-      if (pending) {
-        try {
-          await this.pay({
-            orderNo: pending.orderNo,
-            amountYuan: pending.amountYuan,
-            payType: pending.payType,
-            subject: pending.subject,
-          });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          logPayment({
-            orderNo: pending.orderNo,
-            stage: "error",
-            level: "error",
-            message: `OAuth 回跳后续单失败：${msg}`,
-            payload: { pending },
-          });
-          hideLoadingMask();
-        }
-      } else {
-        // openid 已写入但没有待支付订单，关掉 loading
-        hideLoadingMask();
-      }
-    } else if (hasOpenidInUrl) {
-      // 兜底：URL 有 wx_openid 但解析失败
-      hideLoadingMask();
-    }
+    return;
   },
 
   async queryOrder(orderNo: string): Promise<QueryOrderResponse> {
-    try {
-      const res = await fetch(`${GATEWAY_BASE}/api/pay/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: orderNo }),
-      });
-      if (!res.ok) return { success: false };
-      const j = (await res.json()) as QueryOrderResponse;
-      return j;
-    } catch {
-      return { success: false };
-    }
+    const { data, error } = await supabase
+      .from("payment_orders")
+      .select("status, amount, trade_no")
+      .eq("order_no", orderNo)
+      .maybeSingle();
+    if (error || !data) return { success: false };
+    const tradeStatus =
+      data.status === "paid"
+        ? "SUCCESS"
+        : data.status === "closed"
+          ? "CLOSED"
+          : data.status === "failed"
+            ? "FAILED"
+            : "WAIT_BUYER_PAY";
+    return {
+      success: true,
+      tradeStatus: tradeStatus as QueryOrderResponse["tradeStatus"],
+      amount: Number(data.amount),
+      tradeNo: data.trade_no ?? undefined,
+    };
   },
 
   async pay(opts: {
@@ -298,203 +97,67 @@ export const PaymentService = {
     payType: PayType;
     subject: string;
   }): Promise<void> {
-    const { orderNo, amountYuan, payType } = opts;
-    // 关键：先清洗 subject，去掉 emoji 等导致上游 PB500098 的字符
-    const subject = sanitizePaySubject(opts.subject);
+    const { orderNo, payType, subject } = opts;
     const inWechat = this.isWechat();
 
-    // 微信内 + 微信支付：必须先有 openid，否则跳网关 OAuth
-    let openId: string | null = null;
-    if (inWechat && payType === "wechat") {
-      try {
-        openId = sessionStorage.getItem(OPENID_KEY);
-      } catch {
-        openId = null;
-      }
-      if (!openId) {
-        // 试一次：URL 上可能刚被网关带回来还没清理
-        openId = consumeOpenIdFromUrl();
-        if (openId) {
-          try {
-            sessionStorage.setItem(OPENID_KEY, openId);
-          } catch {
-            // ignore
-          }
-        }
-      }
-      if (!openId) {
-        // 注意：保存 sanitize 后的 subject，避免 oauth 回跳后续单又把 emoji 写回去
-        savePendingWxPay({ orderNo, amountYuan, payType: "wechat", subject });
-        logPayment({
-          orderNo,
-          stage: "oauth_redirect",
-          message: "微信内未取到 openid，跳网关 OAuth",
-          payload: { amountYuan, subject },
-        });
-        showLoadingMask("正在准备微信支付…", "正在获取微信授权，请稍候");
-        redirectToGatewayOAuth();
-        return; // 页面将跳转
-      }
-    }
-    // 已拿到 openid 或非微信 JSAPI 场景，统一显示 loading，避免接口耗时让用户误判
     showLoadingMask();
-
-    const returnUrl = buildReturnUrl(orderNo);
-    const body: Record<string, unknown> = {
-      orderId: orderNo,
-      amount: Math.round(amountYuan * 100), // 单位：分
-      payType,
-      subject,
-      notifyUrl: NOTIFY_URL,
-      returnUrl,
-      // 兼容字段：网关 / 上游 13pay 不同字段名都带上，确保支付完成后能跳回站内
-      return_url: returnUrl,
-      redirect_url: returnUrl,
-      redirectUrl: returnUrl,
-    };
-    if (payType === "wechat" && openId) {
-      body.openId = openId;
-      // v2 协议：微信 JSAPI 必填 method
-      body.method = "jsapi";
-    }
-    const clientIp = await fetchClientIp();
-    if (clientIp) body.clientIp = clientIp;
     logPayment({
       orderNo,
       stage: "create_request",
-      message: "调用网关 /api/pay/create",
-      payload: { ...body, openId: openId ? `${openId.slice(0, 6)}***` : undefined },
+      message: "调用 pay-create",
+      payload: { payType, inWechat },
     });
 
-    let res: Response;
-    try {
-      res = await fetch(`${GATEWAY_BASE}/api/pay/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      logPayment({ orderNo, stage: "create_error", level: "error", message: `网络错误：${msg}` });
+    const { data, error } = await supabase.functions.invoke("pay-create", {
+      body: { orderNo, payType },
+    });
+
+    if (error || !data?.payUrl) {
       hideLoadingMask();
-      throw new Error(`网关网络错误：${msg}`);
-    }
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      let detail = text;
-      try {
-        const parsed = JSON.parse(text) as { message?: string; msg?: string; error?: string };
-        detail = parsed.message || parsed.msg || parsed.error || text;
-      } catch {
-        // keep raw text
-      }
+      const msg = (data as { error?: string })?.error || error?.message || "创建支付订单失败";
       logPayment({
         orderNo,
         stage: "create_error",
         level: "error",
-        message: `网关 HTTP ${res.status}`,
-        payload: { status: res.status, body: text.slice(0, 2000) },
+        message: msg,
+        payload: { error, data },
       });
-      hideLoadingMask();
-      throw new Error(`网关错误 HTTP ${res.status}${detail ? `：${detail}` : ""}`);
+      throw new Error(msg);
     }
-    const j = (await res.json()) as CreateOrderResponse;
-    const payInfo = j.data?.pay_info ?? j.pay_info ?? j.raw?.pay_info;
-    const payTypeResp = j.data?.pay_type ?? j.pay_type ?? j.raw?.pay_type;
-    const okResp = j.success && !!payInfo;
+
+    const payUrl = String(data.payUrl);
     logPayment({
       orderNo,
       stage: "create_response",
-      level: okResp ? "info" : "error",
-      message: okResp ? "网关返回成功" : `网关返回不可支付：${gatewayFailureDetail(j)}`,
-      payload: {
-        success: j.success,
-        provider: j.provider,
-        payMethod: j.payMethod,
-        payType: j.payType,
-        dataPayType: payTypeResp,
-        message: j.message,
-        raw: j.raw,
-        payInfoPreview: typeof payInfo === "string" ? payInfo.slice(0, 500) : null,
-      },
+      message: "已获取收银台 URL，准备跳转",
+      payload: { urlPreview: payUrl.slice(0, 200) },
     });
-    if (!okResp || !payInfo) {
-      hideLoadingMask();
-      throw new Error(gatewayFailureDetail(j));
-    }
 
-    // 跳转支付（13pay JSAPI / H5 / 支付宝 H5 都走此分支）
-    const isJump =
-      j.payMethod === "jsapi" ||
-      j.payMethod === "jump" ||
-      payTypeResp === "jump" ||
-      (inWechat && payType === "wechat");
-
-    if (isJump) {
-      if (isJsonPayInfo(payInfo)) {
-        logPayment({
-          orderNo,
-          stage: "create_error",
-          level: "error",
-          message: "网关返回了 JSAPI 参数 JSON，不是可跳转 pay_info URL",
-          payload: { payInfoPreview: payInfo.slice(0, 500), payMethod: j.payMethod, payTypeResp },
-        });
-        hideLoadingMask();
-        throw new Error(
-          "支付中转站返回的是 JSAPI 参数 JSON，不是跳转 URL。请中转站按 13pay 跳转方式返回 pay_info URL。",
-        );
-      }
-
-      // 微信内 JSAPI 跳转前清理 pending
-      if (inWechat && payType === "wechat") clearPendingWxPay();
-
-      // 微信内点支付宝 → 提示在外部浏览器打开
-      if (inWechat && payType === "alipay") {
-        try {
-          localStorage.setItem(
-            "pending_alipay",
-            JSON.stringify({ orderId: orderNo, payUrl: payInfo, createdAt: Date.now() }),
-          );
-        } catch {
-          // ignore
-        }
-        hideLoadingMask();
-        this.showOpenInBrowserMask();
-        return;
-      }
-
-      // 13pay 微信支付走跳转方式：直接 window.location.href = pay_info，
-      // 不调用 wx.config / WeixinJSBridge.getBrandWCPayRequest，避免触发
-      // "当前页面URL未注册" 弹窗（无需 JS 接口安全域名 / JSAPI 支付授权目录）。
-      // 在 pay_info URL 上追加 redirect_url，确保收银台完成后能跳回站内 /pay/success
-      let target = payInfo;
+    // 微信内点支付宝 → 提示在外部浏览器打开
+    if (inWechat && payType === "alipay") {
       try {
-        const u = new URL(payInfo);
-        if (!u.searchParams.has("redirect_url")) u.searchParams.set("redirect_url", returnUrl);
-        if (!u.searchParams.has("return_url")) u.searchParams.set("return_url", returnUrl);
-        target = u.toString();
+        localStorage.setItem(
+          "pending_alipay",
+          JSON.stringify({ orderId: orderNo, payUrl, createdAt: Date.now() }),
+        );
       } catch {
-        // payInfo 不是合法 URL（例如 weixin://），保持原样
+        // ignore
       }
-      logPayment({
-        orderNo,
-        stage: "jsapi_invoke",
-        message: "跳转网关返回的支付 URL",
-        payload: { urlPreview: target.slice(0, 300) },
-      });
-      window.location.href = target;
-      return;
-    }
-
-    // 二维码支付（PC / 桌面浏览器场景）
-    if (payTypeResp === "qrcode" || j.payMethod === "qrcode") {
       hideLoadingMask();
-      await showQrCodeMask(payInfo, subject);
+      this.showOpenInBrowserMask();
       return;
     }
 
-    hideLoadingMask();
-    throw new Error(`不支持的支付响应类型：${payTypeResp || j.payMethod || "unknown"}`);
+    // PC 浏览器扫码场景：3ypay NATIVE 返回的可能是二维码内容（weixin://wxpay/...）
+    // 这里简单判断：以 weixin:// 或非 http 开头视为二维码
+    if (!inWechat && /^(weixin:|alipayqr:|alipays:)/i.test(payUrl)) {
+      hideLoadingMask();
+      await showQrCodeMask(payUrl, subject);
+      return;
+    }
+
+    // 默认：直接跳转 3ypay 收银台 URL（微信内会自动拉起 JSAPI）
+    window.location.href = payUrl;
   },
 
   showOpenInBrowserMask(): void {
@@ -567,7 +230,7 @@ export const PaymentService = {
           return;
         }
       } catch {
-        // ignore, will retry
+        // ignore
       }
       setTimeout(tick, intervalMs);
     };

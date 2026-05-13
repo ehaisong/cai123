@@ -65,7 +65,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const router = useRouter();
   useEffect(() => {
-    void PaymentService.resumeFromWxOAuthIfAny();
     PaymentService.checkPendingAlipay();
   }, []);
   useEffect(() => {
