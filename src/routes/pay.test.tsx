@@ -90,14 +90,18 @@ function PayTestPage() {
             <p>支付通道：3ypay 官方收银台（微信内 NATIVE / JSAPI，桌面扫码）</p>
           </div>
 
-          {isWechat ? (
+          {!envReady ? (
+            <Button size="lg" className="w-full" disabled>
+              环境检测中…
+            </Button>
+          ) : isWechat ? (
             <Button
               size="lg"
               className="w-full"
               disabled={submitting !== null}
               onClick={() => handlePay("wechat")}
             >
-              {submitting === "wechat" ? "正在拉起支付…" : "微信支付"}
+              {submitting === "wechat" ? "正在拉起支付…" : "微信支付（NATIVE）"}
             </Button>
           ) : (
             <div className="space-y-2">
@@ -116,7 +120,7 @@ function PayTestPage() {
                 disabled={submitting !== null}
                 onClick={() => handlePay("wechat")}
               >
-                {submitting === "wechat" ? "正在拉起支付…" : "微信支付（H5）"}
+                {submitting === "wechat" ? "正在拉起支付…" : "微信支付（H5/扫码）"}
               </Button>
             </div>
           )}
