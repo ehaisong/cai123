@@ -83,15 +83,11 @@ function PayTestPage() {
           </div>
 
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground">
-            <p>当前环境：<strong>{!envReady ? "检测中…" : isWechat ? "微信内" : "外部浏览器"}</strong></p>
+            <p>当前环境：<strong>{isWechat ? "微信内" : "外部浏览器"}</strong></p>
             <p>支付通道：3ypay 官方收银台（微信内 NATIVE / JSAPI，桌面扫码）</p>
           </div>
 
-          {!envReady ? (
-            <Button size="lg" className="w-full" disabled>
-              环境检测中…
-            </Button>
-          ) : isWechat ? (
+          {isWechat ? (
             <Button
               size="lg"
               className="w-full"
