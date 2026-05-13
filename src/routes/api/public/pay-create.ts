@@ -19,12 +19,11 @@ const CORS_HEADERS = {
 
 type AppSupabase = SupabaseClient<Database>;
 
-function getSupabaseForRequest(request: Request): { supabase: AppSupabase; mode: "service" | "user" } {
-  const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const publishableKey =
-    process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
+function getSupabaseForRequest(
+  request: Request,
+  env: { supabaseUrl?: string; serviceRoleKey?: string; publishableKey?: string },
+): { supabase: AppSupabase; mode: "service" | "user" } {
+  const { supabaseUrl, serviceRoleKey, publishableKey } = env;
   if (!supabaseUrl || (!serviceRoleKey && !publishableKey)) {
     throw new Error("服务器缺少 Supabase 环境变量");
   }
@@ -34,9 +33,12 @@ function getSupabaseForRequest(request: Request): { supabase: AppSupabase; mode:
     throw new Error("服务器缺少 service role，且请求未携带用户登录态");
   }
 
+  const supabaseKey = serviceRoleKey || publishableKey;
+  if (!supabaseKey) throw new Error("服务器缺少 Supabase 访问密钥");
+
   return {
     mode: serviceRoleKey ? "service" : "user",
-    supabase: createClient<Database>(supabaseUrl, serviceRoleKey || publishableKey, {
+    supabase: createClient<Database>(supabaseUrl, supabaseKey, {
       auth: {
         storage: undefined,
         persistSession: false,
