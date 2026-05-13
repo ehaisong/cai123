@@ -308,26 +308,36 @@ function EditDialog({
           {form.provider !== "custom" && (
             <div className="border-t border-border pt-3 space-y-3">
               <div className="text-xs font-medium">{PROVIDER_LABEL[form.provider]}参数</div>
-              {fields.map((f) => (
-                <div key={f.key}>
-                  <label className="text-xs">{f.label}</label>
-                  {f.type === "textarea" ? (
-                    <textarea
-                      className="w-full mt-1 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono min-h-[100px]"
-                      value={form.config[f.key] ?? ""}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setForm({ ...form, config: { ...form.config, [f.key]: e.target.value } })}
-                    />
-                  ) : (
-                    <Input
-                      type={f.type}
-                      value={form.config[f.key] ?? ""}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setForm({ ...form, config: { ...form.config, [f.key]: e.target.value } })}
-                    />
-                  )}
-                </div>
-              ))}
+              {fields.map((f) => {
+                const value = f.key.includes(".") ? getNested(form.config, f.key) : form.config[f.key];
+                const onChange = (val: string) =>
+                  setForm({
+                    ...form,
+                    config: f.key.includes(".")
+                      ? setNested(form.config, f.key, val)
+                      : { ...form.config, [f.key]: val },
+                  });
+                return (
+                  <div key={f.key}>
+                    <label className="text-xs">{f.label}</label>
+                    {f.type === "textarea" ? (
+                      <textarea
+                        className="w-full mt-1 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono min-h-[100px]"
+                        value={value ?? ""}
+                        placeholder={f.placeholder}
+                        onChange={(e) => onChange(e.target.value)}
+                      />
+                    ) : (
+                      <Input
+                        type={f.type}
+                        value={value ?? ""}
+                        placeholder={f.placeholder}
+                        onChange={(e) => onChange(e.target.value)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
