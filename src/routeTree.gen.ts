@@ -13,6 +13,7 @@ import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PcRouteImport } from './routes/pc'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as MerchantsRouteImport } from './routes/merchants'
@@ -21,6 +22,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PcIndexRouteImport } from './routes/pc.index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WalletTransactionsRouteImport } from './routes/wallet_.transactions'
@@ -29,6 +31,8 @@ import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProfileKycRouteImport } from './routes/profile_.kyc'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as PcUsersRouteImport } from './routes/pc.users'
+import { Route as PcLoginRouteImport } from './routes/pc.login'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
@@ -68,6 +72,9 @@ import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
+import { Route as PcUsersMerchantMerchantIdRouteImport } from './routes/pc.users.merchant.$merchantId'
+import { Route as PcUsersBuyerUserIdRouteImport } from './routes/pc.users.buyer.$userId'
+import { Route as PcUsersAgentUserIdRouteImport } from './routes/pc.users.agent.$userId'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
 import { Route as MerchantProductsProductIdIssuesBulkImportRouteImport } from './routes/merchant.products.$productId.issues.bulk-import'
@@ -91,6 +98,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PcRoute = PcRouteImport.update({
+  id: '/pc',
+  path: '/pc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -133,6 +145,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PcIndexRoute = PcIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PcRoute,
+} as any)
 const MerchantIndexRoute = MerchantIndexRouteImport.update({
   id: '/merchant/',
   path: '/merchant/',
@@ -172,6 +189,16 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
   path: '/product/$productId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PcUsersRoute = PcUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => PcRoute,
+} as any)
+const PcLoginRoute = PcLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => PcRoute,
 } as any)
 const PayTestRoute = PayTestRouteImport.update({
   id: '/pay/test',
@@ -369,6 +396,22 @@ const MerchantAgentsUserIdRoute = MerchantAgentsUserIdRouteImport.update({
   path: '/$userId',
   getParentRoute: () => MerchantAgentsRoute,
 } as any)
+const PcUsersMerchantMerchantIdRoute =
+  PcUsersMerchantMerchantIdRouteImport.update({
+    id: '/merchant/$merchantId',
+    path: '/merchant/$merchantId',
+    getParentRoute: () => PcUsersRoute,
+  } as any)
+const PcUsersBuyerUserIdRoute = PcUsersBuyerUserIdRouteImport.update({
+  id: '/buyer/$userId',
+  path: '/buyer/$userId',
+  getParentRoute: () => PcUsersRoute,
+} as any)
+const PcUsersAgentUserIdRoute = PcUsersAgentUserIdRouteImport.update({
+  id: '/agent/$userId',
+  path: '/agent/$userId',
+  getParentRoute: () => PcUsersRoute,
+} as any)
 const MerchantProductsProductIdIssuesIndexRoute =
   MerchantProductsProductIdIssuesIndexRouteImport.update({
     id: '/merchant/products/$productId/issues/',
@@ -403,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/pc': typeof PcRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -443,6 +487,8 @@ export interface FileRoutesByFullPath {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pc/login': typeof PcLoginRoute
+  '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/profile/kyc': typeof ProfileKycRoute
@@ -451,9 +497,13 @@ export interface FileRoutesByFullPath {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/pc/': typeof PcIndexRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
+  '/pc/users/agent/$userId': typeof PcUsersAgentUserIdRoute
+  '/pc/users/buyer/$userId': typeof PcUsersBuyerUserIdRoute
+  '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -508,6 +558,8 @@ export interface FileRoutesByTo {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pc/login': typeof PcLoginRoute
+  '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/profile/kyc': typeof ProfileKycRoute
@@ -516,9 +568,13 @@ export interface FileRoutesByTo {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
+  '/pc': typeof PcIndexRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
+  '/pc/users/agent/$userId': typeof PcUsersAgentUserIdRoute
+  '/pc/users/buyer/$userId': typeof PcUsersBuyerUserIdRoute
+  '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -534,6 +590,7 @@ export interface FileRoutesById {
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/pc': typeof PcRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -574,6 +631,8 @@ export interface FileRoutesById {
   '/orders_/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pc/login': typeof PcLoginRoute
+  '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
   '/profile_/kyc': typeof ProfileKycRoute
@@ -582,9 +641,13 @@ export interface FileRoutesById {
   '/wallet_/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/pc/': typeof PcIndexRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
+  '/pc/users/agent/$userId': typeof PcUsersAgentUserIdRoute
+  '/pc/users/buyer/$userId': typeof PcUsersBuyerUserIdRoute
+  '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -601,6 +664,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/pc'
     | '/privacy'
     | '/profile'
     | '/terms'
@@ -641,6 +705,8 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/pay/success'
     | '/pay/test'
+    | '/pc/login'
+    | '/pc/users'
     | '/product/$productId'
     | '/profile/bind-phone'
     | '/profile/kyc'
@@ -649,9 +715,13 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/pc/'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
+    | '/pc/users/agent/$userId'
+    | '/pc/users/buyer/$userId'
+    | '/pc/users/merchant/$merchantId'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues/'
@@ -706,6 +776,8 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/pay/success'
     | '/pay/test'
+    | '/pc/login'
+    | '/pc/users'
     | '/product/$productId'
     | '/profile/bind-phone'
     | '/profile/kyc'
@@ -714,9 +786,13 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin'
     | '/merchant'
+    | '/pc'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products'
+    | '/pc/users/agent/$userId'
+    | '/pc/users/buyer/$userId'
+    | '/pc/users/merchant/$merchantId'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues'
@@ -731,6 +807,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/pc'
     | '/privacy'
     | '/profile'
     | '/terms'
@@ -771,6 +848,8 @@ export interface FileRouteTypes {
     | '/orders_/$orderId'
     | '/pay/success'
     | '/pay/test'
+    | '/pc/login'
+    | '/pc/users'
     | '/product/$productId'
     | '/profile_/bind-phone'
     | '/profile_/kyc'
@@ -779,9 +858,13 @@ export interface FileRouteTypes {
     | '/wallet_/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/pc/'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
+    | '/pc/users/agent/$userId'
+    | '/pc/users/buyer/$userId'
+    | '/pc/users/merchant/$merchantId'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues/'
@@ -797,6 +880,7 @@ export interface RootRouteChildren {
   MerchantsRoute: typeof MerchantsRoute
   MessagesRoute: typeof MessagesRoute
   OrdersRoute: typeof OrdersRoute
+  PcRoute: typeof PcRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   TermsRoute: typeof TermsRoute
@@ -883,6 +967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pc': {
+      id: '/pc'
+      path: '/pc'
+      fullPath: '/pc'
+      preLoaderRoute: typeof PcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders': {
       id: '/orders'
       path: '/orders'
@@ -939,6 +1030,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pc/': {
+      id: '/pc/'
+      path: '/'
+      fullPath: '/pc/'
+      preLoaderRoute: typeof PcIndexRouteImport
+      parentRoute: typeof PcRoute
+    }
     '/merchant/': {
       id: '/merchant/'
       path: '/merchant'
@@ -994,6 +1092,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/product/$productId'
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/pc/users': {
+      id: '/pc/users'
+      path: '/users'
+      fullPath: '/pc/users'
+      preLoaderRoute: typeof PcUsersRouteImport
+      parentRoute: typeof PcRoute
+    }
+    '/pc/login': {
+      id: '/pc/login'
+      path: '/login'
+      fullPath: '/pc/login'
+      preLoaderRoute: typeof PcLoginRouteImport
+      parentRoute: typeof PcRoute
     }
     '/pay/test': {
       id: '/pay/test'
@@ -1268,6 +1380,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantAgentsUserIdRouteImport
       parentRoute: typeof MerchantAgentsRoute
     }
+    '/pc/users/merchant/$merchantId': {
+      id: '/pc/users/merchant/$merchantId'
+      path: '/merchant/$merchantId'
+      fullPath: '/pc/users/merchant/$merchantId'
+      preLoaderRoute: typeof PcUsersMerchantMerchantIdRouteImport
+      parentRoute: typeof PcUsersRoute
+    }
+    '/pc/users/buyer/$userId': {
+      id: '/pc/users/buyer/$userId'
+      path: '/buyer/$userId'
+      fullPath: '/pc/users/buyer/$userId'
+      preLoaderRoute: typeof PcUsersBuyerUserIdRouteImport
+      parentRoute: typeof PcUsersRoute
+    }
+    '/pc/users/agent/$userId': {
+      id: '/pc/users/agent/$userId'
+      path: '/agent/$userId'
+      fullPath: '/pc/users/agent/$userId'
+      preLoaderRoute: typeof PcUsersAgentUserIdRouteImport
+      parentRoute: typeof PcUsersRoute
+    }
     '/merchant/products/$productId/issues/': {
       id: '/merchant/products/$productId/issues/'
       path: '/merchant/products/$productId/issues'
@@ -1299,6 +1432,35 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PcUsersRouteChildren {
+  PcUsersAgentUserIdRoute: typeof PcUsersAgentUserIdRoute
+  PcUsersBuyerUserIdRoute: typeof PcUsersBuyerUserIdRoute
+  PcUsersMerchantMerchantIdRoute: typeof PcUsersMerchantMerchantIdRoute
+}
+
+const PcUsersRouteChildren: PcUsersRouteChildren = {
+  PcUsersAgentUserIdRoute: PcUsersAgentUserIdRoute,
+  PcUsersBuyerUserIdRoute: PcUsersBuyerUserIdRoute,
+  PcUsersMerchantMerchantIdRoute: PcUsersMerchantMerchantIdRoute,
+}
+
+const PcUsersRouteWithChildren =
+  PcUsersRoute._addFileChildren(PcUsersRouteChildren)
+
+interface PcRouteChildren {
+  PcLoginRoute: typeof PcLoginRoute
+  PcUsersRoute: typeof PcUsersRouteWithChildren
+  PcIndexRoute: typeof PcIndexRoute
+}
+
+const PcRouteChildren: PcRouteChildren = {
+  PcLoginRoute: PcLoginRoute,
+  PcUsersRoute: PcUsersRouteWithChildren,
+  PcIndexRoute: PcIndexRoute,
+}
+
+const PcRouteWithChildren = PcRoute._addFileChildren(PcRouteChildren)
+
 interface MerchantAgentsRouteChildren {
   MerchantAgentsUserIdRoute: typeof MerchantAgentsUserIdRoute
 }
@@ -1320,6 +1482,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantsRoute: MerchantsRoute,
   MessagesRoute: MessagesRoute,
   OrdersRoute: OrdersRoute,
+  PcRoute: PcRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   TermsRoute: TermsRoute,
@@ -1382,12 +1545,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

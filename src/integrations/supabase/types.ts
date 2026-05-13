@@ -669,7 +669,9 @@ export type Database = {
           config: Json
           created_at: string
           created_by: string | null
+          fee_rate: number
           id: string
+          is_default: boolean
           is_enabled: boolean
           name: string
           provider: string
@@ -682,7 +684,9 @@ export type Database = {
           config?: Json
           created_at?: string
           created_by?: string | null
+          fee_rate?: number
           id?: string
+          is_default?: boolean
           is_enabled?: boolean
           name: string
           provider: string
@@ -695,7 +699,9 @@ export type Database = {
           config?: Json
           created_at?: string
           created_by?: string | null
+          fee_rate?: number
           id?: string
+          is_default?: boolean
           is_enabled?: boolean
           name?: string
           provider?: string
