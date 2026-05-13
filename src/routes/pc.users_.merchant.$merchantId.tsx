@@ -9,7 +9,7 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft, Eye } from "lucide-react";
 
-export const Route = createFileRoute("/pc/users/merchant/$merchantId")({
+export const Route = createFileRoute("/pc/users_/merchant/$merchantId")({
   component: MerchantDetail,
 });
 
