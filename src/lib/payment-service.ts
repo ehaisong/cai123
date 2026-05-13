@@ -59,8 +59,12 @@ async function showQrCodeMask(qrContent: string, subject: string): Promise<void>
 
 export const PaymentService = {
   isWechat(): boolean {
-    if (typeof navigator === "undefined") return false;
-    return /micromessenger/i.test(navigator.userAgent);
+    if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent || "";
+    const hasWechatUa = /micromessenger|wechat|weixin/i.test(ua);
+    const hasWechatBridge = typeof (window as Window & { WeixinJSBridge?: unknown }).WeixinJSBridge !== "undefined";
+    const forcedWechat = new URLSearchParams(window.location.search).get("env") === "wechat";
+    return hasWechatUa || hasWechatBridge || forcedWechat;
   },
 
   /** 兼容旧入口：3ypay 直连模式下不再需要 OAuth resume，直接 no-op。 */
