@@ -21,6 +21,3 @@ verify_jwt = false
 [functions.pay-notify]
 verify_jwt = false
 
-[functions.pay-create]
-verify_jwt = true
-
