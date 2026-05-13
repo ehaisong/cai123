@@ -175,24 +175,47 @@ Deno.serve(async (req: Request) => {
     return json({ error: `请求 3ypay 失败：${msg}` }, 502);
   }
   const respText = await resp.text();
+  const respCt = resp.headers.get("content-type") || "";
+  // 始终记录原始响应，便于排查 WAF/IP 封禁/网关 5xx 等问题
+  await logPay(orderNo, "create_response", "info", `3ypay HTTP ${resp.status}`, {
+    httpStatus: resp.status,
+    contentType: respCt,
+    bodyPreview: respText.slice(0, 1500),
+  });
+
+  // 识别 HTML / 403 拦截
+  const isHtml = respCt.includes("text/html") || /^\s*<(!doctype|html)/i.test(respText);
+  if (isHtml || resp.status === 403) {
+    const blocked = /you have been blocked|被阻止访问|forbidden/i.test(respText);
+    const errMsg = blocked
+      ? `3ypay 拒绝访问（HTTP ${resp.status}）：服务器出口 IP 被风控拦截。请登录 3ypay 商户后台 → 安全设置 → IP 白名单，添加 Supabase Edge 出口 IP；或联系 3ypay 客服解封。`
+      : `3ypay 返回非 JSON 响应（HTTP ${resp.status}）`;
+    await logPay(orderNo, "create_error", "error", errMsg, {
+      httpStatus: resp.status,
+      bodyPreview: respText.slice(0, 800),
+    });
+    return json({ success: false, error: errMsg, httpStatus: resp.status }, 200);
+  }
+
   let respJson: Record<string, any> = {};
   try {
     respJson = JSON.parse(respText);
   } catch {
-    await logPay(orderNo, "create_error", "error", "响应非 JSON", {
-      status: resp.status,
-      body: respText.slice(0, 1000),
+    const errMsg = `3ypay 响应非 JSON（HTTP ${resp.status}），原始内容：${respText.slice(0, 200)}`;
+    await logPay(orderNo, "create_error", "error", errMsg, {
+      httpStatus: resp.status,
+      body: respText.slice(0, 1500),
     });
-    return json({ error: "3ypay 响应格式错误" }, 502);
+    return json({ success: false, error: errMsg }, 200);
   }
 
   if (respJson.code !== 200 || !respJson.data) {
-    const errMsg = String(respJson.msg || "3ypay 返回失败");
+    const errMsg = `3ypay 返回失败：${respJson.msg || respJson.subMsg || "未知错误"}（code=${respJson.code}）`;
     await logPay(orderNo, "create_error", "error", errMsg, {
       code: respJson.code,
       raw: respJson,
     });
-    return json({ error: errMsg, raw: respJson }, 400);
+    return json({ success: false, error: errMsg, raw: respJson }, 200);
   }
 
   // 6. 验签响应（可选但推荐）
