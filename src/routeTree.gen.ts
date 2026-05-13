@@ -22,6 +22,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PcIndexRouteImport } from './routes/pc.index'
 import { Route as MerchantIndexRouteImport } from './routes/merchant.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WalletTransactionsRouteImport } from './routes/wallet_.transactions'
@@ -139,6 +140,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PcIndexRoute = PcIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PcRoute,
 } as any)
 const MerchantIndexRoute = MerchantIndexRouteImport.update({
   id: '/merchant/',
@@ -465,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/pc/': typeof PcIndexRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
@@ -482,7 +489,6 @@ export interface FileRoutesByTo {
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
-  '/pc': typeof PcRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -532,6 +538,7 @@ export interface FileRoutesByTo {
   '/wallet/transactions': typeof WalletTransactionsRoute
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
+  '/pc': typeof PcIndexRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
@@ -600,6 +607,7 @@ export interface FileRoutesById {
   '/wallet_/transactions': typeof WalletTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
+  '/pc/': typeof PcIndexRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
@@ -669,6 +677,7 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/pc/'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
@@ -686,7 +695,6 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/messages'
     | '/orders'
-    | '/pc'
     | '/privacy'
     | '/profile'
     | '/terms'
@@ -736,6 +744,7 @@ export interface FileRouteTypes {
     | '/wallet/transactions'
     | '/admin'
     | '/merchant'
+    | '/pc'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products'
@@ -803,6 +812,7 @@ export interface FileRouteTypes {
     | '/wallet_/transactions'
     | '/admin/'
     | '/merchant/'
+    | '/pc/'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
@@ -970,6 +980,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/pc/': {
+      id: '/pc/'
+      path: '/'
+      fullPath: '/pc/'
+      preLoaderRoute: typeof PcIndexRouteImport
+      parentRoute: typeof PcRoute
     }
     '/merchant/': {
       id: '/merchant/'
@@ -1340,10 +1357,12 @@ declare module '@tanstack/react-router' {
 
 interface PcRouteChildren {
   PcLoginRoute: typeof PcLoginRoute
+  PcIndexRoute: typeof PcIndexRoute
 }
 
 const PcRouteChildren: PcRouteChildren = {
   PcLoginRoute: PcLoginRoute,
+  PcIndexRoute: PcIndexRoute,
 }
 
 const PcRouteWithChildren = PcRoute._addFileChildren(PcRouteChildren)
