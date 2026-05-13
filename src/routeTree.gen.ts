@@ -31,9 +31,14 @@ import { Route as ShopMerchantIdRouteImport } from './routes/shop.$merchantId'
 import { Route as ProfileKycRouteImport } from './routes/profile_.kyc'
 import { Route as ProfileBindPhoneRouteImport } from './routes/profile_.bind-phone'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as PcWalletTransactionsRouteImport } from './routes/pc.wallet-transactions'
 import { Route as PcUsersRouteImport } from './routes/pc.users'
 import { Route as PcPaymentsRouteImport } from './routes/pc.payments'
+import { Route as PcOrdersRouteImport } from './routes/pc.orders'
 import { Route as PcLoginRouteImport } from './routes/pc.login'
+import { Route as PcCustomersRouteImport } from './routes/pc.customers'
+import { Route as PcCommissionsRouteImport } from './routes/pc.commissions'
+import { Route as PcAgentsRouteImport } from './routes/pc.agents'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
@@ -192,6 +197,11 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   path: '/product/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PcWalletTransactionsRoute = PcWalletTransactionsRouteImport.update({
+  id: '/wallet-transactions',
+  path: '/wallet-transactions',
+  getParentRoute: () => PcRoute,
+} as any)
 const PcUsersRoute = PcUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -202,9 +212,29 @@ const PcPaymentsRoute = PcPaymentsRouteImport.update({
   path: '/payments',
   getParentRoute: () => PcRoute,
 } as any)
+const PcOrdersRoute = PcOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => PcRoute,
+} as any)
 const PcLoginRoute = PcLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => PcRoute,
+} as any)
+const PcCustomersRoute = PcCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => PcRoute,
+} as any)
+const PcCommissionsRoute = PcCommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => PcRoute,
+} as any)
+const PcAgentsRoute = PcAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => PcRoute,
 } as any)
 const PayTestRoute = PayTestRouteImport.update({
@@ -499,9 +529,14 @@ export interface FileRoutesByFullPath {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pc/agents': typeof PcAgentsRoute
+  '/pc/commissions': typeof PcCommissionsRoute
+  '/pc/customers': typeof PcCustomersRoute
   '/pc/login': typeof PcLoginRoute
+  '/pc/orders': typeof PcOrdersRoute
   '/pc/payments': typeof PcPaymentsRoute
   '/pc/users': typeof PcUsersRouteWithChildren
+  '/pc/wallet-transactions': typeof PcWalletTransactionsRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/profile/kyc': typeof ProfileKycRoute
@@ -572,9 +607,14 @@ export interface FileRoutesByTo {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pc/agents': typeof PcAgentsRoute
+  '/pc/commissions': typeof PcCommissionsRoute
+  '/pc/customers': typeof PcCustomersRoute
   '/pc/login': typeof PcLoginRoute
+  '/pc/orders': typeof PcOrdersRoute
   '/pc/payments': typeof PcPaymentsRoute
   '/pc/users': typeof PcUsersRouteWithChildren
+  '/pc/wallet-transactions': typeof PcWalletTransactionsRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/profile/kyc': typeof ProfileKycRoute
@@ -647,9 +687,14 @@ export interface FileRoutesById {
   '/orders_/$orderId': typeof OrdersOrderIdRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pc/agents': typeof PcAgentsRoute
+  '/pc/commissions': typeof PcCommissionsRoute
+  '/pc/customers': typeof PcCustomersRoute
   '/pc/login': typeof PcLoginRoute
+  '/pc/orders': typeof PcOrdersRoute
   '/pc/payments': typeof PcPaymentsRoute
   '/pc/users': typeof PcUsersRouteWithChildren
+  '/pc/wallet-transactions': typeof PcWalletTransactionsRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
   '/profile_/kyc': typeof ProfileKycRoute
@@ -723,9 +768,14 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/pay/success'
     | '/pay/test'
+    | '/pc/agents'
+    | '/pc/commissions'
+    | '/pc/customers'
     | '/pc/login'
+    | '/pc/orders'
     | '/pc/payments'
     | '/pc/users'
+    | '/pc/wallet-transactions'
     | '/product/$productId'
     | '/profile/bind-phone'
     | '/profile/kyc'
@@ -796,9 +846,14 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/pay/success'
     | '/pay/test'
+    | '/pc/agents'
+    | '/pc/commissions'
+    | '/pc/customers'
     | '/pc/login'
+    | '/pc/orders'
     | '/pc/payments'
     | '/pc/users'
+    | '/pc/wallet-transactions'
     | '/product/$productId'
     | '/profile/bind-phone'
     | '/profile/kyc'
@@ -870,9 +925,14 @@ export interface FileRouteTypes {
     | '/orders_/$orderId'
     | '/pay/success'
     | '/pay/test'
+    | '/pc/agents'
+    | '/pc/commissions'
+    | '/pc/customers'
     | '/pc/login'
+    | '/pc/orders'
     | '/pc/payments'
     | '/pc/users'
+    | '/pc/wallet-transactions'
     | '/product/$productId'
     | '/profile_/bind-phone'
     | '/profile_/kyc'
@@ -1118,6 +1178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pc/wallet-transactions': {
+      id: '/pc/wallet-transactions'
+      path: '/wallet-transactions'
+      fullPath: '/pc/wallet-transactions'
+      preLoaderRoute: typeof PcWalletTransactionsRouteImport
+      parentRoute: typeof PcRoute
+    }
     '/pc/users': {
       id: '/pc/users'
       path: '/users'
@@ -1132,11 +1199,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PcPaymentsRouteImport
       parentRoute: typeof PcRoute
     }
+    '/pc/orders': {
+      id: '/pc/orders'
+      path: '/orders'
+      fullPath: '/pc/orders'
+      preLoaderRoute: typeof PcOrdersRouteImport
+      parentRoute: typeof PcRoute
+    }
     '/pc/login': {
       id: '/pc/login'
       path: '/login'
       fullPath: '/pc/login'
       preLoaderRoute: typeof PcLoginRouteImport
+      parentRoute: typeof PcRoute
+    }
+    '/pc/customers': {
+      id: '/pc/customers'
+      path: '/customers'
+      fullPath: '/pc/customers'
+      preLoaderRoute: typeof PcCustomersRouteImport
+      parentRoute: typeof PcRoute
+    }
+    '/pc/commissions': {
+      id: '/pc/commissions'
+      path: '/commissions'
+      fullPath: '/pc/commissions'
+      preLoaderRoute: typeof PcCommissionsRouteImport
+      parentRoute: typeof PcRoute
+    }
+    '/pc/agents': {
+      id: '/pc/agents'
+      path: '/agents'
+      fullPath: '/pc/agents'
+      preLoaderRoute: typeof PcAgentsRouteImport
       parentRoute: typeof PcRoute
     }
     '/pay/test': {
@@ -1487,16 +1582,26 @@ const PcUsersRouteWithChildren =
   PcUsersRoute._addFileChildren(PcUsersRouteChildren)
 
 interface PcRouteChildren {
+  PcAgentsRoute: typeof PcAgentsRoute
+  PcCommissionsRoute: typeof PcCommissionsRoute
+  PcCustomersRoute: typeof PcCustomersRoute
   PcLoginRoute: typeof PcLoginRoute
+  PcOrdersRoute: typeof PcOrdersRoute
   PcPaymentsRoute: typeof PcPaymentsRoute
   PcUsersRoute: typeof PcUsersRouteWithChildren
+  PcWalletTransactionsRoute: typeof PcWalletTransactionsRoute
   PcIndexRoute: typeof PcIndexRoute
 }
 
 const PcRouteChildren: PcRouteChildren = {
+  PcAgentsRoute: PcAgentsRoute,
+  PcCommissionsRoute: PcCommissionsRoute,
+  PcCustomersRoute: PcCustomersRoute,
   PcLoginRoute: PcLoginRoute,
+  PcOrdersRoute: PcOrdersRoute,
   PcPaymentsRoute: PcPaymentsRoute,
   PcUsersRoute: PcUsersRouteWithChildren,
+  PcWalletTransactionsRoute: PcWalletTransactionsRoute,
   PcIndexRoute: PcIndexRoute,
 }
 
