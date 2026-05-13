@@ -18,14 +18,16 @@ async function logNotify(
   payload: Record<string, unknown>,
 ) {
   try {
-    await supabaseAdmin.from("payment_logs").insert({
-      order_no: orderNo,
-      source: "3ypay-notify",
-      stage,
-      level,
-      message,
-      payload,
-    });
+    await supabaseAdmin.from("payment_logs").insert([
+      {
+        order_no: orderNo,
+        source: "3ypay-notify",
+        stage,
+        level,
+        message,
+        payload: payload as never,
+      },
+    ] as never);
   } catch (e) {
     console.error("[pay-notify] log failed", e);
   }
