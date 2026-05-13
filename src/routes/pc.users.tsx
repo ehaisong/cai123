@@ -216,3 +216,196 @@ function UsersPage() {
     </div>
   );
 }
+
+// ===================== 树形展开：商家 → 代理 → 客户 =====================
+
+function MerchantTreeRow({ m, onToggleDisable }: { m: Row; onToggleDisable: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [agents, setAgents] = useState<any[] | null>(null);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+
+  const expand = async () => {
+    const next = !open;
+    setOpen(next);
+    if (next && agents === null) {
+      setLoadingAgents(true);
+      const { data: ar } = await supabase
+        .from("agent_relations")
+        .select("user_id,agent_code,l1_rate,created_at")
+        .eq("bound_merchant_id", m.id).eq("is_agent", true);
+      const list = ar ?? [];
+      const uids = list.map((a: any) => a.user_id);
+      const [{ data: profs }, { data: ws }] = await Promise.all([
+        uids.length ? supabase.from("profiles").select("user_id,id,nickname,phone,user_code").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
+        uids.length ? supabase.from("wallets").select("user_id,total_commission").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const pmap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p]));
+      const wmap = Object.fromEntries((ws ?? []).map((w: any) => [w.user_id, Number(w.total_commission)]));
+      setAgents(list.map((a: any) => ({ ...a, profile: pmap[a.user_id], total_commission: wmap[a.user_id] ?? 0 })));
+      setLoadingAgents(false);
+    }
+  };
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          <button onClick={expand} className="p-1 rounded hover:bg-accent" aria-label="展开">
+            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+        </TableCell>
+        <TableCell className="font-medium">{m.shop_name}</TableCell>
+        <TableCell className="text-sm text-muted-foreground">{m.real_name ?? "—"} / {m.phone ?? "—"}</TableCell>
+        <TableCell>
+          {m.is_disabled
+            ? <span className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive">已关店</span>
+            : m.status === "approved"
+              ? <span className="text-xs px-2 py-0.5 rounded bg-success/10 text-success">营业中</span>
+              : <span className="text-xs px-2 py-0.5 rounded bg-warning/10 text-warning">{m.status}</span>}
+        </TableCell>
+        <TableCell className="text-right">{fmtMoney(m.total_sales)}</TableCell>
+        <TableCell className="text-right text-sm">{m.agents} / {m.customers}</TableCell>
+        <TableCell className="text-sm text-muted-foreground">{fmtDate(m.created_at)}</TableCell>
+        <TableCell className="text-right">
+          <div className="inline-flex items-center gap-1">
+            <Link to="/pc/users/merchant/$merchantId" params={{ merchantId: m.id }}>
+              <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
+            </Link>
+            <Button size="sm" variant={m.is_disabled ? "default" : "outline"} onClick={onToggleDisable}>
+              {m.is_disabled ? "重新开店" : "关店"}
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+      {open && (
+        <TableRow>
+          <TableCell colSpan={8} className="bg-muted/30 p-0">
+            <div className="p-4">
+              <div className="text-xs font-medium text-muted-foreground mb-2">旗下代理</div>
+              {loadingAgents && <div className="text-xs text-muted-foreground py-2">加载中…</div>}
+              {!loadingAgents && agents && agents.length === 0 && <div className="text-xs text-muted-foreground py-2">该商家暂无代理</div>}
+              {!loadingAgents && agents && agents.length > 0 && (
+                <div className="rounded-md border border-border bg-card overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8"></TableHead>
+                        <TableHead>代理</TableHead>
+                        <TableHead>手机号</TableHead>
+                        <TableHead className="text-right">分成</TableHead>
+                        <TableHead className="text-right">累计佣金</TableHead>
+                        <TableHead>加入时间</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {agents.map((a) => <AgentSubRow key={a.user_id} a={a} />)}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}
+
+function AgentSubRow({ a }: { a: any }) {
+  const [open, setOpen] = useState(false);
+  const [customers, setCustomers] = useState<any[] | null>(null);
+  const [loadingC, setLoadingC] = useState(false);
+
+  const expand = async () => {
+    const next = !open;
+    setOpen(next);
+    if (next && customers === null && a.profile?.id) {
+      setLoadingC(true);
+      const { data: cs } = await supabase
+        .from("agent_relations").select("user_id,is_agent,created_at")
+        .eq("upline_id", a.profile.id);
+      const list = cs ?? [];
+      const uids = list.map((c: any) => c.user_id);
+      const { data: profs } = uids.length
+        ? await supabase.from("profiles").select("user_id,nickname,phone,user_code").in("user_id", uids)
+        : { data: [] as any[] };
+      const pmap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p]));
+      setCustomers(list.map((c: any) => ({ ...c, profile: pmap[c.user_id] })));
+      setLoadingC(false);
+    }
+  };
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          <button onClick={expand} className="p-1 rounded hover:bg-accent" aria-label="展开">
+            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+        </TableCell>
+        <TableCell>
+          <div className="font-medium text-sm">{a.profile?.nickname ?? "—"}</div>
+          <div className="text-xs text-muted-foreground">{a.agent_code ?? a.profile?.user_code ?? "—"}</div>
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">{a.profile?.phone ?? "—"}</TableCell>
+        <TableCell className="text-right text-sm">{a.l1_rate != null ? `${(Number(a.l1_rate) * 100).toFixed(0)}%` : <span className="text-muted-foreground">默认</span>}</TableCell>
+        <TableCell className="text-right text-sm">{fmtMoney(a.total_commission)}</TableCell>
+        <TableCell className="text-sm text-muted-foreground">{fmtDate(a.created_at)}</TableCell>
+        <TableCell className="text-right">
+          <Link to="/pc/users/agent/$userId" params={{ userId: a.user_id }}>
+            <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
+          </Link>
+        </TableCell>
+      </TableRow>
+      {open && (
+        <TableRow>
+          <TableCell colSpan={7} className="bg-muted/40 p-0">
+            <div className="p-3 pl-10">
+              <div className="text-xs font-medium text-muted-foreground mb-2">旗下客户</div>
+              {loadingC && <div className="text-xs text-muted-foreground py-2">加载中…</div>}
+              {!loadingC && customers && customers.length === 0 && <div className="text-xs text-muted-foreground py-2">该代理暂无客户</div>}
+              {!loadingC && customers && customers.length > 0 && (
+                <div className="rounded-md border border-border bg-card overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>客户</TableHead>
+                        <TableHead>手机号</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>绑定时间</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customers.map((c) => (
+                        <TableRow key={c.user_id}>
+                          <TableCell>
+                            <div className="font-medium text-sm">{c.profile?.nickname ?? "—"}</div>
+                            <div className="text-xs text-muted-foreground">{c.profile?.user_code ?? "—"}</div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{c.profile?.phone ?? "—"}</TableCell>
+                          <TableCell>
+                            <span className={`text-xs px-2 py-0.5 rounded ${c.is_agent ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                              {c.is_agent ? "代理" : "客户"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{fmtDate(c.created_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <Link to="/pc/users/buyer/$userId" params={{ userId: c.user_id }}>
+                              <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}
