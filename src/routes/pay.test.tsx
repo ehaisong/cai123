@@ -1,4 +1,4 @@
-import { createFileRoute, useHydrated, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -15,17 +15,36 @@ export const Route = createFileRoute("/pay/test")({
   component: PayTestPage,
 });
 
+type PaymentEnv = "detecting" | "wechat" | "browser";
+
+function detectPaymentEnv(): Exclude<PaymentEnv, "detecting"> {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return "browser";
+  const ua = navigator.userAgent || "";
+  const hasWechatUa = /micromessenger|wechat|weixin/i.test(ua);
+  const hasWechatBridge = typeof (window as Window & { WeixinJSBridge?: unknown }).WeixinJSBridge !== "undefined";
+  const forcedWechat = new URLSearchParams(window.location.search).get("env") === "wechat";
+  return hasWechatUa || hasWechatBridge || forcedWechat ? "wechat" : "browser";
+}
+
 function PayTestPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const hydrated = useHydrated();
   const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
-  const isWechat = hydrated ? PaymentService.isWechat() : false;
+  const [paymentEnv, setPaymentEnv] = useState<PaymentEnv>("detecting");
+  const isWechat = paymentEnv === "wechat";
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth/login" });
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    const updateEnv = () => setPaymentEnv(detectPaymentEnv());
+    updateEnv();
+    document.addEventListener("WeixinJSBridgeReady", updateEnv, false);
+    window.setTimeout(updateEnv, 300);
+    return () => document.removeEventListener("WeixinJSBridgeReady", updateEnv, false);
+  }, []);
 
   const handlePay = async (payType: PayType) => {
     if (!user) return;
@@ -80,11 +99,11 @@ function PayTestPage() {
           </div>
 
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground">
-            <p>当前环境：<strong>{hydrated ? (isWechat ? "微信内" : "外部浏览器") : "检测中"}</strong></p>
+            <p>当前环境：<strong>{paymentEnv === "detecting" ? "检测中" : isWechat ? "微信内" : "外部浏览器"}</strong></p>
             <p>支付通道：3ypay 官方收银台（微信内 NATIVE / JSAPI，桌面扫码）</p>
           </div>
 
-          {!hydrated ? (
+          {paymentEnv === "detecting" ? (
             <Button size="lg" className="w-full" disabled>
               支付环境初始化中…
             </Button>
