@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     const anon = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: signIn, error: sErr } = await anon.auth.signInWithPassword({ email, password });
     if (sErr || !signIn.session) {
-      return j({ ok: false, message: "手机号或密码错误" }, 400);
+      return j({ ok: false, message: "手机号或密码错误" });
     }
     return j({
       ok: true,
