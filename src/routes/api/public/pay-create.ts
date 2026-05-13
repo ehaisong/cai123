@@ -9,10 +9,21 @@ const GATEWAY_URL = "https://openapi.3ypay.com/openapi/order/pay/create";
 const NOTIFY_URL = "https://66cai.site/api/public/pay-notify";
 const RETURN_URL_BASE = "https://66cai.site/pay/success";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+} as const;
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      ...CORS_HEADERS,
+    },
   });
 }
 
@@ -55,6 +66,10 @@ async function logPay(
 export const Route = createFileRoute("/api/public/pay-create")({
   server: {
     handlers: {
+      OPTIONS: async () =>
+        new Response(null, { status: 204, headers: CORS_HEADERS }),
+      GET: async () =>
+        json({ ok: true, endpoint: "pay-create", method: "POST" }),
       POST: async ({ request }) => {
         let body: { orderNo?: string; payType?: string } = {};
         try {
