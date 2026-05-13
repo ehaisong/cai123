@@ -20,7 +20,14 @@ function PayTestPage() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
-  const isWechat = PaymentService.isWechat();
+  // 必须在客户端检测，避免 SSR 期间 navigator 不存在导致 hydration 后一直显示"外部浏览器"
+  const [isWechat, setIsWechat] = useState(false);
+  const [envReady, setEnvReady] = useState(false);
+
+  useEffect(() => {
+    setIsWechat(PaymentService.isWechat());
+    setEnvReady(true);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth/login" });
