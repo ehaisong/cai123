@@ -108,19 +108,32 @@ export const PaymentService = {
       payload: { payType, inWechat },
     });
 
-    const { data, error } = await supabase.functions.invoke("pay-create", {
-      body: { orderNo, payType },
-    });
+    let data: { success?: boolean; payUrl?: string; error?: string } | null = null;
+    let fetchErr: Error | null = null;
+    try {
+      const resp = await fetch("/api/public/pay-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderNo, payType }),
+      });
+      try {
+        data = await resp.json();
+      } catch {
+        data = { success: false, error: `HTTP ${resp.status}` };
+      }
+    } catch (e) {
+      fetchErr = e instanceof Error ? e : new Error(String(e));
+    }
 
-    if (error || !data?.payUrl) {
+    if (fetchErr || !data?.success || !data?.payUrl) {
       hideLoadingMask();
-      const msg = (data as { error?: string })?.error || error?.message || "创建支付订单失败";
+      const msg = data?.error || fetchErr?.message || "创建支付订单失败";
       logPayment({
         orderNo,
         stage: "create_error",
         level: "error",
         message: msg,
-        payload: { error, data },
+        payload: { fetchErr: fetchErr?.message, data },
       });
       throw new Error(msg);
     }

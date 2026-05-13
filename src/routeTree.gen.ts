@@ -57,7 +57,6 @@ import { Route as LoginDoneRouteImport } from './routes/login.done'
 import { Route as AuthStaffLoginRouteImport } from './routes/auth.staff-login'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as ApplyAgentMerchantIdRouteImport } from './routes/apply-agent.$merchantId'
-import { Route as ApiPayCreateRouteImport } from './routes/api/pay-create'
 import { Route as AgentShareRouteImport } from './routes/agent_.share'
 import { Route as AgentMerchantsRouteImport } from './routes/agent_.merchants'
 import { Route as AgentInviteesRouteImport } from './routes/agent_.invitees'
@@ -80,6 +79,7 @@ import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.pro
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
 import { Route as ApiPublicPayNotifyRouteImport } from './routes/api/public/pay-notify'
+import { Route as ApiPublicPayCreateRouteImport } from './routes/api/public/pay-create'
 import { Route as PcUsersMerchantMerchantIdRouteImport } from './routes/pc.users_.merchant.$merchantId'
 import { Route as PcUsersBuyerUserIdRouteImport } from './routes/pc.users_.buyer.$userId'
 import { Route as PcUsersAgentUserIdRouteImport } from './routes/pc.users_.agent.$userId'
@@ -329,11 +329,6 @@ const ApplyAgentMerchantIdRoute = ApplyAgentMerchantIdRouteImport.update({
   path: '/apply-agent/$merchantId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPayCreateRoute = ApiPayCreateRouteImport.update({
-  id: '/api/pay-create',
-  path: '/api/pay-create',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AgentShareRoute = AgentShareRouteImport.update({
   id: '/agent_/share',
   path: '/agent/share',
@@ -444,6 +439,11 @@ const ApiPublicPayNotifyRoute = ApiPublicPayNotifyRouteImport.update({
   path: '/api/public/pay-notify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPayCreateRoute = ApiPublicPayCreateRouteImport.update({
+  id: '/api/public/pay-create',
+  path: '/api/public/pay-create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PcUsersMerchantMerchantIdRoute =
   PcUsersMerchantMerchantIdRouteImport.update({
     id: '/users_/merchant/$merchantId',
@@ -517,7 +517,6 @@ export interface FileRoutesByFullPath {
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
-  '/api/pay-create': typeof ApiPayCreateRoute
   '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -553,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/pc/': typeof PcIndexRoute
+  '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
@@ -596,7 +596,6 @@ export interface FileRoutesByTo {
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
-  '/api/pay-create': typeof ApiPayCreateRoute
   '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -632,6 +631,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
   '/pc': typeof PcIndexRoute
+  '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
@@ -677,7 +677,6 @@ export interface FileRoutesById {
   '/agent_/invitees': typeof AgentInviteesRoute
   '/agent_/merchants': typeof AgentMerchantsRoute
   '/agent_/share': typeof AgentShareRoute
-  '/api/pay-create': typeof ApiPayCreateRoute
   '/apply-agent/$merchantId': typeof ApplyAgentMerchantIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/staff-login': typeof AuthStaffLoginRoute
@@ -713,6 +712,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/pc/': typeof PcIndexRoute
+  '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
@@ -759,7 +759,6 @@ export interface FileRouteTypes {
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
-    | '/api/pay-create'
     | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
@@ -795,6 +794,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/merchant/'
     | '/pc/'
+    | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
@@ -838,7 +838,6 @@ export interface FileRouteTypes {
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
-    | '/api/pay-create'
     | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
@@ -874,6 +873,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/merchant'
     | '/pc'
+    | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
@@ -918,7 +918,6 @@ export interface FileRouteTypes {
     | '/agent_/invitees'
     | '/agent_/merchants'
     | '/agent_/share'
-    | '/api/pay-create'
     | '/apply-agent/$merchantId'
     | '/auth/login'
     | '/auth/staff-login'
@@ -954,6 +953,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/merchant/'
     | '/pc/'
+    | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
@@ -999,7 +999,6 @@ export interface RootRouteChildren {
   AgentInviteesRoute: typeof AgentInviteesRoute
   AgentMerchantsRoute: typeof AgentMerchantsRoute
   AgentShareRoute: typeof AgentShareRoute
-  ApiPayCreateRoute: typeof ApiPayCreateRoute
   ApplyAgentMerchantIdRoute: typeof ApplyAgentMerchantIdRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthStaffLoginRoute: typeof AuthStaffLoginRoute
@@ -1026,6 +1025,7 @@ export interface RootRouteChildren {
   WalletTransactionsRoute: typeof WalletTransactionsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
+  ApiPublicPayCreateRoute: typeof ApiPublicPayCreateRoute
   ApiPublicPayNotifyRoute: typeof ApiPublicPayNotifyRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
@@ -1373,13 +1373,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplyAgentMerchantIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/pay-create': {
-      id: '/api/pay-create'
-      path: '/api/pay-create'
-      fullPath: '/api/pay-create'
-      preLoaderRoute: typeof ApiPayCreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/agent_/share': {
       id: '/agent_/share'
       path: '/agent/share'
@@ -1534,6 +1527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPayNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pay-create': {
+      id: '/api/public/pay-create'
+      path: '/api/public/pay-create'
+      fullPath: '/api/public/pay-create'
+      preLoaderRoute: typeof ApiPublicPayCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pc/users_/merchant/$merchantId': {
       id: '/pc/users_/merchant/$merchantId'
       path: '/users/merchant/$merchantId'
@@ -1662,7 +1662,6 @@ const rootRouteChildren: RootRouteChildren = {
   AgentInviteesRoute: AgentInviteesRoute,
   AgentMerchantsRoute: AgentMerchantsRoute,
   AgentShareRoute: AgentShareRoute,
-  ApiPayCreateRoute: ApiPayCreateRoute,
   ApplyAgentMerchantIdRoute: ApplyAgentMerchantIdRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthStaffLoginRoute: AuthStaffLoginRoute,
@@ -1689,6 +1688,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletTransactionsRoute: WalletTransactionsRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
+  ApiPublicPayCreateRoute: ApiPublicPayCreateRoute,
   ApiPublicPayNotifyRoute: ApiPublicPayNotifyRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
@@ -1704,3 +1704,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
