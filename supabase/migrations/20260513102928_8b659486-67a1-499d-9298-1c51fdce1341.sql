@@ -1,0 +1,2 @@
+ALTER TABLE public.payment_channels DROP CONSTRAINT payment_channels_provider_check;
+ALTER TABLE public.payment_channels ADD CONSTRAINT payment_channels_provider_check CHECK (provider = ANY (ARRAY['3ypay'::text, 'wechat'::text, 'alipay'::text, 'custom'::text]));
