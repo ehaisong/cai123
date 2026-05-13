@@ -13,6 +13,7 @@ import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PcRouteImport } from './routes/pc'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as MerchantsRouteImport } from './routes/merchants'
@@ -91,6 +92,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PcRoute = PcRouteImport.update({
+  id: '/pc',
+  path: '/pc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/pc': typeof PcRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -468,6 +475,7 @@ export interface FileRoutesByTo {
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/pc': typeof PcRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -534,6 +542,7 @@ export interface FileRoutesById {
   '/merchants': typeof MerchantsRoute
   '/messages': typeof MessagesRoute
   '/orders': typeof OrdersRoute
+  '/pc': typeof PcRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
@@ -601,6 +610,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/pc'
     | '/privacy'
     | '/profile'
     | '/terms'
@@ -666,6 +676,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/pc'
     | '/privacy'
     | '/profile'
     | '/terms'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/messages'
     | '/orders'
+    | '/pc'
     | '/privacy'
     | '/profile'
     | '/terms'
@@ -797,6 +809,7 @@ export interface RootRouteChildren {
   MerchantsRoute: typeof MerchantsRoute
   MessagesRoute: typeof MessagesRoute
   OrdersRoute: typeof OrdersRoute
+  PcRoute: typeof PcRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   TermsRoute: typeof TermsRoute
@@ -881,6 +894,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pc': {
+      id: '/pc'
+      path: '/pc'
+      fullPath: '/pc'
+      preLoaderRoute: typeof PcRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -1320,6 +1340,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantsRoute: MerchantsRoute,
   MessagesRoute: MessagesRoute,
   OrdersRoute: OrdersRoute,
+  PcRoute: PcRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   TermsRoute: TermsRoute,
