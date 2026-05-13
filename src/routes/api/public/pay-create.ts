@@ -52,7 +52,7 @@ async function logPay(
   }
 }
 
-export const Route = createFileRoute("/api/pay-create")({
+export const Route = createFileRoute("/api/public/pay-create")({
   server: {
     handlers: {
       POST: async ({ request }) => {
