@@ -72,6 +72,7 @@ import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
+import { Route as PcUsersMerchantMerchantIdRouteImport } from './routes/pc.users.merchant.$merchantId'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
 import { Route as MerchantProductsProductIdIssuesBulkImportRouteImport } from './routes/merchant.products.$productId.issues.bulk-import'
@@ -393,6 +394,12 @@ const MerchantAgentsUserIdRoute = MerchantAgentsUserIdRouteImport.update({
   path: '/$userId',
   getParentRoute: () => MerchantAgentsRoute,
 } as any)
+const PcUsersMerchantMerchantIdRoute =
+  PcUsersMerchantMerchantIdRouteImport.update({
+    id: '/merchant/$merchantId',
+    path: '/merchant/$merchantId',
+    getParentRoute: () => PcUsersRoute,
+  } as any)
 const MerchantProductsProductIdIssuesIndexRoute =
   MerchantProductsProductIdIssuesIndexRouteImport.update({
     id: '/merchant/products/$productId/issues/',
@@ -469,7 +476,7 @@ export interface FileRoutesByFullPath {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/login': typeof PcLoginRoute
-  '/pc/users': typeof PcUsersRoute
+  '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/profile/kyc': typeof ProfileKycRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
+  '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -537,7 +545,7 @@ export interface FileRoutesByTo {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/login': typeof PcLoginRoute
-  '/pc/users': typeof PcUsersRoute
+  '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile/bind-phone': typeof ProfileBindPhoneRoute
   '/profile/kyc': typeof ProfileKycRoute
@@ -550,6 +558,7 @@ export interface FileRoutesByTo {
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
+  '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -607,7 +616,7 @@ export interface FileRoutesById {
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/login': typeof PcLoginRoute
-  '/pc/users': typeof PcUsersRoute
+  '/pc/users': typeof PcUsersRouteWithChildren
   '/product/$productId': typeof ProductProductIdRoute
   '/profile_/bind-phone': typeof ProfileBindPhoneRoute
   '/profile_/kyc': typeof ProfileKycRoute
@@ -620,6 +629,7 @@ export interface FileRoutesById {
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
+  '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
   '/merchant/products/$productId/issues/bulk-import': typeof MerchantProductsProductIdIssuesBulkImportRoute
   '/merchant/products/$productId/issues/new': typeof MerchantProductsProductIdIssuesNewRoute
   '/merchant/products/$productId/issues/': typeof MerchantProductsProductIdIssuesIndexRoute
@@ -691,6 +701,7 @@ export interface FileRouteTypes {
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
+    | '/pc/users/merchant/$merchantId'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues/'
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products'
+    | '/pc/users/merchant/$merchantId'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues'
@@ -828,6 +840,7 @@ export interface FileRouteTypes {
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
+    | '/pc/users/merchant/$merchantId'
     | '/merchant/products/$productId/issues/bulk-import'
     | '/merchant/products/$productId/issues/new'
     | '/merchant/products/$productId/issues/'
@@ -1343,6 +1356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantAgentsUserIdRouteImport
       parentRoute: typeof MerchantAgentsRoute
     }
+    '/pc/users/merchant/$merchantId': {
+      id: '/pc/users/merchant/$merchantId'
+      path: '/merchant/$merchantId'
+      fullPath: '/pc/users/merchant/$merchantId'
+      preLoaderRoute: typeof PcUsersMerchantMerchantIdRouteImport
+      parentRoute: typeof PcUsersRoute
+    }
     '/merchant/products/$productId/issues/': {
       id: '/merchant/products/$productId/issues/'
       path: '/merchant/products/$productId/issues'
@@ -1374,15 +1394,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PcUsersRouteChildren {
+  PcUsersMerchantMerchantIdRoute: typeof PcUsersMerchantMerchantIdRoute
+}
+
+const PcUsersRouteChildren: PcUsersRouteChildren = {
+  PcUsersMerchantMerchantIdRoute: PcUsersMerchantMerchantIdRoute,
+}
+
+const PcUsersRouteWithChildren =
+  PcUsersRoute._addFileChildren(PcUsersRouteChildren)
+
 interface PcRouteChildren {
   PcLoginRoute: typeof PcLoginRoute
-  PcUsersRoute: typeof PcUsersRoute
+  PcUsersRoute: typeof PcUsersRouteWithChildren
   PcIndexRoute: typeof PcIndexRoute
 }
 
 const PcRouteChildren: PcRouteChildren = {
   PcLoginRoute: PcLoginRoute,
-  PcUsersRoute: PcUsersRoute,
+  PcUsersRoute: PcUsersRouteWithChildren,
   PcIndexRoute: PcIndexRoute,
 }
 
