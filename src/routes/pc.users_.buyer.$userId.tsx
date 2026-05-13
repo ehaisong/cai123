@@ -8,7 +8,7 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-export const Route = createFileRoute("/pc/users/buyer/$userId")({
+export const Route = createFileRoute("/pc/users_/buyer/$userId")({
   component: BuyerDetail,
 });
 
