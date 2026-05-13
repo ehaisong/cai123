@@ -4,6 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import WebSocket from "ws";
+import type { WebSocketLikeConstructor } from "@supabase/realtime-js";
 import { signRSA2, verifyRSA2 } from "@/lib/threeypay-verify";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -19,6 +20,7 @@ const CORS_HEADERS = {
 } as const;
 
 type AppSupabase = SupabaseClient<Database>;
+const WsTransport = WebSocket as unknown as WebSocketLikeConstructor;
 
 function getSupabaseForRequest(
   request: Request,
@@ -39,13 +41,13 @@ function getSupabaseForRequest(
 
   return {
     mode: serviceRoleKey ? "service" : "user",
-    supabase: createClient<Database>(supabaseUrl, supabaseKey, {
+    supabase: createClient<Database, "public">(supabaseUrl, supabaseKey, {
       auth: {
         storage: undefined,
         persistSession: false,
         autoRefreshToken: false,
       },
-      realtime: { transport: WebSocket },
+      realtime: { transport: WsTransport },
       global: authHeader && !serviceRoleKey ? { headers: { Authorization: authHeader } } : undefined,
     }),
   };
