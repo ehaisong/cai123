@@ -20,14 +20,11 @@ function PayTestPage() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
-  // 必须在客户端检测，避免 SSR 期间 navigator 不存在导致 hydration 后一直显示"外部浏览器"
-  const [isWechat, setIsWechat] = useState(false);
-  const [envReady, setEnvReady] = useState(false);
-
-  useEffect(() => {
-    setIsWechat(PaymentService.isWechat());
-    setEnvReady(true);
-  }, []);
+  // 同步判断 UA：SSR 时 navigator 不存在 → false（外部浏览器布局）；
+  // 客户端首次渲染立即拿到真实 UA，不再依赖 useEffect 才解锁按钮，
+  // 避免任何 hydration 异常导致按钮永远停在"环境检测中"。
+  const isWechat =
+    typeof navigator !== "undefined" && /micromessenger/i.test(navigator.userAgent);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth/login" });
@@ -86,15 +83,11 @@ function PayTestPage() {
           </div>
 
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground">
-            <p>当前环境：<strong>{!envReady ? "检测中…" : isWechat ? "微信内" : "外部浏览器"}</strong></p>
+            <p>当前环境：<strong>{isWechat ? "微信内" : "外部浏览器"}</strong></p>
             <p>支付通道：3ypay 官方收银台（微信内 NATIVE / JSAPI，桌面扫码）</p>
           </div>
 
-          {!envReady ? (
-            <Button size="lg" className="w-full" disabled>
-              环境检测中…
-            </Button>
-          ) : isWechat ? (
+          {isWechat ? (
             <Button
               size="lg"
               className="w-full"
