@@ -20,7 +20,14 @@ function PayTestPage() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState<number>(1);
   const [submitting, setSubmitting] = useState<PayType | null>(null);
-  const isWechat = PaymentService.isWechat();
+  // 必须在客户端检测，避免 SSR 期间 navigator 不存在导致 hydration 后一直显示"外部浏览器"
+  const [isWechat, setIsWechat] = useState(false);
+  const [envReady, setEnvReady] = useState(false);
+
+  useEffect(() => {
+    setIsWechat(PaymentService.isWechat());
+    setEnvReady(true);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth/login" });
@@ -79,18 +86,22 @@ function PayTestPage() {
           </div>
 
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground">
-            <p>当前环境：<strong>{isWechat ? "微信内" : "外部浏览器"}</strong></p>
-            <p>支付通道：gw.nrnc.net 中转 v2（13pay JSAPI=jump，H5/支付宝=jump，桌面=qrcode）</p>
+            <p>当前环境：<strong>{!envReady ? "检测中…" : isWechat ? "微信内" : "外部浏览器"}</strong></p>
+            <p>支付通道：3ypay 官方收银台（微信内 NATIVE / JSAPI，桌面扫码）</p>
           </div>
 
-          {isWechat ? (
+          {!envReady ? (
+            <Button size="lg" className="w-full" disabled>
+              环境检测中…
+            </Button>
+          ) : isWechat ? (
             <Button
               size="lg"
               className="w-full"
               disabled={submitting !== null}
               onClick={() => handlePay("wechat")}
             >
-              {submitting === "wechat" ? "正在拉起支付…" : "微信支付"}
+              {submitting === "wechat" ? "正在拉起支付…" : "微信支付（NATIVE）"}
             </Button>
           ) : (
             <div className="space-y-2">
@@ -109,7 +120,7 @@ function PayTestPage() {
                 disabled={submitting !== null}
                 onClick={() => handlePay("wechat")}
               >
-                {submitting === "wechat" ? "正在拉起支付…" : "微信支付（H5）"}
+                {submitting === "wechat" ? "正在拉起支付…" : "微信支付（H5/扫码）"}
               </Button>
             </div>
           )}
