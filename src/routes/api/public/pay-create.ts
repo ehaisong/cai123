@@ -267,6 +267,33 @@ export const Route = createFileRoute("/api/public/pay-create")({
         };
         const bizContentSerialized = stringifySorted(bizContentObj);
         const signString = buildSignContent(common);
+
+        // 诊断：派生本地商户私钥对应的公钥 SPKI SHA-256，便于和后台保存的商户公钥指纹比对
+        let derivedPublicSha256 = "";
+        let derivedPublicBase64 = "";
+        try {
+          const pemToDer = (pem: string) => {
+            const b64 = pem.replace(/-----BEGIN [^-]+-----/g, "").replace(/-----END [^-]+-----/g, "").replace(/\s+/g, "");
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return bytes;
+          };
+          const wrapped = merchantPrivateKey.includes("BEGIN")
+            ? merchantPrivateKey
+            : `-----BEGIN PRIVATE KEY-----\n${merchantPrivateKey.match(/.{1,64}/g)?.join("\n") ?? merchantPrivateKey}\n-----END PRIVATE KEY-----`;
+          const der = pemToDer(wrapped);
+          const priv = await crypto.subtle.importKey("pkcs8", der.buffer as ArrayBuffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, true, ["sign"]);
+          const jwk = (await crypto.subtle.exportKey("jwk", priv)) as JsonWebKey;
+          const pub = await crypto.subtle.importKey("jwk", { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: jwk.alg, ext: true }, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, true, ["verify"]);
+          const spki = new Uint8Array(await crypto.subtle.exportKey("spki", pub));
+          const sha = await crypto.subtle.digest("SHA-256", spki.buffer as ArrayBuffer);
+          derivedPublicSha256 = Array.from(new Uint8Array(sha)).map((b) => b.toString(16).padStart(2, "0")).join("");
+          derivedPublicBase64 = btoa(String.fromCharCode(...spki));
+        } catch (e) {
+          derivedPublicSha256 = `ERR:${e instanceof Error ? e.message : String(e)}`;
+        }
+
         let sign: string;
         try {
           sign = await signRSA2(common, merchantPrivateKey);
@@ -295,6 +322,8 @@ export const Route = createFileRoute("/api/public/pay-create")({
           appId,
           requestBodyJson,
           supabaseMode,
+          derivedPublicSha256,
+          derivedPublicBase64,
         });
         let resp: Response;
         try {
