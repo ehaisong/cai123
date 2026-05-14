@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import WebSocket from "ws";
 import type { WebSocketLikeConstructor } from "@supabase/realtime-js";
-import { signRSA2, verifyRSA2 } from "@/lib/threeypay-verify";
+import { signRSA2, verifyRSA2, buildSignContent, stringifySorted } from "@/lib/threeypay-verify";
 import type { Database } from "@/integrations/supabase/types";
 
 const GATEWAY_URL = "https://openapi.3ypay.com/openapi/order/pay/create";
