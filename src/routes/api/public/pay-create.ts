@@ -322,6 +322,8 @@ export const Route = createFileRoute("/api/public/pay-create")({
           appId,
           requestBodyJson,
           supabaseMode,
+          derivedPublicSha256,
+          derivedPublicBase64,
         });
         let resp: Response;
         try {
