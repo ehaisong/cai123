@@ -214,7 +214,8 @@ export const Route = createFileRoute("/api/public/pay-create")({
         }
         const cfg = (chan.config ?? {}) as Record<string, unknown>;
         const appId = cfg.appId as string | undefined;
-        const merchantPrivateKey = cfg.merchantPrivateKey as string | undefined;
+        // 商户私钥优先使用服务器 secret THREEYPAY_MCH_PRIVATE_KEY，不再读取数据库 config.merchantPrivateKey
+        const merchantPrivateKey = process.env.THREEYPAY_MCH_PRIVATE_KEY as string | undefined;
         const platformPublicKey = cfg.platformPublicKey as string | undefined;
         const sub = (cfg[payType] ?? {}) as Record<string, string | undefined>;
         const rawProductCode = sub.productCode;
