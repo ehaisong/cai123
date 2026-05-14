@@ -21,13 +21,18 @@ function base64ToBytes(b64: string): ArrayBuffer {
 
 export function buildSignContent(params: Record<string, unknown>): string {
   const keys = Object.keys(params)
-    .filter((k) => k !== "sign" && k !== "signType")
+    .filter((k) => k !== "sign")
     .filter((k) => {
       const v = params[k];
       return v !== undefined && v !== null && v !== "";
     })
     .sort();
-  return keys.map((k) => `${k}=${params[k]}`).join("&");
+  return keys
+    .map((k) => {
+      const value = params[k];
+      return `${k}=${typeof value === "object" ? JSON.stringify(value) : String(value)}`;
+    })
+    .join("&");
 }
 
 function bytesToBase64(bytes: ArrayBuffer): string {
