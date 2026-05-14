@@ -235,6 +235,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
             allEnvKeysSample: allEnvKeys.slice(0, 50),
             nodeVersion: typeof process !== "undefined" ? process.version : "n/a",
             buildTarget: process.env.BUILD_TARGET || "unset",
+          });
           return json({ success: false, error: "支付通道配置不完整" }, 200);
         }
 
