@@ -137,10 +137,18 @@ function PaySuccessPage() {
           {status === "failed" && (
             <>
               <XCircle className="w-12 h-12 mx-auto text-destructive" />
-              <p className="mt-4 font-semibold">支付未完成</p>
-              <p className="mt-1 text-xs text-muted-foreground">如已扣款，请稍后查看订单或联系客服</p>
+              <p className="mt-4 font-semibold">支付未完成或已取消</p>
+              <p className="mt-1 text-xs text-muted-foreground">如已扣款，请稍候片刻让回调到达；否则可重新发起支付</p>
               <p className="mt-1 text-xs text-muted-foreground break-all">订单号：{orderNo}</p>
-              <div className="mt-6">
+              <div className="mt-6 space-y-2">
+                {failedProductId ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => navigate({ to: "/product/$productId", params: { productId: failedProductId } })}
+                  >
+                    返回商品页重试支付
+                  </Button>
+                ) : null}
                 <Button variant="outline" asChild className="w-full">
                   <Link to="/">返回首页</Link>
                 </Button>
