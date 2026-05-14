@@ -254,8 +254,8 @@ export const Route = createFileRoute("/api/public/pay-create")({
         // 4. 公共参数 + 签名
         const requestId =
           crypto.randomUUID().replace(/-/g, "") + Date.now().toString(36);
-        // 3ypay openapi 要求 timestamp 为毫秒级 Long，按文档以数字传递/签名。
-        const timestamp = Date.now();
+        // 3ypay 客服确认：timestamp 为毫秒字符串。
+        const timestamp = String(Date.now());
         const common: Record<string, unknown> = {
           appId,
           requestId,
