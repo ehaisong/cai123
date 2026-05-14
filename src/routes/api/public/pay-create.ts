@@ -222,7 +222,8 @@ export const Route = createFileRoute("/api/public/pay-create")({
         const productCode = normalizeProductCode(rawProductCode, payType);
         const paySubType = sub.paySubType || "NATIVE";
         if (!appId || !merchantPrivateKey || !platformPublicKey || !productCode) {
-          const envKeys = Object.keys(process.env || {}).filter((k) => k.startsWith("THREEYPAY") || k.startsWith("SUPABASE"));
+          const allEnvKeys = Object.keys(process.env || {});
+          const envKeys = allEnvKeys.filter((k) => k.startsWith("THREEYPAY") || k.startsWith("SUPABASE") || k.startsWith("VITE_"));
           await logPay(supabase, orderNo, "create_error", "error", "通道配置不完整", {
             hasAppId: !!appId,
             hasPriv: !!merchantPrivateKey,
