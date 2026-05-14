@@ -60,6 +60,9 @@ function PaySuccessPage() {
         handlePaid(data);
         return;
       }
+      // 提前记录 productId，便于失败时跳回商品页重试
+      const initialMeta = (data?.metadata ?? {}) as { product_id?: string };
+      if (initialMeta.product_id) setFailedProductId(initialMeta.product_id);
       stopPolling = PaymentService.startPolling(
         orderNo,
         async (r: QueryOrderResponse) => {
