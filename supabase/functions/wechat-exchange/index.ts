@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ticket,
-          client: "66cai",
+          client: "wordpro",
           client_secret: HUB_SECRET,
         }),
         signal: ctrl.signal,

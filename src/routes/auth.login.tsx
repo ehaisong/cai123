@@ -28,7 +28,7 @@ export const Route = createFileRoute("/auth/login")({
 });
 
 const HUB_BASE = "https://wx.lovclaw.com";
-const HUB_CLIENT = "66cai";
+const HUB_CLIENT = "wordpro";
 
 const env = import.meta.env as Record<string, string | undefined>;
 const SUPABASE_URL = env.VITE_SUPABASE_URL ?? "https://aonequdtprbhviskbvrw.supabase.co";
