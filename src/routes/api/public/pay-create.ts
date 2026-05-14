@@ -1,4 +1,4 @@
-// 同源 3ypay 创建订单接口（运行在 66cai.site 自有服务器，
+// 同源 3ypay 创建订单接口（运行在 wordpro.cn 自有服务器，
 // 出口 IP 即站点白名单 IP，避免被 3ypay 风控拦截）。
 // 替代原 supabase/functions/pay-create。
 import { createFileRoute } from "@tanstack/react-router";
@@ -9,8 +9,8 @@ import { signRSA2, verifyRSA2, buildSignContent, stringifySorted } from "@/lib/t
 import type { Database } from "@/integrations/supabase/types";
 
 const GATEWAY_URL = "https://openapi.3ypay.com/openapi/order/pay/create";
-const NOTIFY_URL = "https://geoarena.cn/api/public/pay-notify";
-const RETURN_URL_BASE = "https://geoarena.cn/pay/success";
+const NOTIFY_URL = "https://wordpro.cn/api/public/pay-notify";
+const RETURN_URL_BASE = "https://wordpro.cn/pay/success";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -143,7 +143,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
             endpoint: "pay-create",
             serverEgressIp: await getServerEgressIp(),
             expectedWhitelistIp: "103.87.9.218",
-            note: "此 IP 是 66cai.site Node 服务调用 3ypay 时对方看到的出口 IP，不是 Supabase 出口 IP。",
+            note: "此 IP 是 wordpro.cn Node 服务调用 3ypay 时对方看到的出口 IP，不是 Supabase 出口 IP。",
           });
         }
         return json({ ok: true, endpoint: "pay-create", method: "POST" });
