@@ -210,14 +210,20 @@ function ProductDetailPage() {
             <Button
               className="w-full bg-primary hover:bg-primary/90"
               size="lg"
-              onClick={() => {
-                if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
-                setShowPay(true);
-              }}
-              disabled={buying}
+              onClick={handleBuyClick}
+              disabled={buying || env === "detecting"}
             >
-              {buying ? "处理中…" : `立即购买 ¥${Number(product.price).toFixed(2)}`}
+              {buying
+                ? "正在拉起支付…"
+                : env === "detecting"
+                  ? "准备中…"
+                  : env === "wechat"
+                    ? `微信支付 ¥${Number(product.price).toFixed(2)}`
+                    : `立即购买 ¥${Number(product.price).toFixed(2)}`}
             </Button>
+            <p className="mt-2 text-[11px] text-muted-foreground text-center">
+              {env === "wechat" ? "微信内将直接拉起支付，完成后自动解锁内容" : "支持微信 / 支付宝，支付完成后自动解锁内容"}
+            </p>
           </div>
         )}
       </div>
