@@ -232,7 +232,7 @@ function ProductDetailPage() {
               disabled={buying || env === "detecting"}
             >
               {buying
-                ? "正在拉起支付…"
+                ? "支付中…"
                 : env === "detecting"
                   ? "准备中…"
                   : payFailed
