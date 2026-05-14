@@ -18,6 +18,7 @@ function PaySuccessPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [info, setInfo] = useState<{ amount?: number; tradeNo?: string; purpose?: string; productId?: string } | null>(null);
+  const [failedProductId, setFailedProductId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderNo) {
@@ -59,6 +60,9 @@ function PaySuccessPage() {
         handlePaid(data);
         return;
       }
+      // 提前记录 productId，便于失败时跳回商品页重试
+      const initialMeta = (data?.metadata ?? {}) as { product_id?: string };
+      if (initialMeta.product_id) setFailedProductId(initialMeta.product_id);
       stopPolling = PaymentService.startPolling(
         orderNo,
         async (r: QueryOrderResponse) => {
@@ -133,10 +137,18 @@ function PaySuccessPage() {
           {status === "failed" && (
             <>
               <XCircle className="w-12 h-12 mx-auto text-destructive" />
-              <p className="mt-4 font-semibold">支付未完成</p>
-              <p className="mt-1 text-xs text-muted-foreground">如已扣款，请稍后查看订单或联系客服</p>
+              <p className="mt-4 font-semibold">支付未完成或已取消</p>
+              <p className="mt-1 text-xs text-muted-foreground">如已扣款，请稍候片刻让回调到达；否则可重新发起支付</p>
               <p className="mt-1 text-xs text-muted-foreground break-all">订单号：{orderNo}</p>
-              <div className="mt-6">
+              <div className="mt-6 space-y-2">
+                {failedProductId ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => navigate({ to: "/product/$productId", params: { productId: failedProductId } })}
+                  >
+                    返回商品页重试支付
+                  </Button>
+                ) : null}
                 <Button variant="outline" asChild className="w-full">
                   <Link to="/">返回首页</Link>
                 </Button>
