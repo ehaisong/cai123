@@ -72,6 +72,52 @@ function ProductDetailPage() {
 
   useEffect(() => { load(); }, [productId, user?.id]);
 
+  // 检测访问环境
+  const [env, setEnv] = useState<"detecting" | "wechat" | "browser">("detecting");
+  useEffect(() => {
+    const update = () => setEnv(PaymentService.isWechat() ? "wechat" : "browser");
+    update();
+    document.addEventListener("WeixinJSBridgeReady", update, false);
+    const t = window.setTimeout(update, 300);
+    return () => {
+      document.removeEventListener("WeixinJSBridgeReady", update, false);
+      window.clearTimeout(t);
+    };
+  }, []);
+
+  // 用户从外部浏览器回到本页时，轮询订单确认支付，自动解锁
+  useEffect(() => {
+    if (!user || !current || purchased || isOwner) return;
+    const stop = PaymentService.startPolling(
+      `__watch_${current.id}`,
+      () => {},
+      () => {},
+    );
+    // 上面只是占位；真实的解锁通过 supabase 直查更靠谱
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      const { data: ord } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("buyer_id", user.id)
+        .eq("issue_id", current.id)
+        .eq("status", "paid")
+        .maybeSingle();
+      if (ord) {
+        setPurchased(true);
+        return;
+      }
+      window.setTimeout(tick, 4000);
+    };
+    const t = window.setTimeout(tick, 4000);
+    return () => {
+      stopped = true;
+      window.clearTimeout(t);
+      stop();
+    };
+  }, [user, current, purchased, isOwner]);
+
   const [showPay, setShowPay] = useState(false);
 
   const startPayment = async (payType: PayType) => {
@@ -99,6 +145,18 @@ function ProductDetailPage() {
     } finally {
       setBuying(false);
     }
+  };
+
+  const handleBuyClick = () => {
+    if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
+    if (!current || buying) return;
+    // 微信内：直接拉起微信支付，不弹选择框
+    if (env === "wechat") {
+      startPayment("wechat");
+      return;
+    }
+    // 外部浏览器：弹出支付方式选择
+    setShowPay(true);
   };
 
   if (!product) {
