@@ -267,8 +267,9 @@ export const Route = createFileRoute("/api/public/pay-create")({
           notifyUrl: NOTIFY_URL,
           redirectUrl: `${RETURN_URL_BASE}?orderNo=${encodeURIComponent(orderNo)}`,
         };
-        // 3ypay 文档：Content-Type: application/json，bizContent 作为 JSON 对象传递
-        const bizContent = bizContentObj;
+        // 3ypay 签名文档要求 bizContent 作为 JSON 字符串参与签名，
+        // 且最终请求体里也传同一个字符串，避免 3ypay 服务端重组后验签不一致。
+        const bizContent = JSON.stringify(bizContentObj);
 
         // 4. 公共参数 + 签名
         const requestId =
@@ -284,7 +285,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           charset: "UTF-8",
           bizContent,
         };
-        const bizContentSerialized = stringifySorted(bizContentObj);
+        const bizContentSerialized = bizContent;
         const signString = buildSignContent(common);
 
         // 诊断：派生本地商户私钥对应的公钥 SPKI SHA-256，便于和后台保存的商户公钥指纹比对
@@ -339,6 +340,9 @@ export const Route = createFileRoute("/api/public/pay-create")({
           sign,
           timestamp,
           appId,
+          merchantPrivateKeySource,
+          merchantPrivateKeyLen: merchantPrivateKey.length,
+          merchantPrivateKeyFormat: merchantPrivateKey.includes("BEGIN") ? "pem" : "base64",
           requestBodyJson,
           supabaseMode,
           derivedPublicSha256,
