@@ -35,6 +35,8 @@ function ProductDetailPage() {
   const [purchased, setPurchased] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [payFailed, setPayFailed] = useState<string | null>(null);
+  const [lastPayType, setLastPayType] = useState<PayType | null>(null);
 
   const load = async () => {
     const { data: p } = await supabase.from("products")
