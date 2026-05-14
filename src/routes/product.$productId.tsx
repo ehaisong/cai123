@@ -88,12 +88,6 @@ function ProductDetailPage() {
   // 用户从外部浏览器回到本页时，轮询订单确认支付，自动解锁
   useEffect(() => {
     if (!user || !current || purchased || isOwner) return;
-    const stop = PaymentService.startPolling(
-      `__watch_${current.id}`,
-      () => {},
-      () => {},
-    );
-    // 上面只是占位；真实的解锁通过 supabase 直查更靠谱
     let stopped = false;
     const tick = async () => {
       if (stopped) return;
@@ -114,7 +108,6 @@ function ProductDetailPage() {
     return () => {
       stopped = true;
       window.clearTimeout(t);
-      stop();
     };
   }, [user, current, purchased, isOwner]);
 
