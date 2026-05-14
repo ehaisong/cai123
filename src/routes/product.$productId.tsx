@@ -72,6 +72,45 @@ function ProductDetailPage() {
 
   useEffect(() => { load(); }, [productId, user?.id]);
 
+  // 检测访问环境
+  const [env, setEnv] = useState<"detecting" | "wechat" | "browser">("detecting");
+  useEffect(() => {
+    const update = () => setEnv(PaymentService.isWechat() ? "wechat" : "browser");
+    update();
+    document.addEventListener("WeixinJSBridgeReady", update, false);
+    const t = window.setTimeout(update, 300);
+    return () => {
+      document.removeEventListener("WeixinJSBridgeReady", update, false);
+      window.clearTimeout(t);
+    };
+  }, []);
+
+  // 用户从外部浏览器回到本页时，轮询订单确认支付，自动解锁
+  useEffect(() => {
+    if (!user || !current || purchased || isOwner) return;
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      const { data: ord } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("buyer_id", user.id)
+        .eq("issue_id", current.id)
+        .eq("status", "paid")
+        .maybeSingle();
+      if (ord) {
+        setPurchased(true);
+        return;
+      }
+      window.setTimeout(tick, 4000);
+    };
+    const t = window.setTimeout(tick, 4000);
+    return () => {
+      stopped = true;
+      window.clearTimeout(t);
+    };
+  }, [user, current, purchased, isOwner]);
+
   const [showPay, setShowPay] = useState(false);
 
   const startPayment = async (payType: PayType) => {
@@ -99,6 +138,18 @@ function ProductDetailPage() {
     } finally {
       setBuying(false);
     }
+  };
+
+  const handleBuyClick = () => {
+    if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
+    if (!current || buying) return;
+    // 微信内：直接拉起微信支付，不弹选择框
+    if (env === "wechat") {
+      startPayment("wechat");
+      return;
+    }
+    // 外部浏览器：弹出支付方式选择
+    setShowPay(true);
   };
 
   if (!product) {
@@ -159,14 +210,20 @@ function ProductDetailPage() {
             <Button
               className="w-full bg-primary hover:bg-primary/90"
               size="lg"
-              onClick={() => {
-                if (!user) { navigate({ to: "/auth/login", search: { redirect: `/product/${productId}` } }); return; }
-                setShowPay(true);
-              }}
-              disabled={buying}
+              onClick={handleBuyClick}
+              disabled={buying || env === "detecting"}
             >
-              {buying ? "处理中…" : `立即购买 ¥${Number(product.price).toFixed(2)}`}
+              {buying
+                ? "正在拉起支付…"
+                : env === "detecting"
+                  ? "准备中…"
+                  : env === "wechat"
+                    ? `微信支付 ¥${Number(product.price).toFixed(2)}`
+                    : `立即购买 ¥${Number(product.price).toFixed(2)}`}
             </Button>
+            <p className="mt-2 text-[11px] text-muted-foreground text-center">
+              {env === "wechat" ? "微信内将直接拉起支付，完成后自动解锁内容" : "支持微信 / 支付宝，支付完成后自动解锁内容"}
+            </p>
           </div>
         )}
       </div>
