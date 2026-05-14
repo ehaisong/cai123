@@ -13,7 +13,7 @@ export interface QueryOrderResponse {
   tradeNo?: string;
 }
 
-function showLoadingMask(text = "正在拉起支付…", subText = "请稍候，不要关闭页面"): void {
+function showLoadingMask(text = "支付中…", subText = "请稍候，不要关闭页面"): void {
   if (typeof document === "undefined") return;
   const id = "pay-loading-mask";
   if (document.getElementById(id)) return;
