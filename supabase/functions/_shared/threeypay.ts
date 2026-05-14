@@ -37,6 +37,21 @@ function base64ToBytes(b64: string): ArrayBuffer {
 
 // ---------- 待签字符串 ----------
 
+function stringifySorted(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stringifySorted(v)).join(",")}]`;
+  }
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj)
+    .filter((k) => {
+      const v = obj[k];
+      return v !== undefined && v !== null && v !== "";
+    })
+    .sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stringifySorted(obj[k])}`).join(",")}}`;
+}
+
 export function buildSignContent(params: Record<string, unknown>): string {
   const keys = Object.keys(params)
     .filter((k) => k !== "sign")
@@ -48,7 +63,7 @@ export function buildSignContent(params: Record<string, unknown>): string {
   return keys
     .map((k) => {
       const value = params[k];
-      return `${k}=${typeof value === "object" ? JSON.stringify(value) : String(value)}`;
+      return `${k}=${typeof value === "object" ? stringifySorted(value) : String(value)}`;
     })
     .join("&");
 }
