@@ -80,7 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     rolesLoaded,
     signOut: async () => { await supabase.auth.signOut(); },
-    refreshRoles: () => loadRoles(user?.id),
+    // 直接从 supabase 取当前 uid，避免依赖可能尚未更新的 React state
+    // （刚 setSession 完成后，组件可能还未重渲染，闭包里的 user 仍是 null）
+    refreshRoles: async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      // 强制刷新：清掉去重锁，确保拉取最新角色
+      loadingUidRef.__loadRolesUid = undefined;
+      await loadRoles(uid);
+    },
     hasRole: (r) => roles.includes(r),
   };
 
