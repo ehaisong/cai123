@@ -265,15 +265,21 @@ export const Route = createFileRoute("/api/public/pay-create")({
           charset: "UTF-8",
           bizContent,
         };
+        const bizContentSerialized = stringifySorted(bizContentObj);
+        const signString = buildSignContent(common);
         let sign: string;
         try {
           sign = await signRSA2(common, merchantPrivateKey);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          await logPay(supabase, orderNo, "create_error", "error", `RSA2 签名失败：${msg}`, {});
+          await logPay(supabase, orderNo, "create_error", "error", `RSA2 签名失败：${msg}`, {
+            signString,
+            bizContentSerialized,
+          });
           return json({ success: false, error: `签名失败：${msg}` }, 200);
         }
         const reqBody = { ...common, sign };
+        const requestBodyJson = JSON.stringify(reqBody);
 
         // 5. 调用 3ypay
         await logPay(supabase, orderNo, "create_request", "info", "POST 3ypay openapi (同源)", {
@@ -282,7 +288,12 @@ export const Route = createFileRoute("/api/public/pay-create")({
           rawProductCode,
           paySubType,
           bizContent: bizContentObj,
-          bizContentType: "json-string",
+          bizContentSerialized,
+          signString,
+          sign,
+          timestamp,
+          appId,
+          requestBodyJson,
           supabaseMode,
         });
         let resp: Response;
