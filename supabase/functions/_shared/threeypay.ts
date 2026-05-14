@@ -4,7 +4,7 @@
 // 算法：RSA2 = SHA256withRSA (RSASSA-PKCS1-v1_5)
 // 待签字符串规则：
 //   1. 取所有公共参数 + bizContent（bizContent 为 JSON 字符串）
-//   2. 剔除 sign / signType / 空值 / null
+//   2. 剔除 sign / 空值 / null
 //   3. 按 key ASCII 升序排序
 //   4. 拼接 key=value，用 & 连接（VALUE 不做 URL 编码）
 
@@ -45,7 +45,12 @@ export function buildSignContent(params: Record<string, unknown>): string {
       return v !== undefined && v !== null && v !== "";
     })
     .sort();
-  return keys.map((k) => `${k}=${params[k]}`).join("&");
+  return keys
+    .map((k) => {
+      const value = params[k];
+      return `${k}=${typeof value === "object" ? JSON.stringify(value) : String(value)}`;
+    })
+    .join("&");
 }
 
 // ---------- 签名 ----------
