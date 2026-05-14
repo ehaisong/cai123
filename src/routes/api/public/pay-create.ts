@@ -9,8 +9,8 @@ import { signRSA2, verifyRSA2 } from "@/lib/threeypay-verify";
 import type { Database } from "@/integrations/supabase/types";
 
 const GATEWAY_URL = "https://openapi.3ypay.com/openapi/order/pay/create";
-const NOTIFY_URL = "https://66cai.site/api/public/pay-notify";
-const RETURN_URL_BASE = "https://66cai.site/pay/success";
+const NOTIFY_URL = "https://geoarena.cn/api/public/pay-notify";
+const RETURN_URL_BASE = "https://geoarena.cn/pay/success";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
