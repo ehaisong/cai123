@@ -214,8 +214,17 @@ export const Route = createFileRoute("/api/public/pay-create")({
         }
         const cfg = (chan.config ?? {}) as Record<string, unknown>;
         const appId = cfg.appId as string | undefined;
-        // 商户私钥优先使用服务器 secret THREEYPAY_MCH_PRIVATE_KEY，不再读取数据库 config.merchantPrivateKey
-        const merchantPrivateKey = process.env.THREEYPAY_MCH_PRIVATE_KEY as string | undefined;
+        // 商户私钥：优先读后台 payment_channels.config.merchantPrivateKey；
+        // env THREEYPAY_MCH_PRIVATE_KEY 作为兜底（适合 Lovable Worker 环境，
+        // 自建 Node 服务建议直接在后台维护）。
+        const merchantPrivateKey =
+          (cfg.merchantPrivateKey as string | undefined) ||
+          (process.env.THREEYPAY_MCH_PRIVATE_KEY as string | undefined);
+        const merchantPrivateKeySource = cfg.merchantPrivateKey
+          ? "db"
+          : process.env.THREEYPAY_MCH_PRIVATE_KEY
+            ? "env"
+            : "none";
         const platformPublicKey = cfg.platformPublicKey as string | undefined;
         const sub = (cfg[payType] ?? {}) as Record<string, string | undefined>;
         const rawProductCode = sub.productCode;
