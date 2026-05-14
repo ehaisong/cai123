@@ -95,6 +95,17 @@ function sanitizeSubject(raw: string): string {
   return s;
 }
 
+function normalizeProductCode(raw: string | undefined, payType: "wechat" | "alipay"): string | undefined {
+  const value = String(raw || "").trim();
+  if (!value) return payType === "alipay" ? "Ali-PAY" : "WeChat-PAY";
+  const upper = value.toUpperCase();
+  if (upper === "ALI_NATIVE" || upper === "ALIPAY" || upper === "ALI_PAY") return "Ali-PAY";
+  if (upper === "WX_NATIVE" || upper === "WECHAT" || upper === "WECHAT_PAY" || upper === "WX_PAY") {
+    return "WeChat-PAY";
+  }
+  return value;
+}
+
 async function logPay(
   supabase: AppSupabase,
   orderNo: string | null,
@@ -206,7 +217,8 @@ export const Route = createFileRoute("/api/public/pay-create")({
         const merchantPrivateKey = cfg.merchantPrivateKey as string | undefined;
         const platformPublicKey = cfg.platformPublicKey as string | undefined;
         const sub = (cfg[payType] ?? {}) as Record<string, string | undefined>;
-        const productCode = sub.productCode;
+        const rawProductCode = sub.productCode;
+        const productCode = normalizeProductCode(rawProductCode, payType);
         const paySubType = sub.paySubType || "NATIVE";
         if (!appId || !merchantPrivateKey || !platformPublicKey || !productCode) {
           await logPay(supabase, orderNo, "create_error", "error", "通道配置不完整", {
