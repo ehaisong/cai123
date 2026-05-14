@@ -237,6 +237,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
             hasAppId: !!appId,
             hasPriv: !!merchantPrivateKey,
             privLen: merchantPrivateKey?.length ?? 0,
+            merchantPrivateKeySource,
             hasPub: !!platformPublicKey,
             hasProductCode: !!productCode,
             envKeys,
