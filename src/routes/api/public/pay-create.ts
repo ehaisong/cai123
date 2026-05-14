@@ -242,18 +242,18 @@ export const Route = createFileRoute("/api/public/pay-create")({
           productCode,
           paySubType,
           subject: sanitizeSubject(order.subject || "支付订单"),
+          description: sanitizeSubject(order.subject || "支付订单"),
           orderAmount: Number(order.amount).toFixed(2),
           clientIp,
           notifyUrl: NOTIFY_URL,
           redirectUrl: `${RETURN_URL_BASE}?orderNo=${encodeURIComponent(orderNo)}`,
         };
-        const bizContent = JSON.stringify(bizContentObj);
 
         // 4. 公共参数 + 签名
         const requestId =
           crypto.randomUUID().replace(/-/g, "") + Date.now().toString(36);
-        // 3ypay openapi 要求 timestamp 为毫秒级 Long（以字符串发送，避免 JSON 解析差异导致验签失败）
-        const timestamp = String(Date.now());
+        // 3ypay openapi 要求 timestamp 为毫秒级 Long，按文档以数字传递/签名。
+        const timestamp = Date.now();
         const common: Record<string, unknown> = {
           appId,
           requestId,
@@ -261,7 +261,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           timestamp,
           version: "1.0",
           charset: "UTF-8",
-          bizContent,
+          bizContent: bizContentObj,
         };
         let sign: string;
         try {
@@ -277,6 +277,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
         await logPay(supabase, orderNo, "create_request", "info", "POST 3ypay openapi (同源)", {
           requestId,
           productCode,
+          rawProductCode,
           paySubType,
           bizContent: bizContentObj,
           supabaseMode,
