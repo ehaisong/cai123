@@ -212,19 +212,34 @@ function ProductDetailPage() {
             <div className="bg-muted rounded-lg py-8 text-center mb-3">
               <p className="text-muted-foreground text-sm">🔒 内容已加密，购买后查看</p>
             </div>
+            {payFailed && (
+              <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-sm font-medium text-destructive">支付未完成</p>
+                <p className="mt-1 text-xs text-muted-foreground break-all">{payFailed}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">如已扣款，可稍候片刻让回调到达；否则请重试。</p>
+              </div>
+            )}
             <Button
               className="w-full bg-primary hover:bg-primary/90"
               size="lg"
-              onClick={handleBuyClick}
+              onClick={() => {
+                if (payFailed && lastPayType && env === "wechat") {
+                  startPayment(lastPayType);
+                } else {
+                  handleBuyClick();
+                }
+              }}
               disabled={buying || env === "detecting"}
             >
               {buying
                 ? "正在拉起支付…"
                 : env === "detecting"
                   ? "准备中…"
-                  : env === "wechat"
-                    ? `微信支付 ¥${Number(product.price).toFixed(2)}`
-                    : `立即购买 ¥${Number(product.price).toFixed(2)}`}
+                  : payFailed
+                    ? `重试支付 ¥${Number(product.price).toFixed(2)}`
+                    : env === "wechat"
+                      ? `微信支付 ¥${Number(product.price).toFixed(2)}`
+                      : `立即购买 ¥${Number(product.price).toFixed(2)}`}
             </Button>
             <p className="mt-2 text-[11px] text-muted-foreground text-center">
               {env === "wechat" ? "微信内将直接拉起支付，完成后自动解锁内容" : "支持微信 / 支付宝，支付完成后自动解锁内容"}
