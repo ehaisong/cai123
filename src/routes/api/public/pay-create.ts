@@ -248,6 +248,9 @@ export const Route = createFileRoute("/api/public/pay-create")({
           notifyUrl: NOTIFY_URL,
           redirectUrl: `${RETURN_URL_BASE}?orderNo=${encodeURIComponent(orderNo)}`,
         };
+        // 3ypay 公共报文规范要求 bizContent 是 JSON 格式字符串；
+        // 签名串与实际请求体必须使用同一个字符串，避免平台端重组对象导致验签不一致。
+        const bizContent = JSON.stringify(bizContentObj);
 
         // 4. 公共参数 + 签名
         const requestId =
@@ -261,7 +264,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           timestamp,
           version: "1.0",
           charset: "UTF-8",
-          bizContent: bizContentObj,
+          bizContent,
         };
         let sign: string;
         try {
@@ -280,6 +283,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           rawProductCode,
           paySubType,
           bizContent: bizContentObj,
+          bizContentType: "json-string",
           supabaseMode,
         });
         let resp: Response;
