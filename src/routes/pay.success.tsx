@@ -18,6 +18,7 @@ function PaySuccessPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [info, setInfo] = useState<{ amount?: number; tradeNo?: string; purpose?: string; productId?: string } | null>(null);
+  const [failedProductId, setFailedProductId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderNo) {
