@@ -27,7 +27,12 @@ export function buildSignContent(params: Record<string, unknown>): string {
       return v !== undefined && v !== null && v !== "";
     })
     .sort();
-  return keys.map((k) => `${k}=${params[k]}`).join("&");
+  return keys
+    .map((k) => {
+      const value = params[k];
+      return `${k}=${typeof value === "object" ? JSON.stringify(value) : String(value)}`;
+    })
+    .join("&");
 }
 
 function bytesToBase64(bytes: ArrayBuffer): string {
