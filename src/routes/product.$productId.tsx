@@ -120,6 +120,8 @@ function ProductDetailPage() {
     if (!current) return;
     setShowPay(false);
     setBuying(true);
+    setPayFailed(null);
+    setLastPayType(payType);
     try {
       const { data, error } = await supabase.rpc(
         "create_product_payment_order" as never,
@@ -136,7 +138,8 @@ function ProductDetailPage() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      toast.error(msg);
+      toast.error(`支付未完成：${msg}`, { description: "可点击下方「重试支付」再试一次" });
+      setPayFailed(msg);
     } finally {
       setBuying(false);
     }
