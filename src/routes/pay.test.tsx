@@ -53,7 +53,7 @@ function PayTestPage() {
       return;
     }
     setSubmitting(payType);
-    const subject = `支付通道测试 ¥${amount.toFixed(2)}`;
+    const subject = `支付通道测试 ${amount.toFixed(2)}元`;
     const { data: orderNo, error } = await supabase.rpc("create_payment_order", {
       _amount: amount,
       _pay_type: payType,
