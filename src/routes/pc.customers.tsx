@@ -144,8 +144,10 @@ function CustomersPage() {
 
   const filtered = useMemo(() => {
     let out = rows;
-    if (agentFilter !== "all") out = out.filter((r) => r.upline_profile_id === agentFilter);
-    if (merchantFilter !== "all") out = out.filter((r) => r.upline_merchant_id === merchantFilter);
+    if (agentFilter === "__none__") out = out.filter((r) => !r.upline_profile_id);
+    else if (agentFilter !== "all") out = out.filter((r) => r.upline_profile_id === agentFilter);
+    if (merchantFilter === "__none__") out = out.filter((r) => !r.upline_merchant_id);
+    else if (merchantFilter !== "all") out = out.filter((r) => r.upline_merchant_id === merchantFilter);
     if (kw.trim()) {
       const k = kw.toLowerCase();
       out = out.filter((r) =>
