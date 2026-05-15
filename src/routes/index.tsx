@@ -114,11 +114,12 @@ function HomeRouter() {
         return;
       }
 
-      // 2) 已登录用户：lastShopId / agent_relations / default_shop_id 三者并行查询，
-      //    再按优先级挑选第一个有效的商家，避免串行多次 RTT。
-      const [arRes, settingsRes, lastShopValid] = await Promise.all([
+      // 2) 已登录用户：优先按"上线代理当前绑定的商家"决定默认店铺
+      //    （代理换绑商家后，原绑定该代理的客户登录会自动跟随到新商家）。
+      //    无上线代理时回落到 lastShopId / 平台默认店铺。
+      const [resolvedRes, settingsRes, lastShopValid] = await Promise.all([
         user
-          ? supabase.from("agent_relations").select("bound_merchant_id").eq("user_id", user.id).maybeSingle()
+          ? supabase.rpc("resolve_my_shop")
           : Promise.resolve({ data: null } as const),
         supabase.from("app_settings").select("value").eq("key", "default_shop_id").maybeSingle(),
         lastShopId
@@ -126,13 +127,15 @@ function HomeRouter() {
           : Promise.resolve({ data: null } as const),
       ]);
 
-      // 优先级：lastShopId(已校验) > agent 绑定商家 > 默认店铺
+      const resolved = (resolvedRes as any)?.data as string | null | undefined;
+      if (resolved) {
+        setState({ kind: "shop", merchantId: resolved });
+        return;
+      }
       if ((lastShopValid as any)?.data?.id) {
         setState({ kind: "shop", merchantId: (lastShopValid as any).data.id });
         return;
       }
-      const agentBound = (arRes as any)?.data?.bound_merchant_id ?? null;
-      if (agentBound) target = agentBound;
       if (!target) {
         const v = (settingsRes as any)?.data?.value;
         if (typeof v === "string" && v.length > 0) target = v;
