@@ -23,12 +23,6 @@ DECLARE
   comm_count int;
   rate numeric;
   membership uuid;
-
-  PROCEDURE assume(_uid uuid) AS $$
-  BEGIN
-    PERFORM set_config('request.jwt.claims',
-      json_build_object('sub', _uid::text, 'role', 'authenticated')::text, true);
-  END; $$ LANGUAGE plpgsql;
 BEGIN
   ----------------------------------------------------------------------
   -- 0. 种子：auth.users / profiles / merchants / category / product / config
