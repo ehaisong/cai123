@@ -90,12 +90,11 @@ function ShopPage() {
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
     setIsShopOwner(!!m);
 
-    // 记住归属：登录的非代理用户访问任意店铺，即把它设为默认归属店铺。
-    // 这样无论从二维码 /shop/MID 还是商品页进入，之后点击「主页」都会回到这个店铺，
-    // 不会再被回退到 default_shop_id（DEMO）。
-    // bind_referrer 内部对 is_agent=true 用户不会修改 bound_merchant_id，安全。
+    // 登记入店：登录的非店主、非本店代理用户进入任意店铺即写入 shop_memberships。
+    // 一旦写入就锁定终身归属（首次入店决定 upline / 分佣对象）。
+    // 这里若已有 membership，bind_shop_referrer 会直接返回不改写。
     if (!m && (!ar?.is_agent || ar?.bound_merchant_id !== merchantId)) {
-      await supabase.rpc("bind_referrer", { _agent_code: `M_${merchantId}` });
+      await supabase.rpc("bind_shop_referrer", { _merchant_id: merchantId, _ref: `M_${merchantId}` });
     }
   };
 
