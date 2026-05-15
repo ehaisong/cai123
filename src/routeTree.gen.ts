@@ -83,7 +83,7 @@ import { Route as ApiPublicPayCreateRouteImport } from './routes/api/public/pay-
 import { Route as PcUsersMerchantMerchantIdRouteImport } from './routes/pc.users_.merchant.$merchantId'
 import { Route as PcUsersBuyerUserIdRouteImport } from './routes/pc.users_.buyer.$userId'
 import { Route as PcUsersAgentUserIdRouteImport } from './routes/pc.users_.agent.$userId'
-import { Route as AdminMerchantsMerchantIdAgentsRouteImport } from './routes/admin.merchants.$merchantId.agents'
+import { Route as AdminMerchantsMerchantIdAgentsRouteImport } from './routes/admin.merchants_.$merchantId.agents'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
 import { Route as MerchantProductsProductIdIssuesBulkImportRouteImport } from './routes/merchant.products.$productId.issues.bulk-import'
@@ -463,9 +463,9 @@ const PcUsersAgentUserIdRoute = PcUsersAgentUserIdRouteImport.update({
 } as any)
 const AdminMerchantsMerchantIdAgentsRoute =
   AdminMerchantsMerchantIdAgentsRouteImport.update({
-    id: '/$merchantId/agents',
-    path: '/$merchantId/agents',
-    getParentRoute: () => AdminMerchantsRoute,
+    id: '/admin/merchants_/$merchantId/agents',
+    path: '/admin/merchants/$merchantId/agents',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const MerchantProductsProductIdIssuesIndexRoute =
   MerchantProductsProductIdIssuesIndexRouteImport.update({
@@ -512,7 +512,7 @@ export interface FileRoutesByFullPath {
   '/admin/commission': typeof AdminCommissionRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
-  '/admin/merchants': typeof AdminMerchantsRouteWithChildren
+  '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
   '/admin/payment-logs': typeof AdminPaymentLogsRoute
@@ -592,7 +592,7 @@ export interface FileRoutesByTo {
   '/admin/commission': typeof AdminCommissionRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
-  '/admin/merchants': typeof AdminMerchantsRouteWithChildren
+  '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
   '/admin/payment-logs': typeof AdminPaymentLogsRoute
@@ -674,7 +674,7 @@ export interface FileRoutesById {
   '/admin/commission': typeof AdminCommissionRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
-  '/admin/merchants': typeof AdminMerchantsRouteWithChildren
+  '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment': typeof AdminPaymentRoute
   '/admin/payment-logs': typeof AdminPaymentLogsRoute
@@ -726,7 +726,7 @@ export interface FileRoutesById {
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
-  '/admin/merchants/$merchantId/agents': typeof AdminMerchantsMerchantIdAgentsRoute
+  '/admin/merchants_/$merchantId/agents': typeof AdminMerchantsMerchantIdAgentsRoute
   '/pc/users_/agent/$userId': typeof PcUsersAgentUserIdRoute
   '/pc/users_/buyer/$userId': typeof PcUsersBuyerUserIdRoute
   '/pc/users_/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
@@ -970,7 +970,7 @@ export interface FileRouteTypes {
     | '/merchant/agents/$userId'
     | '/merchant/products/new'
     | '/merchant/products/'
-    | '/admin/merchants/$merchantId/agents'
+    | '/admin/merchants_/$merchantId/agents'
     | '/pc/users_/agent/$userId'
     | '/pc/users_/buyer/$userId'
     | '/pc/users_/merchant/$merchantId'
@@ -1000,7 +1000,7 @@ export interface RootRouteChildren {
   AdminCommissionRoute: typeof AdminCommissionRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMerchantRecruitRoute: typeof AdminMerchantRecruitRoute
-  AdminMerchantsRoute: typeof AdminMerchantsRouteWithChildren
+  AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentRoute: typeof AdminPaymentRoute
   AdminPaymentLogsRoute: typeof AdminPaymentLogsRoute
@@ -1042,6 +1042,7 @@ export interface RootRouteChildren {
   ApiPublicPayNotifyRoute: typeof ApiPublicPayNotifyRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
+  AdminMerchantsMerchantIdAgentsRoute: typeof AdminMerchantsMerchantIdAgentsRoute
   MerchantProductsProductIdIssuesBulkImportRoute: typeof MerchantProductsProductIdIssuesBulkImportRoute
   MerchantProductsProductIdIssuesNewRoute: typeof MerchantProductsProductIdIssuesNewRoute
   MerchantProductsProductIdIssuesIndexRoute: typeof MerchantProductsProductIdIssuesIndexRoute
@@ -1568,12 +1569,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PcUsersAgentUserIdRouteImport
       parentRoute: typeof PcRoute
     }
-    '/admin/merchants/$merchantId/agents': {
-      id: '/admin/merchants/$merchantId/agents'
-      path: '/$merchantId/agents'
+    '/admin/merchants_/$merchantId/agents': {
+      id: '/admin/merchants_/$merchantId/agents'
+      path: '/admin/merchants/$merchantId/agents'
       fullPath: '/admin/merchants/$merchantId/agents'
       preLoaderRoute: typeof AdminMerchantsMerchantIdAgentsRouteImport
-      parentRoute: typeof AdminMerchantsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/merchant/products/$productId/issues/': {
       id: '/merchant/products/$productId/issues/'
@@ -1638,18 +1639,6 @@ const PcRouteChildren: PcRouteChildren = {
 
 const PcRouteWithChildren = PcRoute._addFileChildren(PcRouteChildren)
 
-interface AdminMerchantsRouteChildren {
-  AdminMerchantsMerchantIdAgentsRoute: typeof AdminMerchantsMerchantIdAgentsRoute
-}
-
-const AdminMerchantsRouteChildren: AdminMerchantsRouteChildren = {
-  AdminMerchantsMerchantIdAgentsRoute: AdminMerchantsMerchantIdAgentsRoute,
-}
-
-const AdminMerchantsRouteWithChildren = AdminMerchantsRoute._addFileChildren(
-  AdminMerchantsRouteChildren,
-)
-
 interface MerchantAgentsRouteChildren {
   MerchantAgentsUserIdRoute: typeof MerchantAgentsUserIdRoute
 }
@@ -1682,7 +1671,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCommissionRoute: AdminCommissionRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMerchantRecruitRoute: AdminMerchantRecruitRoute,
-  AdminMerchantsRoute: AdminMerchantsRouteWithChildren,
+  AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentRoute: AdminPaymentRoute,
   AdminPaymentLogsRoute: AdminPaymentLogsRoute,
@@ -1724,6 +1713,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPayNotifyRoute: ApiPublicPayNotifyRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
+  AdminMerchantsMerchantIdAgentsRoute: AdminMerchantsMerchantIdAgentsRoute,
   MerchantProductsProductIdIssuesBulkImportRoute:
     MerchantProductsProductIdIssuesBulkImportRoute,
   MerchantProductsProductIdIssuesNewRoute:
@@ -1736,3 +1726,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
