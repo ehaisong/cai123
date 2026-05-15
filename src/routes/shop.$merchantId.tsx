@@ -18,6 +18,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { Share2, Copy } from "lucide-react";
+import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/shop/$merchantId")({
   component: ShopPage,
