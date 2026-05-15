@@ -5,88 +5,192 @@ import { PcPageHeader } from "@/components/pc/pc-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtDate, fmtMoney } from "@/lib/format";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Unlink } from "lucide-react";
+import { toast } from "sonner";
+import { reportRpcError } from "@/lib/error-logger";
 
 export const Route = createFileRoute("/pc/customers")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    agentId: typeof s.agentId === "string" ? s.agentId : undefined,
+    merchantId: typeof s.merchantId === "string" ? s.merchantId : undefined,
+  }),
   component: CustomersPage,
 });
 
 type Row = {
   user_id: string;
+  profile_id: string;
   user_code: string;
   nickname: string | null;
   phone: string | null;
   created_at: string;
   is_disabled: boolean;
+  upline_profile_id: string | null;
   upline_nickname: string | null;
   upline_phone: string | null;
+  upline_merchant_id: string | null;
   balance: number;
   total_recharge: number;
 };
 
+type AgentOpt = { profile_id: string; nickname: string | null; phone: string | null; bound_merchant_id: string | null };
+type MerchantOpt = { id: string; shop_name: string };
+
 function CustomersPage() {
+  const search = Route.useSearch();
   const [rows, setRows] = useState<Row[]>([]);
+  const [agents, setAgents] = useState<AgentOpt[]>([]);
+  const [merchants, setMerchants] = useState<MerchantOpt[]>([]);
   const [kw, setKw] = useState("");
+  const [agentFilter, setAgentFilter] = useState<string>(search.agentId ?? "all");
+  const [merchantFilter, setMerchantFilter] = useState<string>(search.merchantId ?? "all");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setAgentFilter(search.agentId ?? "all"); }, [search.agentId]);
+  useEffect(() => { setMerchantFilter(search.merchantId ?? "all"); }, [search.merchantId]);
+
+  const load = async () => {
+    setLoading(true);
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id,user_id,user_code,nickname,phone,created_at,is_disabled")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    const list = profs ?? [];
+    const allUids = list.map((p: any) => p.user_id);
+
+    // Identify agents and merchants to exclude
+    const [{ data: agentRels }, { data: ms }] = await Promise.all([
+      allUids.length ? supabase.from("agent_relations").select("user_id").in("user_id", allUids).eq("is_agent", true) : Promise.resolve({ data: [] as any[] }),
+      allUids.length ? supabase.from("merchants").select("user_id").in("user_id", allUids) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const agentUids = new Set((agentRels ?? []).map((r: any) => r.user_id));
+    const merchantUids = new Set((ms ?? []).map((m: any) => m.user_id));
+    const buyers = list.filter((p: any) => !agentUids.has(p.user_id) && !merchantUids.has(p.user_id));
+    const uids = buyers.map((p: any) => p.user_id);
+
+    const [{ data: rels }, { data: wallets }] = await Promise.all([
+      uids.length ? supabase.from("agent_relations").select("user_id,upline_id,bound_merchant_id").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
+      uids.length ? supabase.from("wallets").select("user_id,balance,total_recharge").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const relMap = Object.fromEntries((rels ?? []).map((r: any) => [r.user_id, r]));
+    const upIds = Array.from(new Set((rels ?? []).map((r: any) => r.upline_id).filter(Boolean) as string[]));
+    const { data: upProfs } = upIds.length
+      ? await supabase.from("profiles").select("id,nickname,phone").in("id", upIds)
+      : { data: [] as any[] };
+    const upPMap = Object.fromEntries((upProfs ?? []).map((p: any) => [p.id, p]));
+    const wMap = Object.fromEntries((wallets ?? []).map((w: any) => [w.user_id, w]));
+
+    setRows(buyers.map((p: any) => {
+      const rel = relMap[p.user_id];
+      const upId = rel?.upline_id ?? null;
+      const up = upId ? upPMap[upId] : null;
+      const w = wMap[p.user_id];
+      return {
+        user_id: p.user_id,
+        profile_id: p.id,
+        user_code: p.user_code,
+        nickname: p.nickname,
+        phone: p.phone,
+        created_at: p.created_at,
+        is_disabled: p.is_disabled,
+        upline_profile_id: upId,
+        upline_nickname: up?.nickname ?? null,
+        upline_phone: up?.phone ?? null,
+        upline_merchant_id: rel?.bound_merchant_id ?? null,
+        balance: Number(w?.balance ?? 0),
+        total_recharge: Number(w?.total_recharge ?? 0),
+      };
+    }));
+    setLoading(false);
+  };
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id,user_id,user_code,nickname,phone,created_at,is_disabled")
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      const list = profs ?? [];
-      const uids = list.map((p: any) => p.user_id);
-
-      const [{ data: rels }, { data: wallets }] = await Promise.all([
-        uids.length ? supabase.from("agent_relations").select("user_id,upline_id").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
-        uids.length ? supabase.from("wallets").select("user_id,balance,total_recharge").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
-      ]);
-      const upMap = Object.fromEntries((rels ?? []).map((r: any) => [r.user_id, r.upline_id]));
-      const upIds = Array.from(new Set(Object.values(upMap).filter(Boolean) as string[]));
-      const { data: upProfs } = upIds.length
-        ? await supabase.from("profiles").select("id,nickname,phone").in("id", upIds)
+      // Load agents and merchants for filter dropdowns
+      const { data: ar } = await supabase
+        .from("agent_relations")
+        .select("user_id,bound_merchant_id")
+        .eq("is_agent", true)
+        .limit(500);
+      const agUids = (ar ?? []).map((a: any) => a.user_id);
+      const { data: agProfs } = agUids.length
+        ? await supabase.from("profiles").select("id,user_id,nickname,phone").in("user_id", agUids)
         : { data: [] as any[] };
-      const upPMap = Object.fromEntries((upProfs ?? []).map((p: any) => [p.id, p]));
-      const wMap = Object.fromEntries((wallets ?? []).map((w: any) => [w.user_id, w]));
+      const aprofMap = Object.fromEntries((agProfs ?? []).map((p: any) => [p.user_id, p]));
+      setAgents((ar ?? []).map((a: any) => {
+        const p = aprofMap[a.user_id];
+        return { profile_id: p?.id ?? "", nickname: p?.nickname ?? null, phone: p?.phone ?? null, bound_merchant_id: a.bound_merchant_id };
+      }).filter((x) => x.profile_id));
 
-      setRows(list.map((p: any) => {
-        const upId = upMap[p.user_id];
-        const up = upId ? upPMap[upId] : null;
-        const w = wMap[p.user_id];
-        return {
-          ...p,
-          upline_nickname: up?.nickname ?? null,
-          upline_phone: up?.phone ?? null,
-          balance: Number(w?.balance ?? 0),
-          total_recharge: Number(w?.total_recharge ?? 0),
-        };
-      }));
-      setLoading(false);
+      const { data: mList } = await supabase.from("merchants").select("id,shop_name").order("shop_name");
+      setMerchants(((mList ?? []) as any[]).map((m) => ({ id: m.id, shop_name: m.shop_name })));
     })();
+    load();
   }, []);
 
+  const unbindAgent = async (r: Row) => {
+    if (!confirm(`确定解绑「${r.nickname ?? r.user_code}」与代理「${r.upline_nickname ?? "-"}」的绑定关系？`)) return;
+    const { error } = await supabase
+      .from("agent_relations")
+      .update({ upline_id: null, upline_l2_id: null, bound_merchant_id: null })
+      .eq("user_id", r.user_id);
+    if (error) { reportRpcError(error, { op: "agent_relations.unbind", scope: "PcCustomers" }); return; }
+    toast.success("已解绑归属代理");
+    load();
+  };
+
   const filtered = useMemo(() => {
-    if (!kw.trim()) return rows;
-    const k = kw.toLowerCase();
-    return rows.filter((r) =>
-      r.nickname?.toLowerCase().includes(k) ||
-      r.phone?.includes(k) ||
-      r.user_code?.toLowerCase().includes(k) ||
-      r.upline_nickname?.toLowerCase().includes(k),
-    );
-  }, [rows, kw]);
+    let out = rows;
+    if (agentFilter !== "all") out = out.filter((r) => r.upline_profile_id === agentFilter);
+    if (merchantFilter !== "all") out = out.filter((r) => r.upline_merchant_id === merchantFilter);
+    if (kw.trim()) {
+      const k = kw.toLowerCase();
+      out = out.filter((r) =>
+        r.nickname?.toLowerCase().includes(k) ||
+        r.phone?.includes(k) ||
+        r.user_code?.toLowerCase().includes(k) ||
+        r.upline_nickname?.toLowerCase().includes(k),
+      );
+    }
+    return out;
+  }, [rows, kw, agentFilter, merchantFilter]);
+
+  const merchantNameMap = useMemo(() => Object.fromEntries(merchants.map((m) => [m.id, m.shop_name])), [merchants]);
 
   return (
     <div>
-      <PcPageHeader title="客户管理" description={`共 ${rows.length} 位用户`} />
+      <PcPageHeader title="客户管理" description={`共 ${filtered.length} 位用户`} />
       <div className="bg-card border border-border rounded-xl">
-        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input value={kw} onChange={(e) => setKw(e.target.value)} placeholder="搜索昵称/手机号/编号/归属代理" className="h-8 w-80" />
+        <div className="px-4 py-3 border-b border-border flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input value={kw} onChange={(e) => setKw(e.target.value)} placeholder="搜索昵称/手机号/编号/归属代理" className="h-8 w-72" />
+          </div>
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger className="h-8 w-56"><SelectValue placeholder="按代理过滤" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部代理</SelectItem>
+              <SelectItem value="__none__">未绑定代理</SelectItem>
+              {agents.map((a) => (
+                <SelectItem key={a.profile_id} value={a.profile_id}>
+                  {a.nickname ?? "未命名"}{a.phone ? ` · ${a.phone}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={merchantFilter} onValueChange={setMerchantFilter}>
+            <SelectTrigger className="h-8 w-56"><SelectValue placeholder="按归属商家过滤" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部商家</SelectItem>
+              <SelectItem value="__none__">未绑定商家</SelectItem>
+              {merchants.map((m) => (
+                <SelectItem key={m.id} value={m.id}>{m.shop_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Table>
           <TableHeader>
@@ -104,26 +208,44 @@ function CustomersPage() {
           <TableBody>
             {loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">加载中…</TableCell></TableRow>}
             {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">暂无用户</TableCell></TableRow>}
-            {filtered.map((r) => (
-              <TableRow key={r.user_id}>
-                <TableCell><div className="font-medium">{r.nickname ?? "—"}</div><div className="text-xs text-muted-foreground">{r.user_code}</div></TableCell>
-                <TableCell className="text-sm text-muted-foreground">{r.phone ?? "—"}</TableCell>
-                <TableCell className="text-sm">{r.upline_nickname ? `${r.upline_nickname} · ${r.upline_phone ?? "—"}` : <span className="text-muted-foreground">未绑定</span>}</TableCell>
-                <TableCell className="text-right">{fmtMoney(r.balance)}</TableCell>
-                <TableCell className="text-right">{fmtMoney(r.total_recharge)}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{fmtDate(r.created_at)}</TableCell>
-                <TableCell>
-                  {r.is_disabled
-                    ? <span className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive">已禁用</span>
-                    : <span className="text-xs px-2 py-0.5 rounded bg-success/10 text-success">正常</span>}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Link to="/pc/users/buyer/$userId" params={{ userId: r.user_id }}>
-                    <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filtered.map((r) => {
+              const matchAgentNone = agentFilter === "__none__" ? !r.upline_profile_id : true;
+              const matchMerchantNone = merchantFilter === "__none__" ? !r.upline_merchant_id : true;
+              if (!matchAgentNone || !matchMerchantNone) return null;
+              return (
+                <TableRow key={r.user_id}>
+                  <TableCell><div className="font-medium">{r.nickname ?? "—"}</div><div className="text-xs text-muted-foreground">{r.user_code}</div></TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{r.phone ?? "—"}</TableCell>
+                  <TableCell className="text-sm">
+                    {r.upline_profile_id ? (
+                      <div className="space-y-0.5">
+                        <div>{r.upline_nickname ?? "—"}{r.upline_phone ? ` · ${r.upline_phone}` : ""}</div>
+                        {r.upline_merchant_id && <div className="text-xs text-muted-foreground">{merchantNameMap[r.upline_merchant_id] ?? "—"}</div>}
+                        <button
+                          onClick={() => unbindAgent(r)}
+                          className="text-xs text-destructive hover:underline inline-flex items-center gap-1"
+                        >
+                          <Unlink className="h-3 w-3" />解绑
+                        </button>
+                      </div>
+                    ) : <span className="text-muted-foreground">未绑定</span>}
+                  </TableCell>
+                  <TableCell className="text-right">{fmtMoney(r.balance)}</TableCell>
+                  <TableCell className="text-right">{fmtMoney(r.total_recharge)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{fmtDate(r.created_at)}</TableCell>
+                  <TableCell>
+                    {r.is_disabled
+                      ? <span className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive">已禁用</span>
+                      : <span className="text-xs px-2 py-0.5 rounded bg-success/10 text-success">正常</span>}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link to="/pc/users/buyer/$userId" params={{ userId: r.user_id }}>
+                      <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
