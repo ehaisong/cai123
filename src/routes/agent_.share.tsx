@@ -101,8 +101,11 @@ function SharePage() {
   const code = info.agent_code ?? profile?.user_code ?? "";
   // 二维码统一指向中转站，由中转站 302 到当前生效的生产域名，
   // 这样即使某个生产域名被微信屏蔽，已发出的二维码依然可用。
-  // 代理推广码：?ref=<user_code>，登陆后自动绑定为我的下级 + 解析到归属商家
-  const agentUrl = buildShareUrl({ ref: code });
+  // 推广码格式：A_<userCode>_M_<merchantId>，明确指向「我作为某商家代理」邀请客户。
+  // 客户登录后会调用 bind_shop_referrer(merchantId, ref) 完成入店 + 终身归属绑定。
+  const agentUrl = merchant
+    ? buildShareUrl({ ref: `A_${code}_M_${merchant.id}`, to: `/shop/${merchant.id}` })
+    : buildShareUrl({ ref: code });
   const url = agentUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";
