@@ -62,6 +62,7 @@ function AgentsPage() {
 
       setRows(list.map((a: any) => ({
         ...a,
+        profile_id: pmap[a.user_id]?.id ?? null,
         nickname: pmap[a.user_id]?.nickname ?? null,
         phone: pmap[a.user_id]?.phone ?? null,
         user_code: pmap[a.user_id]?.user_code ?? null,
