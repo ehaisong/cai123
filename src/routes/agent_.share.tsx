@@ -37,25 +37,34 @@ function SharePage() {
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [merchant, setMerchant] = useState<MerchantBrief | null>(null);
+  const [bindCount, setBindCount] = useState(0);
   const [config, setConfig] = useState<{ l1_rate: number } | null>(null);
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       if (!user) { setLoading(false); return; }
       preloadRelayBase();
-      const [arRes, pRes, cfgRes] = await Promise.all([
+      const [arRes, pRes, cfgRes, bmRes] = await Promise.all([
         supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
         supabase.from("commission_config").select("l1_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.rpc("agent_my_bound_merchants"),
       ]);
       if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "SharePage" });
       setInfo(arRes.data);
       setProfile(pRes.data);
       setConfig(cfgRes.data ?? null);
 
-      if (arRes.data?.bound_merchant_id) {
+      // 优先从已绑定商家列表里取「当前活跃」商家，其次回落到 agent_relations.bound_merchant_id。
+      // 这样代理切换商家后，分享码会立即跟着更新。
+      const list = ((bmRes.data as any[]) ?? []);
+      setBindCount(list.length);
+      const active = list.find((r) => r.is_active) ?? null;
+      if (active) {
+        setMerchant({ id: active.merchant_id, shop_name: active.shop_name, shop_avatar_url: active.shop_avatar_url });
+      } else if (arRes.data?.bound_merchant_id) {
         const { data: m } = await supabase
           .from("merchants")
           .select("id, shop_name, shop_avatar_url")
@@ -92,8 +101,11 @@ function SharePage() {
   const code = info.agent_code ?? profile?.user_code ?? "";
   // 二维码统一指向中转站，由中转站 302 到当前生效的生产域名，
   // 这样即使某个生产域名被微信屏蔽，已发出的二维码依然可用。
-  // 代理推广码：?ref=<user_code>，登陆后自动绑定为我的下级 + 解析到归属商家
-  const agentUrl = buildShareUrl({ ref: code });
+  // 推广码格式：A_<userCode>_M_<merchantId>，明确指向「我作为某商家代理」邀请客户。
+  // 客户登录后会调用 bind_shop_referrer(merchantId, ref) 完成入店 + 终身归属绑定。
+  const agentUrl = merchant
+    ? buildShareUrl({ ref: `A_${code}_M_${merchant.id}`, to: `/shop/${merchant.id}` })
+    : buildShareUrl({ ref: code });
   const url = agentUrl;
 
   const l1Pct = config ? (config.l1_rate * 100).toFixed(0) : "—";

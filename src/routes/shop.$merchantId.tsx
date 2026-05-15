@@ -18,6 +18,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { Share2, Copy } from "lucide-react";
+import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/shop/$merchantId")({
   component: ShopPage,
@@ -57,8 +58,10 @@ function ShopPage() {
   const [switchOpen, setSwitchOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [agentCode, setAgentCode] = useState<string>("");
-  const [origin, setOrigin] = useState("");
 
+  const shareUrl = agentCode
+    ? buildShareUrl({ ref: `A_${agentCode}_M_${merchantId}`, to: `/shop/${merchantId}` })
+    : "";
   const loadAgent = async () => {
     if (!user) {
       setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null); setAgentCode("");
@@ -90,17 +93,16 @@ function ShopPage() {
       .from("merchants").select("id").eq("user_id", user.id).eq("id", merchantId).maybeSingle();
     setIsShopOwner(!!m);
 
-    // 记住归属：登录的非代理用户访问任意店铺，即把它设为默认归属店铺。
-    // 这样无论从二维码 /shop/MID 还是商品页进入，之后点击「主页」都会回到这个店铺，
-    // 不会再被回退到 default_shop_id（DEMO）。
-    // bind_referrer 内部对 is_agent=true 用户不会修改 bound_merchant_id，安全。
+    // 登记入店：登录的非店主、非本店代理用户进入任意店铺即写入 shop_memberships。
+    // 一旦写入就锁定终身归属（首次入店决定 upline / 分佣对象）。
+    // 这里若已有 membership，bind_shop_referrer 会直接返回不改写。
     if (!m && (!ar?.is_agent || ar?.bound_merchant_id !== merchantId)) {
-      await supabase.rpc("bind_referrer", { _agent_code: `M_${merchantId}` });
+      await supabase.rpc("bind_shop_referrer", { _merchant_id: merchantId, _ref: `M_${merchantId}` });
     }
   };
 
   useEffect(() => {
-    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
+    preloadRelayBase();
     // 记住"上次访问的店铺"：无论登录与否，扫码或直链进入后写入 localStorage，
     // 让下次访问 / 时直接进入该店铺；扫描其他店铺二维码会自动覆盖。
     if (typeof window !== "undefined") {
@@ -327,7 +329,7 @@ function ShopPage() {
           </DialogHeader>
           <div className="flex flex-col items-center gap-3 py-2">
             <div className="bg-white p-3 rounded-xl border border-border">
-              <QRCodeSVG value={`${origin}/?ref=${agentCode}`} size={220} level="M" />
+              <QRCodeSVG value={shareUrl} size={220} level="M" />
             </div>
             <div className="text-xs text-muted-foreground">
               推广码：<span className="font-mono">{agentCode || "—"}</span>
@@ -336,7 +338,7 @@ function ShopPage() {
               <Button
                 variant="outline"
                 onClick={async () => {
-                  try { await navigator.clipboard.writeText(`${origin}/?ref=${agentCode}`); toast.success("已复制链接"); }
+                  try { await navigator.clipboard.writeText(shareUrl); toast.success("已复制链接"); }
                   catch { toast.error("复制失败"); }
                 }}
               >

@@ -64,8 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const code = typeof window !== "undefined" ? localStorage.getItem("pending_referrer") : null;
             if (!code) return;
-            await supabase.rpc("bind_referrer", { _agent_code: code });
+            // 优先使用按店绑定：从存储中取 pending_merchant_id；否则解析 ref 反查商家
+            let mid: string | null = null;
+            try { mid = localStorage.getItem("pending_merchant_id"); } catch {}
+            if (!mid) {
+              const { data } = await supabase.rpc("resolve_ref_to_merchant", { _ref: code });
+              mid = (data as string | null) ?? null;
+            }
+            if (mid) {
+              await supabase.rpc("bind_shop_referrer", { _merchant_id: mid, _ref: code });
+            } else {
+              await supabase.rpc("bind_referrer", { _agent_code: code });
+            }
             try { localStorage.removeItem("pending_referrer"); } catch {}
+            try { localStorage.removeItem("pending_merchant_id"); } catch {}
           } catch {}
         }, 0);
       }
