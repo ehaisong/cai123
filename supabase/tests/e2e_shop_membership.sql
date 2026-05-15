@@ -62,7 +62,6 @@ BEGIN
     VALUES (prod_m2, '20260102', 'published', now()) RETURNING id INTO iss_m2;
 
   -- A 已是 M1 代理（前置条件）
-  CALL NULL; -- placeholder
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub', uid_a::text, 'role','authenticated')::text, true);
   PERFORM public.become_agent_for_merchant(m1);
