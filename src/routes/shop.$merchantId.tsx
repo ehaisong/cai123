@@ -102,7 +102,7 @@ function ShopPage() {
   };
 
   useEffect(() => {
-    setOrigin(typeof window !== "undefined" ? window.location.origin : "");
+    preloadRelayBase();
     // 记住"上次访问的店铺"：无论登录与否，扫码或直链进入后写入 localStorage，
     // 让下次访问 / 时直接进入该店铺；扫描其他店铺二维码会自动覆盖。
     if (typeof window !== "undefined") {
