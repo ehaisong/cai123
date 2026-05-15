@@ -211,9 +211,6 @@ function CustomersPage() {
             {loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">加载中…</TableCell></TableRow>}
             {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">暂无用户</TableCell></TableRow>}
             {filtered.map((r) => {
-              const matchAgentNone = agentFilter === "__none__" ? !r.upline_profile_id : true;
-              const matchMerchantNone = merchantFilter === "__none__" ? !r.upline_merchant_id : true;
-              if (!matchAgentNone || !matchMerchantNone) return null;
               return (
                 <TableRow key={r.user_id}>
                   <TableCell><div className="font-medium">{r.nickname ?? "—"}</div><div className="text-xs text-muted-foreground">{r.user_code}</div></TableCell>
