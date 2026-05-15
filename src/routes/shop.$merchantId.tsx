@@ -58,8 +58,10 @@ function ShopPage() {
   const [switchOpen, setSwitchOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [agentCode, setAgentCode] = useState<string>("");
-  const [origin, setOrigin] = useState("");
 
+  const shareUrl = agentCode
+    ? buildShareUrl({ ref: `A_${agentCode}_M_${merchantId}`, to: `/shop/${merchantId}` })
+    : "";
   const loadAgent = async () => {
     if (!user) {
       setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null); setAgentCode("");
