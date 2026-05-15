@@ -8,7 +8,7 @@ import { reportRpcError } from "@/lib/error-logger";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { Search } from "lucide-react";
 
-export const Route = createFileRoute("/admin/merchants/$merchantId/agents")({
+export const Route = createFileRoute("/admin/merchants_/$merchantId/agents")({
   component: () => (
     <RouteGuard title="店铺代理" roles={["admin"]} forbiddenText="此页面仅限管理员访问">
       <Inner />
