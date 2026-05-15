@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/h5/page-header";
@@ -108,7 +108,7 @@ function Inner() {
         {loading && <p className="text-center py-4 text-sm text-muted-foreground">加载中…</p>}
         {!loading && filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无商家</p>}
         {filtered.map((m) => (
-          <button key={m.id} onClick={() => openEdit(m)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
+          <div key={m.id} className="bg-card rounded-md p-3">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium truncate">{m.shop_name}</div>
               <span className="text-xs text-primary">分成 {(Number(m.l1_rate) * 100).toFixed(0)}% / 上限 {(Number(m.l1_max_rate) * 100).toFixed(0)}%</span>
@@ -122,7 +122,13 @@ function Inner() {
               {m.real_name ?? "-"} · 销售额 {fmtMoney(m.total_sales)} · 粉丝 {m.fans_count ?? 0}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">入驻：{fmtDate(m.created_at)}</div>
-          </button>
+            <div className="flex gap-2 mt-2">
+              <Button asChild size="sm" variant="outline" className="flex-1">
+                <Link to="/admin/merchants/$merchantId/agents" params={{ merchantId: m.id }}>代理</Link>
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => openEdit(m)}>设置</Button>
+            </div>
+          </div>
         ))}
       </main>
 
