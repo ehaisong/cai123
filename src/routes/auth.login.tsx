@@ -291,25 +291,165 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function CustomerPanel({ onLogin, ref_ }: { onLogin: () => void; ref_?: string }) {
+function CustomerPanel({
+  mode,
+  setMode,
+  onWechatLogin,
+  requireAgree,
+  onOtpSuccess,
+  ref_,
+}: {
+  mode: "wechat" | "otp";
+  setMode: (m: "wechat" | "otp") => void;
+  onWechatLogin: () => void;
+  requireAgree: (next: () => void) => void;
+  onOtpSuccess: () => void;
+  ref_?: string;
+}) {
+  if (mode === "wechat") {
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={onWechatLogin}
+          className="w-full rounded-full bg-success py-3.5 text-sm font-semibold text-success-foreground shadow-md transition-transform active:scale-[0.98]"
+        >
+          微信登录
+        </button>
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setMode("otp")}
+            className="text-xs text-info underline-offset-2 hover:underline"
+          >
+            手机验证码登录
+          </button>
+        </div>
+        {ref_ && (
+          <p className="text-center text-xs text-info">将关联推荐人/店铺：{ref_}</p>
+        )}
+      </div>
+    );
+  }
   return (
-    <div className="space-y-4">
-      <button
-        type="button"
-        onClick={onLogin}
-        className="w-full rounded-full bg-success py-3.5 text-sm font-semibold text-success-foreground shadow-md transition-transform active:scale-[0.98]"
-      >
-        微信扫码登录
+    <CustomerOtpPanel
+      requireAgree={requireAgree}
+      onSuccess={onOtpSuccess}
+      onBack={() => setMode("wechat")}
+      ref_={ref_}
+    />
+  );
+}
+
+function CustomerOtpPanel({
+  requireAgree,
+  onSuccess,
+  onBack,
+  ref_,
+}: {
+  requireAgree: (next: () => void) => void;
+  onSuccess: () => void;
+  onBack: () => void;
+  ref_?: string;
+}) {
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [sid, setSid] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  // 保留代理绑定：手机注册成功后 auth-context 会读取 pending_referrer 并调用 bind_referrer
+  useEffect(() => {
+    if (ref_) {
+      try { localStorage.setItem("pending_referrer", ref_); } catch {}
+    }
+  }, [ref_]);
+
+  const phoneValid = /^1\d{10}$/.test(phone.replace(/\D/g, ""));
+
+  const handleSend = () => {
+    if (!phoneValid) { toast.error("请输入正确的手机号"); return; }
+    requireAgree(async () => {
+      setSending(true);
+      try {
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; sid?: string }>("sms-send", { body: { phone, sid } });
+        if (fnErr || !res) { toast.error(fnErr?.message ?? "发送失败"); return; }
+        if (!res.ok) { toast.error(res.message); return; }
+        if (res.sid) setSid(res.sid);
+        toast.success("验证码已发送");
+        setCooldown(60);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "发送失败");
+      } finally { setSending(false); }
+    });
+  };
+
+  const handleVerify = () => {
+    if (!phoneValid) { toast.error("请输入正确的手机号"); return; }
+    if (!/^\d{6}$/.test(code)) { toast.error("请输入 6 位验证码"); return; }
+    if (!sid) { toast.error("请先获取验证码"); return; }
+    requireAgree(async () => {
+      setVerifying(true);
+      try {
+        if (ref_) { try { localStorage.setItem("pending_referrer", ref_); } catch {} }
+        const { data: res, error: fnErr } = await supabase.functions.invoke<{ ok: boolean; message?: string; tokenHash?: string }>("sms-verify", { body: { phone, code, sid } });
+        if (fnErr || !res) { toast.error(fnErr?.message ?? "登录失败"); return; }
+        if (!res.ok) { toast.error(res.message); return; }
+        const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: res.tokenHash! });
+        if (error) { toast.error(`登录失败: ${error.message}`); return; }
+        onSuccess();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "登录失败");
+      } finally { setVerifying(false); }
+    });
+  };
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="tel" inputMode="numeric" autoComplete="tel" placeholder="请输入手机号"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+      />
+      <div className="flex gap-2">
+        <input
+          type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="6 位验证码"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+        />
+        <button type="button" onClick={handleSend}
+          disabled={sending || cooldown > 0 || !phoneValid}
+          className="shrink-0 rounded-xl border border-primary px-3 text-xs font-medium text-primary disabled:opacity-50">
+          {sending ? "发送中…" : cooldown > 0 ? `${cooldown}s 后重发` : "获取验证码"}
+        </button>
+      </div>
+      <button type="button" onClick={handleVerify}
+        disabled={verifying || !phoneValid || code.length !== 6}
+        className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-transform active:scale-[0.98] disabled:opacity-60">
+        {verifying ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "登录 / 注册"}
       </button>
-      <p className="text-center text-xs leading-5 text-muted-foreground">
-        点击后将弹出微信授权窗口，扫码即可登录
-      </p>
+      <p className="text-center text-xs leading-5 text-muted-foreground">未注册的手机号将自动创建账号</p>
+      <div className="text-center">
+        <button type="button" onClick={onBack} className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+          返回微信登录
+        </button>
+      </div>
       {ref_ && (
         <p className="text-center text-xs text-info">将关联推荐人/店铺：{ref_}</p>
       )}
     </div>
   );
 }
+
 
 function StaffPanel({
   requireAgree,
