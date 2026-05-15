@@ -1510,6 +1510,7 @@ export type Database = {
         }
         Returns: string
       }
+      resolve_my_shop: { Args: never; Returns: string }
       resolve_ref_to_merchant: { Args: { _ref: string }; Returns: string }
       review_affiliation: {
         Args: { _approve: boolean; _id: string }
