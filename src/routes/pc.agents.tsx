@@ -14,6 +14,7 @@ export const Route = createFileRoute("/pc/agents")({
 
 type Row = {
   user_id: string;
+  profile_id: string | null;
   agent_code: string | null;
   l1_rate: number | null;
   bound_merchant_id: string | null;
@@ -61,6 +62,7 @@ function AgentsPage() {
 
       setRows(list.map((a: any) => ({
         ...a,
+        profile_id: pmap[a.user_id]?.id ?? null,
         nickname: pmap[a.user_id]?.nickname ?? null,
         phone: pmap[a.user_id]?.phone ?? null,
         user_code: pmap[a.user_id]?.user_code ?? null,
@@ -110,7 +112,12 @@ function AgentsPage() {
             {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">暂无代理</TableCell></TableRow>}
             {filtered.map((r) => (
               <TableRow key={r.user_id}>
-                <TableCell><div className="font-medium">{r.nickname ?? "—"}</div><div className="text-xs text-muted-foreground">{r.agent_code ?? r.user_code ?? "—"}</div></TableCell>
+                <TableCell>
+                  {r.profile_id ? (
+                    <Link to="/pc/customers" search={{ agentId: r.profile_id }} className="font-medium hover:underline">{r.nickname ?? "—"}</Link>
+                  ) : <div className="font-medium">{r.nickname ?? "—"}</div>}
+                  <div className="text-xs text-muted-foreground">{r.agent_code ?? r.user_code ?? "—"}</div>
+                </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{r.phone ?? "—"}</TableCell>
                 <TableCell className="text-sm">{r.shop_name ?? <span className="text-muted-foreground">未绑定</span>}</TableCell>
                 <TableCell className="text-right">{r.l1_rate != null ? `${(r.l1_rate * 100).toFixed(0)}%` : <span className="text-muted-foreground">默认</span>}</TableCell>
