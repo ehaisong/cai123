@@ -59,6 +59,7 @@ function LoginPage() {
   const { user, refreshRoles } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>(search.tab ?? "customer");
+  const [customerMode, setCustomerMode] = useState<"wechat" | "otp">("wechat");
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [routing, setRouting] = useState(false);
   const [agreed, setAgreed] = useState(false);
