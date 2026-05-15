@@ -329,7 +329,7 @@ function ShopPage() {
           </DialogHeader>
           <div className="flex flex-col items-center gap-3 py-2">
             <div className="bg-white p-3 rounded-xl border border-border">
-              <QRCodeSVG value={`${origin}/?ref=${agentCode}`} size={220} level="M" />
+              <QRCodeSVG value={shareUrl} size={220} level="M" />
             </div>
             <div className="text-xs text-muted-foreground">
               推广码：<span className="font-mono">{agentCode || "—"}</span>
@@ -338,7 +338,7 @@ function ShopPage() {
               <Button
                 variant="outline"
                 onClick={async () => {
-                  try { await navigator.clipboard.writeText(`${origin}/?ref=${agentCode}`); toast.success("已复制链接"); }
+                  try { await navigator.clipboard.writeText(shareUrl); toast.success("已复制链接"); }
                   catch { toast.error("复制失败"); }
                 }}
               >
