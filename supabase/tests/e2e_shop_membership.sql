@@ -35,9 +35,13 @@ BEGIN
     (uid_c, 'c@test.local', '00000000-0000-0000-0000-000000000000','authenticated','authenticated'),
     (uid_b, 'b@test.local', '00000000-0000-0000-0000-000000000000','authenticated','authenticated');
 
+  -- auth.users 上的 trigger (handle_new_user) 已自动建好 profiles 行，
+  -- 这里只 upsert 覆盖 user_code / nickname，避免 unique 冲突
   INSERT INTO public.profiles(user_id, user_code, nickname) VALUES
     (uid_m1,'TM1','商家一'),(uid_m2,'TM2','商家二'),
-    (uid_a,'TAA','代理A'),(uid_c,'TCC','客户C'),(uid_b,'TBB','买家B');
+    (uid_a,'TAA','代理A'),(uid_c,'TCC','客户C'),(uid_b,'TBB','买家B')
+  ON CONFLICT (user_id) DO UPDATE
+    SET user_code = EXCLUDED.user_code, nickname = EXCLUDED.nickname;
 
   INSERT INTO public.merchants(user_id, shop_name, status, l1_rate, l1_max_rate)
     VALUES (uid_m1,'店一','approved',0.20,0.50) RETURNING id INTO m1;
