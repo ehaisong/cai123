@@ -1122,6 +1122,39 @@ export type Database = {
           },
         ]
       }
+      shop_memberships: {
+        Row: {
+          agent_code: string | null
+          id: string
+          is_agent: boolean
+          joined_at: string
+          l1_rate: number | null
+          merchant_id: string
+          upline_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_code?: string | null
+          id?: string
+          is_agent?: boolean
+          joined_at?: string
+          l1_rate?: number | null
+          merchant_id: string
+          upline_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_code?: string | null
+          id?: string
+          is_agent?: boolean
+          joined_at?: string
+          l1_rate?: number | null
+          merchant_id?: string
+          upline_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sms_codes: {
         Row: {
           code_hash: string
@@ -1437,6 +1470,10 @@ export type Database = {
         Returns: string
       }
       bind_referrer: { Args: { _agent_code: string }; Returns: boolean }
+      bind_shop_referrer: {
+        Args: { _merchant_id: string; _ref: string }
+        Returns: string
+      }
       bind_wechat_to_profile: {
         Args: {
           _avatar: string
