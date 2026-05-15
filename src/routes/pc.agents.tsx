@@ -14,6 +14,7 @@ export const Route = createFileRoute("/pc/agents")({
 
 type Row = {
   user_id: string;
+  profile_id: string | null;
   agent_code: string | null;
   l1_rate: number | null;
   bound_merchant_id: string | null;
