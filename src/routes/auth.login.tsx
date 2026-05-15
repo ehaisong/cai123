@@ -62,7 +62,7 @@ function LoginPage() {
   const [customerMode, setCustomerMode] = useState<"wechat" | "otp">("wechat");
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [routing, setRouting] = useState(false);
-  const [agreed, setAgreed] = useState(false);
+  const [agreed, setAgreed] = useState(true);
   const [wechatLoading, setWechatLoading] = useState(false);
 
   const requireAgree = (next: () => void) => {
