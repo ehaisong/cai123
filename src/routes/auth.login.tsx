@@ -200,16 +200,25 @@ function LoginPage() {
           </div>
 
           {/* 副标题 */}
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            {tab === "customer" ? "微信扫码 · 一键登录" : "管理员 / 商家 / 代理 · 手机验证码"}
-          </p>
+          {!(tab === "customer" && customerMode === "wechat") && (
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {tab === "customer" ? "手机验证码 · 快速登录" : "管理员 / 商家 / 代理 · 手机验证码"}
+            </p>
+          )}
 
           {/* 内容区 */}
           <div className="mt-10">
             {iframeUrl ? (
               <IframeCard url={iframeUrl} onClose={() => setIframeUrl(null)} />
             ) : tab === "customer" ? (
-              <CustomerPanel onLogin={() => requireAgree(openWechat)} ref_={search.ref} />
+              <CustomerPanel
+                mode={customerMode}
+                setMode={setCustomerMode}
+                onWechatLogin={() => requireAgree(openWechat)}
+                requireAgree={requireAgree}
+                onOtpSuccess={() => { void routeAfterLogin(); }}
+                ref_={search.ref}
+              />
             ) : (
               <StaffPanel
                 requireAgree={requireAgree}
