@@ -37,25 +37,34 @@ function SharePage() {
   const [info, setInfo] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [merchant, setMerchant] = useState<MerchantBrief | null>(null);
+  const [bindCount, setBindCount] = useState(0);
   const [config, setConfig] = useState<{ l1_rate: number } | null>(null);
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       if (!user) { setLoading(false); return; }
       preloadRelayBase();
-      const [arRes, pRes, cfgRes] = await Promise.all([
+      const [arRes, pRes, cfgRes, bmRes] = await Promise.all([
         supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
         supabase.from("commission_config").select("l1_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.rpc("agent_my_bound_merchants"),
       ]);
       if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "SharePage" });
       setInfo(arRes.data);
       setProfile(pRes.data);
       setConfig(cfgRes.data ?? null);
 
-      if (arRes.data?.bound_merchant_id) {
+      // 优先从已绑定商家列表里取「当前活跃」商家，其次回落到 agent_relations.bound_merchant_id。
+      // 这样代理切换商家后，分享码会立即跟着更新。
+      const list = ((bmRes.data as any[]) ?? []);
+      setBindCount(list.length);
+      const active = list.find((r) => r.is_active) ?? null;
+      if (active) {
+        setMerchant({ id: active.merchant_id, shop_name: active.shop_name, shop_avatar_url: active.shop_avatar_url });
+      } else if (arRes.data?.bound_merchant_id) {
         const { data: m } = await supabase
           .from("merchants")
           .select("id, shop_name, shop_avatar_url")
