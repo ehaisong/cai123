@@ -1364,6 +1364,21 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_merchant_agents_with_stats: {
+        Args: { _merchant_id: string }
+        Returns: {
+          agent_code: string
+          created_at: string
+          customer_count: number
+          l1_rate: number
+          nickname: string
+          phone: string
+          total_commission: number
+          total_sales: number
+          user_code: string
+          user_id: string
+        }[]
+      }
       admin_recharge_user: {
         Args: { _amount: number; _note?: string; _user_id: string }
         Returns: string
