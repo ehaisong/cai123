@@ -80,23 +80,47 @@ function HomeRouter() {
       let refResolved = true;
 
       if (!search.ref && user && pendingRef) {
-        // 不阻塞跳转，绑定在后台完成
+        // 不阻塞跳转，绑定在后台完成。优先按店绑定。
         void (async () => {
-          try { await supabase.rpc("bind_referrer", { _agent_code: pendingRef! }); } catch {}
+          try {
+            let mid: string | null = null;
+            try { mid = localStorage.getItem("pending_merchant_id"); } catch {}
+            if (!mid) {
+              const { data } = await supabase.rpc("resolve_ref_to_merchant", { _ref: pendingRef! });
+              mid = (data as string | null) ?? null;
+            }
+            if (mid) {
+              await supabase.rpc("bind_shop_referrer", { _merchant_id: mid, _ref: pendingRef! });
+            } else {
+              await supabase.rpc("bind_referrer", { _agent_code: pendingRef! });
+            }
+          } catch {}
           try { localStorage.removeItem("pending_referrer"); } catch {}
+          try { localStorage.removeItem("pending_merchant_id"); } catch {}
         })();
       }
 
       if (search.ref) {
         refResolved = false;
-        if (user) {
-          // bind_referrer 与解析并行，绑定失败不影响店铺跳转
+        const { data: resolved } = await supabase.rpc("resolve_ref_to_merchant", { _ref: search.ref });
+        target = (resolved as string | null) ?? null;
+
+        // 未登录：把 ref + merchantId 同时暂存，登录后由 auth-context 重放
+        if (!user && target) {
+          try { localStorage.setItem("pending_merchant_id", target); } catch {}
+        }
+        // 已登录：直接按店绑定，与解析并行
+        if (user && target) {
+          void supabase.rpc("bind_shop_referrer", { _merchant_id: target, _ref: search.ref }).then(() => {
+            try { localStorage.removeItem("pending_referrer"); } catch {}
+            try { localStorage.removeItem("pending_merchant_id"); } catch {}
+          });
+        } else if (user && !target) {
+          // 未能解析到商家，回落到旧绑定
           void supabase.rpc("bind_referrer", { _agent_code: search.ref }).then(() => {
             try { localStorage.removeItem("pending_referrer"); } catch {}
           });
         }
-        const { data: resolved } = await supabase.rpc("resolve_ref_to_merchant", { _ref: search.ref });
-        target = (resolved as string | null) ?? null;
 
         if (target) {
           setState({ kind: "shop", merchantId: target });
