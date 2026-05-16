@@ -47,7 +47,7 @@ function Inner() {
     setLoading(true);
     const { data, error } = await supabase
       .from("merchants")
-      .select("id, user_id, shop_name, real_name, status, is_disabled, disabled_reason, disabled_at, total_sales, fans_count, wechat_id, created_at, l1_rate, l1_max_rate")
+      .select("id, user_id, shop_name, real_name, status, is_disabled, disabled_reason, disabled_at, total_sales, fans_count, wechat_id, created_at, l1_rate, l1_max_rate, platform_rate")
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) { reportRpcError(error, { op: "merchants.select", scope: "AdminMerchants" }); return; }
