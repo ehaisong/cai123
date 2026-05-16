@@ -42,6 +42,38 @@ function Inner() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Merchant | null>(null);
+  const [defaultPlatformRate, setDefaultPlatformRate] = useState<number>(0.08);
+  const [platformInput, setPlatformInput] = useState<string>("");
+  const [savingPlatform, setSavingPlatform] = useState(false);
+
+  useEffect(() => {
+    supabase.from("commission_config").select("platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setDefaultPlatformRate(Number(data.platform_rate) || 0); });
+  }, []);
+
+  useEffect(() => {
+    if (selected) {
+      setPlatformInput(selected.platform_rate == null ? "" : (Number(selected.platform_rate) * 100).toString());
+    }
+  }, [selected?.id]);
+
+  const savePlatformRate = async () => {
+    if (!selected) return;
+    const trimmed = platformInput.trim();
+    let next: number | null = null;
+    if (trimmed !== "") {
+      const pct = Number(trimmed);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) { toast.error("平台抽成需在 0-100% 之间"); return; }
+      next = Number((pct / 100).toFixed(4));
+    }
+    setSavingPlatform(true);
+    const { error } = await supabase.from("merchants").update({ platform_rate: next }).eq("id", selected.id);
+    setSavingPlatform(false);
+    if (error) { reportRpcError(error, { op: "merchants.update(platform_rate)", scope: "AdminMerchants" }); toast.error(error.message || "保存失败"); return; }
+    toast.success(next == null ? "已恢复使用默认抽成" : "已保存平台抽成");
+    setSelected({ ...selected, platform_rate: next });
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
