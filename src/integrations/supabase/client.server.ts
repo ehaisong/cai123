@@ -10,7 +10,10 @@ import type { Database } from './types';
 const WsTransport = WebSocket as unknown as WebSocketLikeConstructor;
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
+  // 兼容自建 Node 服务（如 wordpro.cn）：通常只设置了 VITE_SUPABASE_URL，
+  // 因此 SUPABASE_URL 退回到 VITE_SUPABASE_URL；service role 必须显式配置。
+  const SUPABASE_URL =
+    process.env.SUPABASE_URL || (import.meta as any).env?.VITE_SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
