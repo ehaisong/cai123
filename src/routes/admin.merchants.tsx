@@ -129,15 +129,7 @@ function Inner() {
               <div>状态：{selected.is_disabled ? "已禁用" : selected.status}</div>
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
             </div>
-            <div className="bg-muted/40 rounded-md p-3 space-y-2">
-              <div className="text-sm font-medium">分成设置</div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs w-20 text-muted-foreground">默认分成</span>
-                <Input type="number" step="0.5" max={92} value={rate} onChange={(e) => setRate(e.target.value)} />
-                <span className="text-xs">%</span>
-              </div>
-              <Button className="w-full" size="sm" onClick={saveRate}>保存分成</Button>
-            </div>
+            <p className="text-[11px] text-muted-foreground">代理分成比例由商户在「代理管理」中自行设置。</p>
             <DisableHistory isDisabled={selected.is_disabled} reason={selected.disabled_reason} at={selected.disabled_at} />
             <AdminUserDetailExtras
               userId={selected.user_id}
