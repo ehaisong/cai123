@@ -62,6 +62,7 @@ function ApplyAgentPage() {
 
   const submit = async () => {
     if (!user) {
+      try { sessionStorage.setItem("pending_apply_agent", merchantId); } catch {}
       navigate({ to: "/auth/login", search: { redirect: `/apply-agent/${merchantId}` } as any });
       return;
     }
@@ -79,6 +80,20 @@ function ApplyAgentPage() {
     toast.success("申请已提交，请等待商家审核");
     setExisting({ status: "pending", note });
   };
+
+  // 登录前点过"登录并申请"会写入 pending_apply_agent；登录回流后自动提交一次。
+  useEffect(() => {
+    if (authLoading || loading) return;
+    if (!user || !merchant || merchant.status !== "approved") return;
+    if (merchant.user_id === user.id) return;
+    if (existing?.status === "pending" || existing?.status === "approved") return;
+    let pending: string | null = null;
+    try { pending = sessionStorage.getItem("pending_apply_agent"); } catch {}
+    if (pending !== merchantId) return;
+    try { sessionStorage.removeItem("pending_apply_agent"); } catch {}
+    void submit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, loading, user?.id, merchant?.id, merchant?.status, existing?.status]);
 
   if (authLoading || loading) {
     return (

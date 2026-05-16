@@ -35,6 +35,11 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
   // 后台尝试初始化 admin 角色，失败也不阻塞
   void (async () => { try { await supabase.rpc("bootstrap_admin_role"); } catch {} })();
 
+  // 显式 redirect 优先：用户从某个落地页（如 /apply-agent/<mid>）跳来登录，
+  // 登录完成后必须回到原页面，不能因 tab=staff 等被带去 /apply。
+  const explicitRedirect = safeRedirect(redirect);
+  if (explicitRedirect) return { path: explicitRedirect };
+
   // 并行：roles + merchant 状态
   const [rolesRes, merchantRes] = await Promise.all([
     supabase.from("user_roles").select("role").eq("user_id", uid),
