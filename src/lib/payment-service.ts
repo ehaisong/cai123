@@ -123,7 +123,13 @@ export const PaymentService = {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ orderNo, payType }),
+        body: JSON.stringify({
+          orderNo,
+          payType,
+          // 让 3ypay 支付完成后跳回用户当前所在的站点（cai123.lovable.app / 预览域 / wordpro.cn）
+          // 而不是写死的 wordpro.cn，避免用户支付完成后被"踢出"到另一个域名
+          returnOrigin: typeof window !== "undefined" ? window.location.origin : undefined,
+        }),
       });
       try {
         data = await resp.json();
