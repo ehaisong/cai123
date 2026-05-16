@@ -34,6 +34,7 @@ type Merchant = {
   created_at: string;
   l1_rate: number;
   l1_max_rate: number;
+  platform_rate: number | null;
 };
 
 function Inner() {
@@ -41,12 +42,44 @@ function Inner() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Merchant | null>(null);
+  const [defaultPlatformRate, setDefaultPlatformRate] = useState<number>(0.08);
+  const [platformInput, setPlatformInput] = useState<string>("");
+  const [savingPlatform, setSavingPlatform] = useState(false);
+
+  useEffect(() => {
+    supabase.from("commission_config").select("platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setDefaultPlatformRate(Number(data.platform_rate) || 0); });
+  }, []);
+
+  useEffect(() => {
+    if (selected) {
+      setPlatformInput(selected.platform_rate == null ? "" : (Number(selected.platform_rate) * 100).toString());
+    }
+  }, [selected?.id]);
+
+  const savePlatformRate = async () => {
+    if (!selected) return;
+    const trimmed = platformInput.trim();
+    let next: number | null = null;
+    if (trimmed !== "") {
+      const pct = Number(trimmed);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) { toast.error("平台抽成需在 0-100% 之间"); return; }
+      next = Number((pct / 100).toFixed(4));
+    }
+    setSavingPlatform(true);
+    const { error } = await supabase.from("merchants").update({ platform_rate: next }).eq("id", selected.id);
+    setSavingPlatform(false);
+    if (error) { reportRpcError(error, { op: "merchants.update(platform_rate)", scope: "AdminMerchants" }); toast.error(error.message || "保存失败"); return; }
+    toast.success(next == null ? "已恢复使用默认抽成" : "已保存平台抽成");
+    setSelected({ ...selected, platform_rate: next });
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("merchants")
-      .select("id, user_id, shop_name, real_name, status, is_disabled, disabled_reason, disabled_at, total_sales, fans_count, wechat_id, created_at, l1_rate, l1_max_rate")
+      .select("id, user_id, shop_name, real_name, status, is_disabled, disabled_reason, disabled_at, total_sales, fans_count, wechat_id, created_at, l1_rate, l1_max_rate, platform_rate")
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) { reportRpcError(error, { op: "merchants.select", scope: "AdminMerchants" }); return; }
@@ -128,6 +161,27 @@ function Inner() {
               <div>累计销售：{fmtMoney(selected.total_sales)}</div>
               <div>状态：{selected.is_disabled ? "已禁用" : selected.status}</div>
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
+            </div>
+            <div className="bg-muted/40 rounded-md p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">平台抽成（本店）</div>
+                <div className="text-[11px] text-muted-foreground">默认 {(defaultPlatformRate * 100).toFixed(2).replace(/\.?0+$/, "")}%</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  step="0.5"
+                  min={0}
+                  max={100}
+                  placeholder={`留空使用默认 ${(defaultPlatformRate * 100).toFixed(2).replace(/\.?0+$/, "")}%`}
+                  value={platformInput}
+                  onChange={(e) => setPlatformInput(e.target.value)}
+                  className="h-9"
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+                <Button size="sm" onClick={savePlatformRate} disabled={savingPlatform}>{savingPlatform ? "保存中…" : "保存"}</Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">留空则沿用全局默认抽成；填写后只对本店生效。</p>
             </div>
             <p className="text-[11px] text-muted-foreground">代理分成比例由商户在「代理管理」中自行设置。</p>
             <DisableHistory isDisabled={selected.is_disabled} reason={selected.disabled_reason} at={selected.disabled_at} />

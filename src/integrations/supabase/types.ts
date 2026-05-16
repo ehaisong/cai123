@@ -447,6 +447,7 @@ export type Database = {
           l2_enabled: boolean
           l2_rate: number
           payment_channel_id: string | null
+          platform_rate: number | null
           public_account: string | null
           real_name: string | null
           shop_avatar_url: string | null
@@ -470,6 +471,7 @@ export type Database = {
           l2_enabled?: boolean
           l2_rate?: number
           payment_channel_id?: string | null
+          platform_rate?: number | null
           public_account?: string | null
           real_name?: string | null
           shop_avatar_url?: string | null
@@ -493,6 +495,7 @@ export type Database = {
           l2_enabled?: boolean
           l2_rate?: number
           payment_channel_id?: string | null
+          platform_rate?: number | null
           public_account?: string | null
           real_name?: string | null
           shop_avatar_url?: string | null
