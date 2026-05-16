@@ -18,6 +18,7 @@ function ApplyAgentPage() {
   const navigate = useNavigate();
   const [merchant, setMerchant] = useState<any>(null);
   const [existing, setExisting] = useState<any>(null);
+  const [alreadyAgent, setAlreadyAgent] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,19 +38,29 @@ function ApplyAgentPage() {
         if (cancelled) return;
         setMerchant(m ?? null);
         if (user) {
-          const { data: a, error: aErr } = await supabase
-            .from("agent_applications")
-            .select("*")
-            .eq("user_id", user.id)
-            .eq("merchant_id", merchantId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          const [{ data: a, error: aErr }, { data: sm }] = await Promise.all([
+            supabase
+              .from("agent_applications")
+              .select("*")
+              .eq("user_id", user.id)
+              .eq("merchant_id", merchantId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            supabase
+              .from("shop_memberships")
+              .select("is_agent")
+              .eq("user_id", user.id)
+              .eq("merchant_id", merchantId)
+              .maybeSingle(),
+          ]);
           if (aErr) console.warn("[apply-agent] load application error", aErr);
           if (cancelled) return;
           setExisting(a ?? null);
+          setAlreadyAgent(!!sm?.is_agent);
         } else {
           setExisting(null);
+          setAlreadyAgent(false);
         }
       } catch (e) {
         console.warn("[apply-agent] load failed", e);
@@ -135,19 +146,22 @@ function ApplyAgentPage() {
         <div className="mx-3 mt-3 p-3 rounded bg-warning/10 text-warning text-sm">商家本人无法申请代理</div>
       )}
 
-      {existing?.status === "pending" && (
+      {alreadyAgent && (
+        <div className="mx-3 mt-3 p-3 rounded bg-success/10 text-success text-sm">您已是本店代理，可前往「代理中心」查看推广二维码与佣金</div>
+      )}
+      {!alreadyAgent && existing?.status === "pending" && (
         <div className="mx-3 mt-3 p-3 rounded bg-warning/10 text-warning text-sm">您已提交申请，正在等待商家审核…</div>
       )}
-      {existing?.status === "approved" && (
+      {!alreadyAgent && existing?.status === "approved" && (
         <div className="mx-3 mt-3 p-3 rounded bg-success/10 text-success text-sm">申请已通过，您已是本店代理</div>
       )}
-      {existing?.status === "rejected" && (
+      {!alreadyAgent && existing?.status === "rejected" && (
         <div className="mx-3 mt-3 p-3 rounded bg-destructive/10 text-destructive text-sm">
           上次申请被驳回{existing.reject_reason ? `：${existing.reject_reason}` : ""}，您可重新提交
         </div>
       )}
 
-      {!isOwner && existing?.status !== "pending" && existing?.status !== "approved" && (
+      {!isOwner && !alreadyAgent && existing?.status !== "pending" && existing?.status !== "approved" && (
         <>
           <div className="px-3 pt-4 pb-2 text-sm text-muted-foreground">申请说明（选填）</div>
           <div className="bg-card mx-3 rounded-xl p-3">
