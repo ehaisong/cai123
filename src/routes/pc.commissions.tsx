@@ -13,7 +13,7 @@ export const Route = createFileRoute("/pc/commissions")({
 
 function CommissionsPage() {
   const [rows, setRows] = useState<any[]>([]);
-  const [level, setLevel] = useState<"all" | 1 | 2>("all");
+  const [level, setLevel] = useState<"all" | 1>("all");
   const [kw, setKw] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -69,7 +69,7 @@ function CommissionsPage() {
       <div className="bg-card border border-border rounded-xl">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-1">
-            {([["all", "全部"], [1, "L1 直推"], [2, "L2 间推"]] as const).map(([k, label]) => (
+            {([["all", "全部"], [1, "代理返佣"]] as const).map(([k, label]) => (
               <button key={String(k)} onClick={() => setLevel(k as any)} className={`px-3 py-1.5 text-sm rounded-md ${level === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
                 {label}
               </button>
