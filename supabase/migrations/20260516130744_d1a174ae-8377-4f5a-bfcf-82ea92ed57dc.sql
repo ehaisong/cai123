@@ -1,0 +1,1 @@
+SELECT public.mark_payment_paid('PROD_20260516125505_93a374c2', 8.00, 'MANUAL_FIX_20260516');
