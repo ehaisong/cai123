@@ -56,16 +56,17 @@ export const Route = createFileRoute("/api/public/pay-notify")({
             return fail("invalid body");
           }
 
-          // 取业务参数（bizContent 是 JSON 字符串）
+          // 取业务参数（兼容 bizContent / data 两种字段；3ypay 异步通知使用 data 为 JSON 字符串）
           let biz: Record<string, any> = {};
-          if (typeof body.bizContent === "string") {
+          const rawBiz = body.bizContent ?? body.data;
+          if (typeof rawBiz === "string") {
             try {
-              biz = JSON.parse(body.bizContent as string);
+              biz = JSON.parse(rawBiz);
             } catch {
               biz = {};
             }
-          } else if (body.bizContent && typeof body.bizContent === "object") {
-            biz = body.bizContent as Record<string, any>;
+          } else if (rawBiz && typeof rawBiz === "object") {
+            biz = rawBiz as Record<string, any>;
           }
           const merchantOrderNo = String(biz.mchOrderNo ?? body.mchOrderNo ?? "");
 
