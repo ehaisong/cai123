@@ -41,6 +41,7 @@ function PhoneLogin() {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [sid, setSid] = useState<string | null>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -48,40 +49,38 @@ function PhoneLogin() {
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  const normalizePhone = (raw: string): string | null => {
-    const trimmed = raw.trim().replace(/\s|-/g, "");
-    if (/^\+\d{8,15}$/.test(trimmed)) return trimmed;
-    if (/^1\d{10}$/.test(trimmed)) return `+86${trimmed}`;
-    return null;
+  const normalizeLocal = (raw: string): string | null => {
+    const digits = raw.replace(/\D/g, "");
+    const local = digits.startsWith("86") ? digits.slice(2) : digits;
+    return /^1\d{10}$/.test(local) ? local : null;
   };
 
   const sendCode = async () => {
-    const p = normalizePhone(phone);
+    const p = normalizeLocal(phone);
     if (!p) { toast.error("请输入有效的手机号"); return; }
     setSending(true);
-    const { error } = await supabase.auth.signInWithOtp({ phone: p });
-    setSending(false);
-    if (error) {
-      toast.error(error.message || "发送失败，请检查短信通道是否已开通");
-      return;
-    }
-    toast.success("验证码已发送");
-    setStep("code");
-    setCooldown(60);
+    try {
+      const { data: res, error } = await supabase.functions.invoke<{ ok: boolean; message?: string; sid?: string; cooldown?: number }>("sms-send", { body: { phone: p, sid } });
+      if (error || !res?.ok) { toast.error(res?.message ?? error?.message ?? "发送失败"); return; }
+      if (res.sid) setSid(res.sid);
+      toast.success("验证码已发送");
+      setStep("code");
+      setCooldown(res.cooldown ?? 60);
+    } finally { setSending(false); }
   };
 
   const verifyCode = async () => {
-    const p = normalizePhone(phone);
-    if (!p || !code) { toast.error("请输入验证码"); return; }
+    const p = normalizeLocal(phone);
+    if (!p || !/^\d{6}$/.test(code)) { toast.error("请输入 6 位验证码"); return; }
+    if (!sid) { toast.error("请先获取验证码"); return; }
     setVerifying(true);
-    const { error } = await supabase.auth.verifyOtp({ phone: p, token: code, type: "sms" });
-    setVerifying(false);
-    if (error) {
-      toast.error(error.message || "验证失败");
-      return;
-    }
-    toast.success("登录成功");
-    // Auth context picks up the session and re-renders this route into ApplyForm
+    try {
+      const { data: res, error } = await supabase.functions.invoke<{ ok: boolean; message?: string; tokenHash?: string }>("sms-verify", { body: { phone: p, code, sid } });
+      if (error || !res?.ok || !res.tokenHash) { toast.error(res?.message ?? error?.message ?? "验证失败"); return; }
+      const { error: vErr } = await supabase.auth.verifyOtp({ type: "email", token_hash: res.tokenHash });
+      if (vErr) { toast.error(`登录失败: ${vErr.message}`); return; }
+      toast.success("登录成功");
+    } finally { setVerifying(false); }
   };
 
   return (
