@@ -34,6 +34,7 @@ type Merchant = {
   created_at: string;
   l1_rate: number;
   l1_max_rate: number;
+  platform_rate: number | null;
 };
 
 function Inner() {
