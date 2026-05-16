@@ -31,42 +31,19 @@ function Inner() {
   useEffect(() => { load(); }, []);
 
   const review = async (app: any, approve: boolean, reason?: string) => {
-    if (approve) {
-      const { error: me } = await supabase.from("merchants").upsert({
-        user_id: app.user_id,
-        shop_name: app.shop_name ?? (app.real_name ? app.real_name + " 的店铺" : "新店铺"),
-        shop_avatar_url: app.shop_avatar_url ?? null,
-        real_name: app.real_name,
-        wechat_id: app.wechat_id,
-        fans_count: app.fans_count,
-        public_account: app.public_account,
-        shop_description: app.description,
-        status: "approved",
-      }, { onConflict: "user_id" });
-      if (me) {
-        reportRpcError(me, { op: "merchants.upsert", scope: "AdminApplications.review" });
-        return;
-      }
-      const { error: re } = await supabase
-        .from("user_roles")
-        .insert({ user_id: app.user_id, role: "merchant" })
-        .select();
-      if (re && re.code !== "23505") {
-        reportRpcError(re, { op: "user_roles.insert(merchant)", scope: "AdminApplications.review" });
-      }
-    }
-    const { error } = await supabase.from("merchant_applications").update({
-      status: approve ? "approved" : "rejected",
-      reject_reason: reason ?? null,
-      reviewed_at: new Date().toISOString(),
-    }).eq("id", app.id);
+    const { error } = await supabase.rpc("admin_review_merchant_application", {
+      _id: app.id,
+      _approve: approve,
+      _reason: reason,
+    });
     if (error) {
-      reportRpcError(error, { op: "merchant_applications.update", scope: "AdminApplications.review" });
-    } else {
-      reportRpcSuccess("merchant_applications.update", { id: app.id, approve });
-      toast.success(approve ? "已通过" : "已驳回");
-      load();
+      reportRpcError(error, { op: "admin_review_merchant_application", scope: "AdminApplications.review" });
+      toast.error(error.message);
+      return;
     }
+    reportRpcSuccess("admin_review_merchant_application", { id: app.id, approve });
+    toast.success(approve ? "已通过" : "已驳回");
+    load();
   };
 
   return (

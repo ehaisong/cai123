@@ -44,9 +44,31 @@ function ApplyPageInner() {
     if (!form.real_name || !form.phone) { toast.error("请填写姓名和手机号"); return; }
     if (!agreed) { toast.error("请阅读并同意《商家入驻协议》"); return; }
     setLoading(true);
+    // 提交前再查一次，防止重复提交 pending
+    const { data: pending } = await supabase
+      .from("merchant_applications")
+      .select("id,status")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .maybeSingle();
+    if (pending) {
+      setLoading(false);
+      setExisting({ ...form, status: "pending" });
+      toast.error("您已提交申请，正在审核中");
+      return;
+    }
     const { error } = await supabase.from("merchant_applications").insert({ ...form, user_id: user.id });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      // 唯一索引冲突也按"已存在 pending"处理
+      if ((error as any).code === "23505") {
+        setExisting({ ...form, status: "pending" });
+        toast.error("您已提交申请，正在审核中");
+        return;
+      }
+      toast.error(error.message);
+      return;
+    }
     toast.success("申请已提交，请等待审核");
     setExisting({ ...form, status: "pending" });
   };

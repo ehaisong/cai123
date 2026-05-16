@@ -1419,6 +1419,10 @@ export type Database = {
         Args: { _amount: number; _note?: string; _user_id: string }
         Returns: string
       }
+      admin_review_merchant_application: {
+        Args: { _approve: boolean; _id: string; _reason?: string }
+        Returns: undefined
+      }
       admin_send_message: {
         Args: { _content: string; _title: string; _user_id: string }
         Returns: string

@@ -50,12 +50,9 @@ export async function resolveLoginDestination(opts: Options = {}): Promise<RoleR
 
   if (roles.includes("admin")) return { path: "/admin" };
 
-  // 商家优先于代理：同时持有 agent + merchant 时应进入商家后台
+  // 商家优先于代理：同时持有 agent + merchant 时应进入商家后台。
+  // 角色由审核 RPC 在事务内写入，这里不再做客户端兜底（普通用户无 user_roles INSERT 权限）。
   if (merchant?.status === "approved") {
-    if (!roles.includes("merchant")) {
-      // 必须等角色写入完成，否则 /merchant 的 RouteGuard 立刻判无权限
-      try { await supabase.from("user_roles").insert({ user_id: uid, role: "merchant" }); } catch {}
-    }
     return { path: "/merchant" };
   }
   if (roles.includes("merchant")) return { path: "/merchant" };
