@@ -149,15 +149,10 @@ function Inner() {
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
             </div>
             <div className="bg-muted/40 rounded-md p-3 space-y-2">
-              <div className="text-sm font-medium">分成设置（一级，最高 92%）</div>
+              <div className="text-sm font-medium">分成设置</div>
               <div className="flex items-center gap-2">
                 <span className="text-xs w-20 text-muted-foreground">默认分成</span>
-                <Input type="number" step="0.5" value={rate} onChange={(e) => setRate(e.target.value)} />
-                <span className="text-xs">%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs w-20 text-muted-foreground">分成上限</span>
-                <Input type="number" step="0.5" max={92} value={maxRate} onChange={(e) => setMaxRate(e.target.value)} />
+                <Input type="number" step="0.5" max={92} value={rate} onChange={(e) => setRate(e.target.value)} />
                 <span className="text-xs">%</span>
               </div>
               <Button className="w-full" size="sm" onClick={saveRate}>保存分成</Button>
