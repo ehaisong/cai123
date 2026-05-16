@@ -18,6 +18,7 @@ function ApplyAgentPage() {
   const navigate = useNavigate();
   const [merchant, setMerchant] = useState<any>(null);
   const [existing, setExisting] = useState<any>(null);
+  const [alreadyAgent, setAlreadyAgent] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
