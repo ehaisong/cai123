@@ -10,7 +10,40 @@ import type { Database } from "@/integrations/supabase/types";
 
 const GATEWAY_URL = "https://openapi.3ypay.com/openapi/order/pay/create";
 const NOTIFY_URL = "https://wordpro.cn/api/public/pay-notify";
-const RETURN_URL_BASE = "https://wordpro.cn/pay/success";
+const DEFAULT_RETURN_ORIGIN = "https://wordpro.cn";
+
+/**
+ * 选择 redirectUrl 的 origin：优先使用前端传入的 returnOrigin（必须在白名单内），
+ * 否则回退到请求自身的 origin / referer，最后兜底 wordpro.cn。
+ * 这样用户在哪个域名（cai123.lovable.app / 预览域 / wordpro.cn）发起支付，
+ * 3ypay 完成后就跳回同一个域名，避免"被踢出"现象。
+ */
+function pickReturnOrigin(request: Request, requested: string | undefined): string {
+  const allowHost = (host: string) =>
+    host === "wordpro.cn" ||
+    host === "www.wordpro.cn" ||
+    host === "cai123.lovable.app" ||
+    host.endsWith(".lovable.app");
+
+  const tryParse = (raw: string | null | undefined): string | null => {
+    if (!raw) return null;
+    try {
+      const u = new URL(raw);
+      if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+      if (!allowHost(u.host)) return null;
+      return `${u.protocol}//${u.host}`;
+    } catch {
+      return null;
+    }
+  };
+
+  return (
+    tryParse(requested) ||
+    tryParse(request.headers.get("origin")) ||
+    tryParse(request.headers.get("referer")) ||
+    DEFAULT_RETURN_ORIGIN
+  );
+}
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
