@@ -34,7 +34,7 @@ function Inner() {
     const { error } = await supabase.rpc("admin_review_merchant_application", {
       _id: app.id,
       _approve: approve,
-      _reason: reason ?? null,
+      _reason: reason,
     });
     if (error) {
       reportRpcError(error, { op: "admin_review_merchant_application", scope: "AdminApplications.review" });
