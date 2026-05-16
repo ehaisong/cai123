@@ -85,11 +85,12 @@ function Inner() {
 
   const saveRate = async () => {
     if (!selected) return;
-    const r = Number(rate), mx = Number(maxRate);
-    if (!Number.isFinite(r) || !Number.isFinite(mx) || r < 0 || mx < 0 || mx > 92) { toast.error("分成上限不能超过 92%"); return; }
-    if (r > mx) { toast.error("默认分成不能超过上限"); return; }
+    const r = Number(rate);
+    const mx = Number(maxRate); // 沿用商家原有上限，不在此页面修改
+    if (!Number.isFinite(r) || r < 0 || r > 92) { toast.error("默认分成需在 0-92% 之间"); return; }
+    if (Number.isFinite(mx) && r > mx) { toast.error(`默认分成不能超过上限 ${mx}%`); return; }
     const { error } = await supabase.from("merchants").update({
-      l1_rate: r / 100, l1_max_rate: mx / 100, l2_enabled: false, l2_rate: 0,
+      l1_rate: r / 100, l2_enabled: false, l2_rate: 0,
     }).eq("id", selected.id);
     if (error) { reportRpcError(error, { op: "merchants.update_rate", scope: "AdminMerchants" }); toast.error(error.message); return; }
     toast.success("已保存分成");
