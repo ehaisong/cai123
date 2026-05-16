@@ -182,7 +182,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
         return json({ ok: true, endpoint: "pay-create", method: "POST" });
       },
       POST: async ({ request }) => {
-        let body: { orderNo?: string; payType?: string } = {};
+        let body: { orderNo?: string; payType?: string; returnOrigin?: string } = {};
         try {
           body = await request.json();
         } catch {
@@ -193,6 +193,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
         if (!orderNo || !["wechat", "alipay"].includes(payType)) {
           return json({ success: false, error: "缺少 orderNo / payType" }, 200);
         }
+        const returnOrigin = pickReturnOrigin(request, body.returnOrigin);
 
         let supabase: AppSupabase;
         let supabaseMode: "service" | "user";
