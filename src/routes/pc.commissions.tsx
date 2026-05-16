@@ -13,7 +13,7 @@ export const Route = createFileRoute("/pc/commissions")({
 
 function CommissionsPage() {
   const [rows, setRows] = useState<any[]>([]);
-  const [level, setLevel] = useState<"all" | 1 | 2>("all");
+  const [level, setLevel] = useState<"all" | 1>("all");
   const [kw, setKw] = useState("");
   const [loading, setLoading] = useState(false);
 
