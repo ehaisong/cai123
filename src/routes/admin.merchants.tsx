@@ -85,11 +85,12 @@ function Inner() {
 
   const saveRate = async () => {
     if (!selected) return;
-    const r = Number(rate), mx = Number(maxRate);
-    if (!Number.isFinite(r) || !Number.isFinite(mx) || r < 0 || mx < 0 || mx > 92) { toast.error("分成上限不能超过 92%"); return; }
-    if (r > mx) { toast.error("默认分成不能超过上限"); return; }
+    const r = Number(rate);
+    const mx = Number(maxRate); // 沿用商家原有上限，不在此页面修改
+    if (!Number.isFinite(r) || r < 0 || r > 92) { toast.error("默认分成需在 0-92% 之间"); return; }
+    if (Number.isFinite(mx) && r > mx) { toast.error(`默认分成不能超过上限 ${mx}%`); return; }
     const { error } = await supabase.from("merchants").update({
-      l1_rate: r / 100, l1_max_rate: mx / 100, l2_enabled: false, l2_rate: 0,
+      l1_rate: r / 100, l2_enabled: false, l2_rate: 0,
     }).eq("id", selected.id);
     if (error) { reportRpcError(error, { op: "merchants.update_rate", scope: "AdminMerchants" }); toast.error(error.message); return; }
     toast.success("已保存分成");
@@ -112,7 +113,7 @@ function Inner() {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium truncate">{m.shop_name}</div>
-                <div className="text-xs text-primary mt-0.5">分成 {(Number(m.l1_rate) * 100).toFixed(0)}% / 上限 {(Number(m.l1_max_rate) * 100).toFixed(0)}%</div>
+                <div className="text-xs text-primary mt-0.5">默认分成 {(Number(m.l1_rate) * 100).toFixed(0)}%</div>
               </div>
               <span className={`shrink-0 text-xs px-2 py-0.5 rounded ${m.is_disabled ? "bg-destructive/10 text-destructive" : m.status === "approved" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
                 {m.is_disabled ? "已禁用" : m.status === "approved" ? "正常" : m.status}
@@ -148,15 +149,10 @@ function Inner() {
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
             </div>
             <div className="bg-muted/40 rounded-md p-3 space-y-2">
-              <div className="text-sm font-medium">分成设置（一级，最高 92%）</div>
+              <div className="text-sm font-medium">分成设置</div>
               <div className="flex items-center gap-2">
                 <span className="text-xs w-20 text-muted-foreground">默认分成</span>
-                <Input type="number" step="0.5" value={rate} onChange={(e) => setRate(e.target.value)} />
-                <span className="text-xs">%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs w-20 text-muted-foreground">分成上限</span>
-                <Input type="number" step="0.5" max={92} value={maxRate} onChange={(e) => setMaxRate(e.target.value)} />
+                <Input type="number" step="0.5" max={92} value={rate} onChange={(e) => setRate(e.target.value)} />
                 <span className="text-xs">%</span>
               </div>
               <Button className="w-full" size="sm" onClick={saveRate}>保存分成</Button>
