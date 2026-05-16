@@ -23,27 +23,42 @@ function ApplyAgentPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return; // 等 auth 初始化完再拉数据
+    let cancelled = false;
+    setLoading(true);
     (async () => {
-      const { data: m } = await supabase
-        .from("merchants")
-        .select("id, shop_name, shop_avatar_url, status, user_id")
-        .eq("id", merchantId)
-        .maybeSingle();
-      setMerchant(m);
-      if (user) {
-        const { data: a } = await supabase
-          .from("agent_applications")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("merchant_id", merchantId)
-          .order("created_at", { ascending: false })
-          .limit(1)
+      try {
+        const { data: m, error: mErr } = await supabase
+          .from("merchants")
+          .select("id, shop_name, shop_avatar_url, status, user_id")
+          .eq("id", merchantId)
           .maybeSingle();
-        setExisting(a);
+        if (mErr) console.warn("[apply-agent] load merchant error", mErr);
+        if (cancelled) return;
+        setMerchant(m ?? null);
+        if (user) {
+          const { data: a, error: aErr } = await supabase
+            .from("agent_applications")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("merchant_id", merchantId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (aErr) console.warn("[apply-agent] load application error", aErr);
+          if (cancelled) return;
+          setExisting(a ?? null);
+        } else {
+          setExisting(null);
+        }
+      } catch (e) {
+        console.warn("[apply-agent] load failed", e);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
-  }, [merchantId, user?.id]);
+    return () => { cancelled = true; };
+  }, [merchantId, user?.id, authLoading]);
 
   const submit = async () => {
     if (!user) {
