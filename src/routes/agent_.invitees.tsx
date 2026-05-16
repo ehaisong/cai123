@@ -43,74 +43,76 @@ function InviteesPage() {
     const load = async () => {
       if (!user) { setLoading(false); return; }
       setLoading(true);
+      try {
+        const [arRes, pRes] = await Promise.all([
+          supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
+          supabase.from("profiles").select("id, user_code").eq("user_id", user.id).maybeSingle(),
+        ]);
+        if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "Invitees" });
+        setInfo(arRes.data);
 
-      const [arRes, pRes] = await Promise.all([
-        supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase.from("profiles").select("id, user_code").eq("user_id", user.id).maybeSingle(),
-      ]);
-      if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "Invitees" });
-      setInfo(arRes.data);
+        if (!pRes.data?.id || !arRes.data?.is_agent) { setItems([]); return; }
+        const myPid = pRes.data.id;
 
-      if (!pRes.data?.id || !arRes.data?.is_agent) { setLoading(false); return; }
-      const myPid = pRes.data.id;
+        // 拉取直接下级 agent_relations（仅 L1）
+        const { data: rels, error: rErr } = await supabase
+          .from("agent_relations")
+          .select("user_id, upline_id, created_at")
+          .eq("upline_id", myPid)
+          .order("created_at", { ascending: false });
+        if (rErr) reportRpcError(rErr, { op: "agent_relations.list_invitees", scope: "Invitees" });
 
-      // 拉取直接下级 agent_relations（仅 L1）
-      const { data: rels, error: rErr } = await supabase
-        .from("agent_relations")
-        .select("user_id, upline_id, created_at")
-        .eq("upline_id", myPid)
-        .order("created_at", { ascending: false });
-      if (rErr) reportRpcError(rErr, { op: "agent_relations.list_invitees", scope: "Invitees" });
+        const userIds = (rels ?? []).map((r) => r.user_id);
+        if (userIds.length === 0) { setItems([]); return; }
 
-      const userIds = (rels ?? []).map((r) => r.user_id);
-      if (userIds.length === 0) { setItems([]); setLoading(false); return; }
+        const [profsRes, ordsRes, commsRes] = await Promise.all([
+          supabase.from("profiles").select("id, user_id, nickname, user_code").in("user_id", userIds),
+          supabase.from("orders").select("buyer_id, amount").in("buyer_id", userIds).eq("status", "paid"),
+          supabase
+            .from("commission_records")
+            .select("amount, order_id, orders!commission_records_order_id_fkey(buyer_id)")
+            .eq("beneficiary_id", user.id),
+        ]);
+        if (profsRes.error) reportRpcError(profsRes.error, { op: "profiles.in", scope: "Invitees" });
+        if (ordsRes.error) reportRpcError(ordsRes.error, { op: "orders.in", scope: "Invitees" });
+        if (commsRes.error) reportRpcError(commsRes.error, { op: "commission_records.select", scope: "Invitees" });
 
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, user_id, nickname, user_code")
-        .in("user_id", userIds);
-      const profMap = new Map((profs ?? []).map((p) => [p.user_id, p]));
+        const profMap = new Map((profsRes.data ?? []).map((p) => [p.user_id, p]));
+        const orderAgg = new Map<string, { count: number; spent: number }>();
+        (ordsRes.data ?? []).forEach((o) => {
+          const cur = orderAgg.get(o.buyer_id) ?? { count: 0, spent: 0 };
+          cur.count += 1;
+          cur.spent += Number(o.amount);
+          orderAgg.set(o.buyer_id, cur);
+        });
+        const commByBuyer = new Map<string, number>();
+        (commsRes.data ?? []).forEach((c: any) => {
+          const bid = c.orders?.buyer_id;
+          if (!bid) return;
+          commByBuyer.set(bid, (commByBuyer.get(bid) ?? 0) + Number(c.amount));
+        });
 
-      const { data: ords } = await supabase
-        .from("orders")
-        .select("buyer_id, amount")
-        .in("buyer_id", userIds)
-        .eq("status", "paid");
-      const orderAgg = new Map<string, { count: number; spent: number }>();
-      (ords ?? []).forEach((o) => {
-        const cur = orderAgg.get(o.buyer_id) ?? { count: 0, spent: 0 };
-        cur.count += 1;
-        cur.spent += Number(o.amount);
-        orderAgg.set(o.buyer_id, cur);
-      });
-
-      const { data: comms } = await supabase
-        .from("commission_records")
-        .select("amount, order_id, orders!commission_records_order_id_fkey(buyer_id)")
-        .eq("beneficiary_id", user.id);
-      const commByBuyer = new Map<string, number>();
-      (comms ?? []).forEach((c: any) => {
-        const bid = c.orders?.buyer_id;
-        if (!bid) return;
-        commByBuyer.set(bid, (commByBuyer.get(bid) ?? 0) + Number(c.amount));
-      });
-
-      const list: Invitee[] = (rels ?? []).map((r) => {
-        const p = profMap.get(r.user_id);
-        const agg = orderAgg.get(r.user_id);
-        return {
-          user_id: r.user_id,
-          profile_id: p?.id ?? "",
-          nickname: p?.nickname ?? null,
-          user_code: p?.user_code ?? "",
-          joined_at: r.created_at,
-          orders_count: agg?.count ?? 0,
-          spent_total: agg?.spent ?? 0,
-          commission_total: commByBuyer.get(r.user_id) ?? 0,
-        };
-      });
-      setItems(list);
-      setLoading(false);
+        const list: Invitee[] = (rels ?? []).map((r) => {
+          const p = profMap.get(r.user_id);
+          const agg = orderAgg.get(r.user_id);
+          return {
+            user_id: r.user_id,
+            profile_id: p?.id ?? "",
+            nickname: p?.nickname ?? null,
+            user_code: p?.user_code ?? "",
+            joined_at: r.created_at,
+            orders_count: agg?.count ?? 0,
+            spent_total: agg?.spent ?? 0,
+            commission_total: commByBuyer.get(r.user_id) ?? 0,
+          };
+        });
+        setItems(list);
+      } catch (e: any) {
+        reportRpcError(e, { op: "invitees.load", scope: "Invitees" });
+      } finally {
+        // 保证无论成功失败都退出"加载中"，避免页面永久卡住
+        setLoading(false);
+      }
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
