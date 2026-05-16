@@ -41,8 +41,6 @@ function Inner() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Merchant | null>(null);
-  const [rate, setRate] = useState("");
-  const [maxRate, setMaxRate] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -79,23 +77,6 @@ function Inner() {
 
   const openEdit = (m: Merchant) => {
     setSelected(m);
-    setRate((Number(m.l1_rate) * 100).toString());
-    setMaxRate((Number(m.l1_max_rate) * 100).toString());
-  };
-
-  const saveRate = async () => {
-    if (!selected) return;
-    const r = Number(rate);
-    const mx = Number(maxRate); // 沿用商家原有上限，不在此页面修改
-    if (!Number.isFinite(r) || r < 0 || r > 92) { toast.error("默认分成需在 0-92% 之间"); return; }
-    if (Number.isFinite(mx) && r > mx) { toast.error(`默认分成不能超过上限 ${mx}%`); return; }
-    const { error } = await supabase.from("merchants").update({
-      l1_rate: r / 100, l2_enabled: false, l2_rate: 0,
-    }).eq("id", selected.id);
-    if (error) { reportRpcError(error, { op: "merchants.update_rate", scope: "AdminMerchants" }); toast.error(error.message); return; }
-    toast.success("已保存分成");
-    load();
-    setSelected(null);
   };
 
   return (
@@ -148,15 +129,7 @@ function Inner() {
               <div>状态：{selected.is_disabled ? "已禁用" : selected.status}</div>
               <div>入驻时间：{fmtDate(selected.created_at)}</div>
             </div>
-            <div className="bg-muted/40 rounded-md p-3 space-y-2">
-              <div className="text-sm font-medium">分成设置</div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs w-20 text-muted-foreground">默认分成</span>
-                <Input type="number" step="0.5" max={92} value={rate} onChange={(e) => setRate(e.target.value)} />
-                <span className="text-xs">%</span>
-              </div>
-              <Button className="w-full" size="sm" onClick={saveRate}>保存分成</Button>
-            </div>
+            <p className="text-[11px] text-muted-foreground">代理分成比例由商户在「代理管理」中自行设置。</p>
             <DisableHistory isDisabled={selected.is_disabled} reason={selected.disabled_reason} at={selected.disabled_at} />
             <AdminUserDetailExtras
               userId={selected.user_id}
