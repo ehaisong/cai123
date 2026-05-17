@@ -55,11 +55,11 @@ function MerchantDetail() {
       (cs ?? []).forEach((c: any) => { custMap[c.upline_user_id] = (custMap[c.upline_user_id] ?? 0) + 1; });
     }
 
-    setAgents((ar ?? []).map((a: any) => ({
+    setAgents(ar.map((a: any) => ({
       ...a,
       profile: pmap[a.user_id],
       total_commission: wmap[a.user_id] ?? 0,
-      customer_count: custMap[pidByUid[a.user_id]] ?? 0,
+      customer_count: custMap[a.user_id] ?? 0,
     })));
     setOrders((ords ?? []).map((o: any) => ({
       ...o,
