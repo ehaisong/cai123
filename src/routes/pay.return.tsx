@@ -49,7 +49,7 @@ function PayReturnPage() {
         .eq("order_no", orderNo)
         .maybeSingle();
       const meta = (data?.metadata ?? {}) as { product_id?: string };
-      if (data?.product_id) setProductId(meta.product_id ?? null);
+      if (meta.product_id) setProductId(meta.product_id);
       if (data?.status === "paid") {
         handlePaid(meta, data.purpose ?? null);
         return;
