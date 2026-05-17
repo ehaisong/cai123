@@ -149,17 +149,42 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
           params: fullParams, gateway: GATEWAY,
         });
 
+        // 带重试 + UA 头 + 超时；workerd 偶发对国内站点首包 TLS 握手失败
+        const doFetch = async (): Promise<Response> => {
+          const ac = new AbortController();
+          const t = setTimeout(() => ac.abort(), 15000);
+          try {
+            return await fetch(GATEWAY, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json, text/plain, */*",
+                "User-Agent": "Mozilla/5.0 (wordpro-13pay-client)",
+              },
+              body: formBody,
+              signal: ac.signal,
+            });
+          } finally {
+            clearTimeout(t);
+          }
+        };
         let resp: Response;
         try {
-          resp = await fetch(GATEWAY, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: formBody,
-          });
+          try {
+            resp = await doFetch();
+          } catch (e1) {
+            await log(orderNo, "create_error", "error",
+              `首次 fetch 失败重试：${e1 instanceof Error ? e1.message : String(e1)}`,
+              { cause: (e1 as { cause?: unknown })?.cause ? String((e1 as { cause?: unknown }).cause) : null });
+            await new Promise((r) => setTimeout(r, 400));
+            resp = await doFetch();
+          }
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          await log(orderNo, "create_error", "error", `网络错误：${msg}`, {});
-          return json({ success: false, error: `请求 13pay 失败：${msg}` });
+          const cause = (e as { cause?: unknown })?.cause;
+          const detail = cause ? ` (cause=${String(cause)})` : "";
+          await log(orderNo, "create_error", "error", `网络错误：${msg}${detail}`, {});
+          return json({ success: false, error: `请求 13pay 失败：${msg}${detail}` });
         }
 
         const respText = await resp.text();
