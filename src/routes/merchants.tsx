@@ -37,9 +37,9 @@ function MerchantsPage() {
       // 代理或买家 → 绑定商家 / 默认店铺
       let target: string | null = null;
       if (user) {
-        const { data: ar } = await supabase
-          .from("agent_relations").select("bound_merchant_id").eq("user_id", user.id).maybeSingle();
-        target = ar?.bound_merchant_id ?? null;
+        const { data: sm } = await supabase
+          .from("shop_memberships").select("merchant_id,is_agent,joined_at").eq("user_id", user.id).order("joined_at", { ascending: true }).limit(1).maybeSingle();
+        target = sm?.merchant_id ?? null;
       }
       if (!target) {
         const { data: s } = await supabase
