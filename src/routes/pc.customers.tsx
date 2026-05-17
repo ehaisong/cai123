@@ -27,7 +27,7 @@ type Row = {
   phone: string | null;
   created_at: string;
   is_disabled: boolean;
-  upline_profile_id: string | null;
+  upline_user_id: string | null;
   upline_nickname: string | null;
   upline_phone: string | null;
   upline_merchant_id: string | null;
@@ -35,7 +35,7 @@ type Row = {
   total_recharge: number;
 };
 
-type AgentOpt = { profile_id: string; nickname: string | null; phone: string | null; bound_merchant_id: string | null };
+type AgentOpt = { user_id: string; nickname: string | null; phone: string | null };
 type MerchantOpt = { id: string; shop_name: string };
 
 function CustomersPage() {
