@@ -88,9 +88,9 @@ function DMPanel() {
     (async () => {
       const { data: m } = await supabase.from("merchants").select("id").eq("user_id", user.id).maybeSingle();
       if (!m) return;
-      const { data: ar } = await supabase.from("agent_relations")
+      const { data: ar } = await supabase.from("shop_memberships")
         .select("user_id, is_agent")
-        .eq("bound_merchant_id", m.id).limit(500);
+        .eq("merchant_id", m.id).limit(500);
       const userIds = (ar ?? []).map((r: any) => r.user_id);
       if (userIds.length === 0) { setList([]); return; }
       const { data: profs } = await supabase.from("profiles")
