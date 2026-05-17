@@ -41,6 +41,7 @@ import { Route as PcCommissionsRouteImport } from './routes/pc.commissions'
 import { Route as PcAgentsRouteImport } from './routes/pc.agents'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
+import { Route as PayReturnRouteImport } from './routes/pay.return'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
@@ -247,6 +248,11 @@ const PayTestRoute = PayTestRouteImport.update({
 const PaySuccessRoute = PaySuccessRouteImport.update({
   id: '/pay/success',
   path: '/pay/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayReturnRoute = PayReturnRouteImport.update({
+  id: '/pay/return',
+  path: '/pay/return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
@@ -540,6 +546,7 @@ export interface FileRoutesByFullPath {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/agents': typeof PcAgentsRoute
@@ -620,6 +627,7 @@ export interface FileRoutesByTo {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/agents': typeof PcAgentsRoute
@@ -702,6 +710,7 @@ export interface FileRoutesById {
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
   '/orders_/$orderId': typeof OrdersOrderIdRoute
+  '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
   '/pc/agents': typeof PcAgentsRoute
@@ -785,6 +794,7 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/orders/$orderId'
+    | '/pay/return'
     | '/pay/success'
     | '/pay/test'
     | '/pc/agents'
@@ -865,6 +875,7 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/orders/$orderId'
+    | '/pay/return'
     | '/pay/success'
     | '/pay/test'
     | '/pc/agents'
@@ -946,6 +957,7 @@ export interface FileRouteTypes {
     | '/merchant/qrcode'
     | '/merchant/shop'
     | '/orders_/$orderId'
+    | '/pay/return'
     | '/pay/success'
     | '/pay/test'
     | '/pc/agents'
@@ -1028,6 +1040,7 @@ export interface RootRouteChildren {
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
+  PayReturnRoute: typeof PayReturnRoute
   PaySuccessRoute: typeof PaySuccessRoute
   PayTestRoute: typeof PayTestRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
@@ -1273,6 +1286,13 @@ declare module '@tanstack/react-router' {
       path: '/pay/success'
       fullPath: '/pay/success'
       preLoaderRoute: typeof PaySuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/return': {
+      id: '/pay/return'
+      path: '/pay/return'
+      fullPath: '/pay/return'
+      preLoaderRoute: typeof PayReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders_/$orderId': {
@@ -1699,6 +1719,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
+  PayReturnRoute: PayReturnRoute,
   PaySuccessRoute: PaySuccessRoute,
   PayTestRoute: PayTestRoute,
   ProductProductIdRoute: ProductProductIdRoute,
