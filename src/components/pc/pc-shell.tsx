@@ -26,6 +26,7 @@ const NAV: Entry[] = [
       { to: "/pc/orders", label: "订单", icon: ShoppingCart },
       { to: "/pc/commissions", label: "返佣记录", icon: Coins },
       { to: "/pc/wallet-transactions", label: "钱包流水", icon: Wallet },
+      { to: "/pc/finance", label: "平台财务", icon: Coins },
     ],
   },
   { to: "/pc/payments", label: "支付通道", icon: CreditCard },

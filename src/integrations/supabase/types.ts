@@ -1380,6 +1380,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_platform_income: {
+        Args: {
+          _from?: string
+          _limit?: number
+          _merchant_id?: string
+          _to?: string
+        }
+        Returns: Json
+      }
       admin_recharge_user: {
         Args: { _amount: number; _note?: string; _user_id: string }
         Returns: string
