@@ -71,7 +71,7 @@ function MerchantDetail() {
     if (v === null) return;
     const n = Number(v);
     if (Number.isNaN(n) || n < 0 || n > 1) { toast.error("无效的比例"); return; }
-    const { error } = await supabase.from("agent_relations").update({ l1_rate: n }).eq("user_id", a.user_id);
+    const { error } = await supabase.from("shop_memberships").update({ l1_rate: n }).eq("user_id", a.user_id).eq("merchant_id", merchantId);
     if (error) { toast.error(error.message); return; }
     toast.success("已更新分成比例");
     load();
