@@ -222,7 +222,7 @@ function CustomersPage() {
                   <TableCell><div className="font-medium">{r.nickname ?? "—"}</div><div className="text-xs text-muted-foreground">{r.user_code}</div></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.phone ?? "—"}</TableCell>
                   <TableCell className="text-sm">
-                    {r.upline_profile_id ? (
+                    {r.upline_user_id ? (
                       <div className="space-y-0.5">
                         <div>{r.upline_nickname ?? "—"}{r.upline_phone ? ` · ${r.upline_phone}` : ""}</div>
                         {r.upline_merchant_id && <div className="text-xs text-muted-foreground">{merchantNameMap[r.upline_merchant_id] ?? "—"}</div>}
