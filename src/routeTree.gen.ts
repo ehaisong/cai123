@@ -36,6 +36,7 @@ import { Route as PcUsersRouteImport } from './routes/pc.users'
 import { Route as PcPaymentsRouteImport } from './routes/pc.payments'
 import { Route as PcOrdersRouteImport } from './routes/pc.orders'
 import { Route as PcLoginRouteImport } from './routes/pc.login'
+import { Route as PcFinanceRouteImport } from './routes/pc.finance'
 import { Route as PcCustomersRouteImport } from './routes/pc.customers'
 import { Route as PcCommissionsRouteImport } from './routes/pc.commissions'
 import { Route as PcAgentsRouteImport } from './routes/pc.agents'
@@ -72,6 +73,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminMerchantRecruitRouteImport } from './routes/admin.merchant-recruit'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminCommissionRouteImport } from './routes/admin.commission'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
@@ -223,6 +225,11 @@ const PcOrdersRoute = PcOrdersRouteImport.update({
 const PcLoginRoute = PcLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => PcRoute,
+} as any)
+const PcFinanceRoute = PcFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
   getParentRoute: () => PcRoute,
 } as any)
 const PcCustomersRoute = PcCustomersRouteImport.update({
@@ -406,6 +413,11 @@ const AdminKycRoute = AdminKycRouteImport.update({
   path: '/admin/kyc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/admin/finance',
+  path: '/admin/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCommissionRoute = AdminCommissionRouteImport.update({
   id: '/admin/commission',
   path: '/admin/commission',
@@ -516,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
@@ -552,6 +565,7 @@ export interface FileRoutesByFullPath {
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
+  '/pc/finance': typeof PcFinanceRoute
   '/pc/login': typeof PcLoginRoute
   '/pc/orders': typeof PcOrdersRoute
   '/pc/payments': typeof PcPaymentsRoute
@@ -597,6 +611,7 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
@@ -633,6 +648,7 @@ export interface FileRoutesByTo {
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
+  '/pc/finance': typeof PcFinanceRoute
   '/pc/login': typeof PcLoginRoute
   '/pc/orders': typeof PcOrdersRoute
   '/pc/payments': typeof PcPaymentsRoute
@@ -680,6 +696,7 @@ export interface FileRoutesById {
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/commission': typeof AdminCommissionRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/merchant-recruit': typeof AdminMerchantRecruitRoute
   '/admin/merchants': typeof AdminMerchantsRoute
@@ -716,6 +733,7 @@ export interface FileRoutesById {
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
+  '/pc/finance': typeof PcFinanceRoute
   '/pc/login': typeof PcLoginRoute
   '/pc/orders': typeof PcOrdersRoute
   '/pc/payments': typeof PcPaymentsRoute
@@ -764,6 +782,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/finance'
     | '/admin/kyc'
     | '/admin/merchant-recruit'
     | '/admin/merchants'
@@ -800,6 +819,7 @@ export interface FileRouteTypes {
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
+    | '/pc/finance'
     | '/pc/login'
     | '/pc/orders'
     | '/pc/payments'
@@ -845,6 +865,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/finance'
     | '/admin/kyc'
     | '/admin/merchant-recruit'
     | '/admin/merchants'
@@ -881,6 +902,7 @@ export interface FileRouteTypes {
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
+    | '/pc/finance'
     | '/pc/login'
     | '/pc/orders'
     | '/pc/payments'
@@ -927,6 +949,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/applications'
     | '/admin/commission'
+    | '/admin/finance'
     | '/admin/kyc'
     | '/admin/merchant-recruit'
     | '/admin/merchants'
@@ -963,6 +986,7 @@ export interface FileRouteTypes {
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
+    | '/pc/finance'
     | '/pc/login'
     | '/pc/orders'
     | '/pc/payments'
@@ -1010,6 +1034,7 @@ export interface RootRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminCommissionRoute: typeof AdminCommissionRoute
+  AdminFinanceRoute: typeof AdminFinanceRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminMerchantRecruitRoute: typeof AdminMerchantRecruitRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
@@ -1251,6 +1276,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/pc/login'
       preLoaderRoute: typeof PcLoginRouteImport
+      parentRoute: typeof PcRoute
+    }
+    '/pc/finance': {
+      id: '/pc/finance'
+      path: '/finance'
+      fullPath: '/pc/finance'
+      preLoaderRoute: typeof PcFinanceRouteImport
       parentRoute: typeof PcRoute
     }
     '/pc/customers': {
@@ -1505,6 +1537,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminKycRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/admin/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/commission': {
       id: '/admin/commission'
       path: '/admin/commission'
@@ -1631,6 +1670,7 @@ interface PcRouteChildren {
   PcAgentsRoute: typeof PcAgentsRoute
   PcCommissionsRoute: typeof PcCommissionsRoute
   PcCustomersRoute: typeof PcCustomersRoute
+  PcFinanceRoute: typeof PcFinanceRoute
   PcLoginRoute: typeof PcLoginRoute
   PcOrdersRoute: typeof PcOrdersRoute
   PcPaymentsRoute: typeof PcPaymentsRoute
@@ -1646,6 +1686,7 @@ const PcRouteChildren: PcRouteChildren = {
   PcAgentsRoute: PcAgentsRoute,
   PcCommissionsRoute: PcCommissionsRoute,
   PcCustomersRoute: PcCustomersRoute,
+  PcFinanceRoute: PcFinanceRoute,
   PcLoginRoute: PcLoginRoute,
   PcOrdersRoute: PcOrdersRoute,
   PcPaymentsRoute: PcPaymentsRoute,
@@ -1689,6 +1730,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
   AdminCommissionRoute: AdminCommissionRoute,
+  AdminFinanceRoute: AdminFinanceRoute,
   AdminKycRoute: AdminKycRoute,
   AdminMerchantRecruitRoute: AdminMerchantRecruitRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,

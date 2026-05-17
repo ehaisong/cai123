@@ -25,6 +25,7 @@ import {
   ShoppingCart,
   TrendingUp,
   QrCode,
+  Receipt,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -70,6 +71,7 @@ const groups: Array<{ label: string; items: Card[] }> = [
   {
     label: "财务",
     items: [
+      { to: "/admin/finance", title: "平台财务", desc: "平台抽成收入/明细", icon: Receipt, color: "bg-emerald-500/10 text-emerald-600" },
       { to: "/admin/recharge", title: "手动充值", desc: "为用户钱包充值", icon: PlusCircle, color: "bg-pink-500/10 text-pink-600" },
       { to: "/admin/commission", title: "分成配置", desc: "设置代理与平台分成", icon: Percent, color: "bg-purple-500/10 text-purple-600" },
     ],
