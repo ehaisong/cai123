@@ -62,7 +62,7 @@ function Inner() {
       const [{ data: profs }, { data: merchs }, { data: agents }] = await Promise.all([
         supabase.from("profiles").select("user_id, user_code, nickname, phone").in("user_id", ids),
         supabase.from("merchants").select("user_id").in("user_id", ids),
-        supabase.from("agent_relations").select("user_id, is_agent").in("user_id", ids).eq("is_agent", true),
+        supabase.from("shop_memberships").select("user_id, is_agent").in("user_id", ids).eq("is_agent", true),
       ]);
       const m: Record<string, ProfileLite> = {};
       (profs ?? []).forEach((p: any) => { m[p.user_id] = p; });
