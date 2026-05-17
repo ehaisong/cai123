@@ -14,7 +14,7 @@ export const Route = createFileRoute("/pc/payments")({
   component: PaymentsPage,
 });
 
-type Provider = "3ypay" | "wechat" | "alipay" | "custom";
+type Provider = "3ypay" | "13pay" | "wechat" | "alipay" | "custom";
 type Channel = {
   id: string;
   code: string;
