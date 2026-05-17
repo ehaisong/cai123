@@ -40,6 +40,7 @@ import { Route as PcFinanceRouteImport } from './routes/pc.finance'
 import { Route as PcCustomersRouteImport } from './routes/pc.customers'
 import { Route as PcCommissionsRouteImport } from './routes/pc.commissions'
 import { Route as PcAgentsRouteImport } from './routes/pc.agents'
+import { Route as PayTest13payRouteImport } from './routes/pay.test-13pay'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayReturnRouteImport } from './routes/pay.return'
@@ -83,6 +84,8 @@ import { Route as MerchantProductsNewRouteImport } from './routes/merchant.produ
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
 import { Route as ApiPublicPayNotifyRouteImport } from './routes/api/public/pay-notify'
 import { Route as ApiPublicPayCreateRouteImport } from './routes/api/public/pay-create'
+import { Route as ApiPublicPay13payNotifyRouteImport } from './routes/api/public/pay-13pay-notify'
+import { Route as ApiPublicPay13payCreateRouteImport } from './routes/api/public/pay-13pay-create'
 import { Route as PcUsersMerchantMerchantIdRouteImport } from './routes/pc.users_.merchant.$merchantId'
 import { Route as PcUsersBuyerUserIdRouteImport } from './routes/pc.users_.buyer.$userId'
 import { Route as PcUsersAgentUserIdRouteImport } from './routes/pc.users_.agent.$userId'
@@ -246,6 +249,11 @@ const PcAgentsRoute = PcAgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
   getParentRoute: () => PcRoute,
+} as any)
+const PayTest13payRoute = PayTest13payRouteImport.update({
+  id: '/pay/test-13pay',
+  path: '/pay/test-13pay',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PayTestRoute = PayTestRouteImport.update({
   id: '/pay/test',
@@ -463,6 +471,16 @@ const ApiPublicPayCreateRoute = ApiPublicPayCreateRouteImport.update({
   path: '/api/public/pay-create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPay13payNotifyRoute = ApiPublicPay13payNotifyRouteImport.update({
+  id: '/api/public/pay-13pay-notify',
+  path: '/api/public/pay-13pay-notify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPay13payCreateRoute = ApiPublicPay13payCreateRouteImport.update({
+  id: '/api/public/pay-13pay-create',
+  path: '/api/public/pay-13pay-create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PcUsersMerchantMerchantIdRoute =
   PcUsersMerchantMerchantIdRouteImport.update({
     id: '/users_/merchant/$merchantId',
@@ -562,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pay/test-13pay': typeof PayTest13payRoute
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
@@ -580,6 +599,8 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/pc/': typeof PcIndexRoute
+  '/api/public/pay-13pay-create': typeof ApiPublicPay13payCreateRoute
+  '/api/public/pay-13pay-notify': typeof ApiPublicPay13payNotifyRoute
   '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
@@ -645,6 +666,7 @@ export interface FileRoutesByTo {
   '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pay/test-13pay': typeof PayTest13payRoute
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
@@ -663,6 +685,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/merchant': typeof MerchantIndexRoute
   '/pc': typeof PcIndexRoute
+  '/api/public/pay-13pay-create': typeof ApiPublicPay13payCreateRoute
+  '/api/public/pay-13pay-notify': typeof ApiPublicPay13payNotifyRoute
   '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
@@ -730,6 +754,7 @@ export interface FileRoutesById {
   '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pay/test-13pay': typeof PayTest13payRoute
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
@@ -748,6 +773,8 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/merchant/': typeof MerchantIndexRoute
   '/pc/': typeof PcIndexRoute
+  '/api/public/pay-13pay-create': typeof ApiPublicPay13payCreateRoute
+  '/api/public/pay-13pay-notify': typeof ApiPublicPay13payNotifyRoute
   '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
@@ -816,6 +843,7 @@ export interface FileRouteTypes {
     | '/pay/return'
     | '/pay/success'
     | '/pay/test'
+    | '/pay/test-13pay'
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
@@ -834,6 +862,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/merchant/'
     | '/pc/'
+    | '/api/public/pay-13pay-create'
+    | '/api/public/pay-13pay-notify'
     | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
@@ -899,6 +929,7 @@ export interface FileRouteTypes {
     | '/pay/return'
     | '/pay/success'
     | '/pay/test'
+    | '/pay/test-13pay'
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
@@ -917,6 +948,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/merchant'
     | '/pc'
+    | '/api/public/pay-13pay-create'
+    | '/api/public/pay-13pay-notify'
     | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
@@ -983,6 +1016,7 @@ export interface FileRouteTypes {
     | '/pay/return'
     | '/pay/success'
     | '/pay/test'
+    | '/pay/test-13pay'
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
@@ -1001,6 +1035,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/merchant/'
     | '/pc/'
+    | '/api/public/pay-13pay-create'
+    | '/api/public/pay-13pay-notify'
     | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
@@ -1068,6 +1104,7 @@ export interface RootRouteChildren {
   PayReturnRoute: typeof PayReturnRoute
   PaySuccessRoute: typeof PaySuccessRoute
   PayTestRoute: typeof PayTestRoute
+  PayTest13payRoute: typeof PayTest13payRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ProfileBindPhoneRoute: typeof ProfileBindPhoneRoute
   ProfileKycRoute: typeof ProfileKycRoute
@@ -1076,6 +1113,8 @@ export interface RootRouteChildren {
   WalletTransactionsRoute: typeof WalletTransactionsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MerchantIndexRoute: typeof MerchantIndexRoute
+  ApiPublicPay13payCreateRoute: typeof ApiPublicPay13payCreateRoute
+  ApiPublicPay13payNotifyRoute: typeof ApiPublicPay13payNotifyRoute
   ApiPublicPayCreateRoute: typeof ApiPublicPayCreateRoute
   ApiPublicPayNotifyRoute: typeof ApiPublicPayNotifyRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
@@ -1305,6 +1344,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pc/agents'
       preLoaderRoute: typeof PcAgentsRouteImport
       parentRoute: typeof PcRoute
+    }
+    '/pay/test-13pay': {
+      id: '/pay/test-13pay'
+      path: '/pay/test-13pay'
+      fullPath: '/pay/test-13pay'
+      preLoaderRoute: typeof PayTest13payRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/pay/test': {
       id: '/pay/test'
@@ -1607,6 +1653,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPayCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pay-13pay-notify': {
+      id: '/api/public/pay-13pay-notify'
+      path: '/api/public/pay-13pay-notify'
+      fullPath: '/api/public/pay-13pay-notify'
+      preLoaderRoute: typeof ApiPublicPay13payNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/pay-13pay-create': {
+      id: '/api/public/pay-13pay-create'
+      path: '/api/public/pay-13pay-create'
+      fullPath: '/api/public/pay-13pay-create'
+      preLoaderRoute: typeof ApiPublicPay13payCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pc/users_/merchant/$merchantId': {
       id: '/pc/users_/merchant/$merchantId'
       path: '/users/merchant/$merchantId'
@@ -1764,6 +1824,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayReturnRoute: PayReturnRoute,
   PaySuccessRoute: PaySuccessRoute,
   PayTestRoute: PayTestRoute,
+  PayTest13payRoute: PayTest13payRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ProfileBindPhoneRoute: ProfileBindPhoneRoute,
   ProfileKycRoute: ProfileKycRoute,
@@ -1772,6 +1833,8 @@ const rootRouteChildren: RootRouteChildren = {
   WalletTransactionsRoute: WalletTransactionsRoute,
   AdminIndexRoute: AdminIndexRoute,
   MerchantIndexRoute: MerchantIndexRoute,
+  ApiPublicPay13payCreateRoute: ApiPublicPay13payCreateRoute,
+  ApiPublicPay13payNotifyRoute: ApiPublicPay13payNotifyRoute,
   ApiPublicPayCreateRoute: ApiPublicPayCreateRoute,
   ApiPublicPayNotifyRoute: ApiPublicPayNotifyRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
@@ -1789,12 +1852,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
