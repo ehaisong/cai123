@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin/payment")({
   ),
 });
 
-type Provider = "3ypay" | "wechat" | "alipay" | "custom";
+type Provider = "3ypay" | "13pay" | "wechat" | "alipay" | "custom";
 type Channel = {
   id: string;
   code: string;
@@ -32,6 +32,7 @@ type Channel = {
 
 const PROVIDER_LABEL: Record<Provider, string> = {
   "3ypay": "3ypay 聚合（微信+支付宝）",
+  "13pay": "13pay 聚合（微信 JSAPI 不关页）",
   wechat: "微信支付（直连）",
   alipay: "支付宝（直连）",
   custom: "自定义",
@@ -47,6 +48,11 @@ const PROVIDER_FIELDS: Record<Provider, { key: string; label: string; type?: "pa
     { key: "wechat.paySubType", label: "微信 paySubType", placeholder: "NATIVE（默认）" },
     { key: "alipay.productCode", label: "支付宝 AUT 编号 productCode", placeholder: "A000558443631" },
     { key: "alipay.paySubType", label: "支付宝 paySubType", placeholder: "NATIVE（默认）" },
+  ],
+  "13pay": [
+    { key: "pid", label: "商户ID（pid）", placeholder: "10078" },
+    { key: "merchantPrivateKey", label: "商户私钥（PEM，仅 RSA 模式）", type: "textarea", placeholder: "-----BEGIN PRIVATE KEY-----\n..." },
+    { key: "platformPublicKey", label: "平台公钥（PEM）", type: "textarea", placeholder: "-----BEGIN PUBLIC KEY-----\n..." },
   ],
   wechat: [
     { key: "app_id", label: "AppID", placeholder: "wx... 公众号/小程序 AppID" },
