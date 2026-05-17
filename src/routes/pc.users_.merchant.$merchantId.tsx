@@ -79,12 +79,13 @@ function MerchantDetail() {
 
   const unbindAgent = async (a: any) => {
     if (!confirm(`确定将「${a.profile?.nickname ?? a.user_id}」从本店解绑？该代理将不再归属本店。`)) return;
-    const { error } = await supabase.from("agent_relations").update({
-      bound_merchant_id: null,
+    // 解绑：把本店的代理身份取消（保留客户关系），agent_relations 由触发器自动同步
+    const { error } = await supabase.from("shop_memberships").update({
       is_agent: false,
-    }).eq("user_id", a.user_id);
+      agent_code: null,
+      l1_rate: null,
+    }).eq("user_id", a.user_id).eq("merchant_id", merchantId);
     if (error) { toast.error(error.message); return; }
-    await supabase.from("agent_merchant_bindings").delete().eq("user_id", a.user_id).eq("merchant_id", merchantId);
     toast.success("已解绑");
     load();
   };
