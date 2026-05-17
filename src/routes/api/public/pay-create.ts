@@ -299,7 +299,7 @@ export const Route = createFileRoute("/api/public/pay-create")({
           orderAmount: Number(order.amount).toFixed(2),
           clientIp,
           notifyUrl: NOTIFY_URL,
-          redirectUrl: `${returnOrigin}/pay/success?orderNo=${encodeURIComponent(orderNo)}`,
+          redirectUrl: `${returnOrigin}/pay/return?orderNo=${encodeURIComponent(orderNo)}`,
         };
         // 3ypay 签名文档要求 bizContent 作为 JSON 字符串参与签名，
         // 且最终请求体里也传同一个字符串，避免 3ypay 服务端重组后验签不一致。
