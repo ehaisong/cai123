@@ -320,12 +320,13 @@ function AgentSubRow({ a }: { a: any }) {
   const expand = async () => {
     const next = !open;
     setOpen(next);
-    if (next && customers === null && a.profile?.id) {
+    if (next && customers === null && a.user_id && a.merchant_id) {
       setLoadingC(true);
       const { data: cs } = await supabase
-        .from("agent_relations").select("user_id,is_agent,created_at")
-        .eq("upline_id", a.profile.id);
-      const list = cs ?? [];
+        .from("shop_memberships").select("user_id,is_agent,joined_at")
+        .eq("upline_user_id", a.user_id)
+        .eq("merchant_id", a.merchant_id);
+      const list = (cs ?? []).map((c: any) => ({ ...c, created_at: c.joined_at }));
       const uids = list.map((c: any) => c.user_id);
       const { data: profs } = uids.length
         ? await supabase.from("profiles").select("user_id,nickname,phone,user_code").in("user_id", uids)
