@@ -40,6 +40,7 @@ import { Route as PcFinanceRouteImport } from './routes/pc.finance'
 import { Route as PcCustomersRouteImport } from './routes/pc.customers'
 import { Route as PcCommissionsRouteImport } from './routes/pc.commissions'
 import { Route as PcAgentsRouteImport } from './routes/pc.agents'
+import { Route as PayTest13payRouteImport } from './routes/pay.test-13pay'
 import { Route as PayTestRouteImport } from './routes/pay.test'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayReturnRouteImport } from './routes/pay.return'
@@ -248,6 +249,11 @@ const PcAgentsRoute = PcAgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
   getParentRoute: () => PcRoute,
+} as any)
+const PayTest13payRoute = PayTest13payRouteImport.update({
+  id: '/pay/test-13pay',
+  path: '/pay/test-13pay',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PayTestRoute = PayTestRouteImport.update({
   id: '/pay/test',
@@ -574,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pay/test-13pay': typeof PayTest13payRoute
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
@@ -659,6 +666,7 @@ export interface FileRoutesByTo {
   '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pay/test-13pay': typeof PayTest13payRoute
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
@@ -746,6 +754,7 @@ export interface FileRoutesById {
   '/pay/return': typeof PayReturnRoute
   '/pay/success': typeof PaySuccessRoute
   '/pay/test': typeof PayTestRoute
+  '/pay/test-13pay': typeof PayTest13payRoute
   '/pc/agents': typeof PcAgentsRoute
   '/pc/commissions': typeof PcCommissionsRoute
   '/pc/customers': typeof PcCustomersRoute
@@ -834,6 +843,7 @@ export interface FileRouteTypes {
     | '/pay/return'
     | '/pay/success'
     | '/pay/test'
+    | '/pay/test-13pay'
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
@@ -919,6 +929,7 @@ export interface FileRouteTypes {
     | '/pay/return'
     | '/pay/success'
     | '/pay/test'
+    | '/pay/test-13pay'
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
@@ -1005,6 +1016,7 @@ export interface FileRouteTypes {
     | '/pay/return'
     | '/pay/success'
     | '/pay/test'
+    | '/pay/test-13pay'
     | '/pc/agents'
     | '/pc/commissions'
     | '/pc/customers'
@@ -1092,6 +1104,7 @@ export interface RootRouteChildren {
   PayReturnRoute: typeof PayReturnRoute
   PaySuccessRoute: typeof PaySuccessRoute
   PayTestRoute: typeof PayTestRoute
+  PayTest13payRoute: typeof PayTest13payRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ProfileBindPhoneRoute: typeof ProfileBindPhoneRoute
   ProfileKycRoute: typeof ProfileKycRoute
@@ -1331,6 +1344,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pc/agents'
       preLoaderRoute: typeof PcAgentsRouteImport
       parentRoute: typeof PcRoute
+    }
+    '/pay/test-13pay': {
+      id: '/pay/test-13pay'
+      path: '/pay/test-13pay'
+      fullPath: '/pay/test-13pay'
+      preLoaderRoute: typeof PayTest13payRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/pay/test': {
       id: '/pay/test'
@@ -1804,6 +1824,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayReturnRoute: PayReturnRoute,
   PaySuccessRoute: PaySuccessRoute,
   PayTestRoute: PayTestRoute,
+  PayTest13payRoute: PayTest13payRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ProfileBindPhoneRoute: ProfileBindPhoneRoute,
   ProfileKycRoute: ProfileKycRoute,
