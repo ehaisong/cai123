@@ -46,7 +46,28 @@ function ShopPage() {
   const { merchantId } = useParams({ from: "/shop/$merchantId" });
   const { ref: refParam } = useSearch({ from: "/shop/$merchantId" });
   const router = useRouter();
-  const { user, refreshRoles, hasRole } = useAuth();
+  const { user, loading: authLoading, refreshRoles, hasRole } = useAuth();
+
+  // 未登录访客进入店铺：先把 ref+merchantId 暂存到 localStorage（用于登录后回放
+  // bind_shop_referrer 完成「客户-代理」绑定），然后立刻跳到登录页。
+  // 登录成功后 redirect 回带 ?ref= 的店铺 URL，保留代理绑定链路。
+  useEffect(() => {
+    if (authLoading || user) return;
+    if (typeof window === "undefined") return;
+    try {
+      const effRef = refParam && refParam.length > 0 ? refParam : `M_${merchantId}`;
+      localStorage.setItem("pending_referrer", effRef);
+      localStorage.setItem("pending_merchant_id", merchantId);
+    } catch {}
+    const backPath = refParam
+      ? `/shop/${merchantId}?ref=${encodeURIComponent(refParam)}`
+      : `/shop/${merchantId}`;
+    router.navigate({
+      to: "/auth/login",
+      search: { redirect: backPath, ref: refParam ?? `M_${merchantId}` } as any,
+      replace: true,
+    });
+  }, [authLoading, user, merchantId, refParam, router]);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
