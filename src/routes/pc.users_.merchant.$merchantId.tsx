@@ -83,7 +83,7 @@ function MerchantDetail() {
 
   const unbindAgent = async (a: any) => {
     if (!confirm(`确定将「${a.profile?.nickname ?? a.user_id}」从本店解绑？该代理将不再归属本店。`)) return;
-    // 解绑：把本店的代理身份取消（保留客户关系），agent_relations 由触发器自动同步
+    // 解绑：把本店的代理身份取消（保留客户关系）
     const { error } = await supabase.from("shop_memberships").update({
       is_agent: false,
       agent_code: null,
