@@ -25,20 +25,21 @@ function PcOverview() {
   useEffect(() => {
     (async () => {
       const since = new Date(Date.now() - 7 * 86400_000).toISOString();
-      const [users, merchants, agents, orders, pays] = await Promise.all([
+      const [users, merchants, agentsRaw, orders, pays] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("merchants").select("*", { count: "exact", head: true }).eq("status", "approved"),
-        supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("is_agent", true),
+        supabase.from("shop_memberships").select("user_id").eq("is_agent", true).limit(5000),
         supabase.from("orders").select("amount").gte("created_at", since).eq("status", "paid"),
         supabase.from("payment_orders").select("amount,status").gte("created_at", since),
       ]);
       const orderAmount = (orders.data ?? []).reduce((a, o: any) => a + Number(o.amount || 0), 0);
       const paySuccess = (pays.data ?? []).filter((p: any) => p.status === "paid").length;
       const payAmount = (pays.data ?? []).filter((p: any) => p.status === "paid").reduce((a, p: any) => a + Number(p.amount || 0), 0);
+      const agentCount = new Set((agentsRaw.data ?? []).map((a: any) => a.user_id)).size;
       setS({
         users: users.count ?? 0,
         merchants: merchants.count ?? 0,
-        agents: agents.count ?? 0,
+        agents: agentCount,
         orders7d: orders.data?.length ?? 0,
         orderAmount7d: orderAmount,
         paySuccess7d: paySuccess,
