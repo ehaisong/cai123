@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useParams, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
+import { z } from "zod";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -21,6 +22,7 @@ import { Share2, Copy } from "lucide-react";
 import { buildShareUrl, preloadRelayBase } from "@/lib/share-url";
 
 export const Route = createFileRoute("/shop/$merchantId")({
+  validateSearch: z.object({ ref: z.string().optional() }),
   component: ShopPage,
 });
 
@@ -42,6 +44,7 @@ interface InboxMsg { id: string; title: string; content: string | null; created_
 
 function ShopPage() {
   const { merchantId } = useParams({ from: "/shop/$merchantId" });
+  const { ref: refParam } = useSearch({ from: "/shop/$merchantId" });
   const router = useRouter();
   const { user, refreshRoles, hasRole } = useAuth();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -95,9 +98,11 @@ function ShopPage() {
 
     // 登记入店：登录的非店主、非本店代理用户进入任意店铺即写入 shop_memberships。
     // 一旦写入就锁定终身归属（首次入店决定 upline / 分佣对象）。
-    // 这里若已有 membership，bind_shop_referrer 会直接返回不改写。
+    // 关键：必须把 URL 上的 ?ref= 带上，否则代理推广码进来会丢失上线，
+    // 只有当 URL 没有 ref 时才回落到「店铺自带招客户码」M_<mid>。
     if (!m && (!ar?.is_agent || ar?.bound_merchant_id !== merchantId)) {
-      await supabase.rpc("bind_shop_referrer", { _merchant_id: merchantId, _ref: `M_${merchantId}` });
+      const effectiveRef = refParam && refParam.length > 0 ? refParam : `M_${merchantId}`;
+      await supabase.rpc("bind_shop_referrer", { _merchant_id: merchantId, _ref: effectiveRef });
     }
   };
 
@@ -107,6 +112,15 @@ function ShopPage() {
     // 让下次访问 / 时直接进入该店铺；扫描其他店铺二维码会自动覆盖。
     if (typeof window !== "undefined") {
       try { localStorage.setItem("last_shop_id", merchantId); } catch {}
+      // 未登录情况下扫了代理/商家二维码到达店铺页：必须把 ref + merchantId 暂存，
+      // 登录后由 auth-context 重放调用 bind_shop_referrer 完成「客户-代理」绑定。
+      // 之前只有 /?ref=... 路径会暂存，导致中转站直达 /shop/<mid>?ref=... 时丢失绑定。
+      if (refParam && !user) {
+        try {
+          localStorage.setItem("pending_referrer", refParam);
+          localStorage.setItem("pending_merchant_id", merchantId);
+        } catch {}
+      }
     }
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
