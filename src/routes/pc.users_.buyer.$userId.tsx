@@ -22,16 +22,16 @@ function BuyerDetail() {
   const [txs, setTxs] = useState<any[]>([]);
 
   const load = async () => {
-    const [{ data: p }, { data: ar }, { data: w }, { data: ods }, { data: ts }] = await Promise.all([
+    const [{ data: p }, { data: sm }, { data: w }, { data: ods }, { data: ts }] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      supabase.from("agent_relations").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("shop_memberships").select("user_id,merchant_id,upline_user_id,is_agent,joined_at").eq("user_id", userId).not("upline_user_id", "is", null).limit(1).maybeSingle(),
       supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("orders").select("id,amount,status,created_at,paid_at,product_id").eq("buyer_id", userId).order("created_at", { ascending: false }).limit(100),
       supabase.from("wallet_transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(100),
     ]);
-    setProfile(p); setRelation(ar); setWallet(w);
-    if (ar?.upline_id) {
-      const { data: up } = await supabase.from("profiles").select("user_id,nickname,user_code,phone").eq("id", ar.upline_id).maybeSingle();
+    setProfile(p); setRelation(sm); setWallet(w);
+    if (sm?.upline_user_id) {
+      const { data: up } = await supabase.from("profiles").select("user_id,nickname,user_code,phone").eq("user_id", sm.upline_user_id).maybeSingle();
       setUpline(up);
     } else setUpline(null);
 
@@ -44,8 +44,9 @@ function BuyerDetail() {
   useEffect(() => { load(); }, [userId]);
 
   const unbindUpline = async () => {
+    if (!relation?.merchant_id) { toast.error("缺少归属店铺信息"); return; }
     if (!confirm("确定将该用户与代理解绑？")) return;
-    const { error } = await supabase.from("agent_relations").update({ upline_id: null }).eq("user_id", userId);
+    const { error } = await supabase.from("shop_memberships").update({ upline_user_id: null }).eq("user_id", userId).eq("merchant_id", relation.merchant_id);
     if (error) { toast.error(error.message); return; }
     toast.success("已解绑"); load();
   };
