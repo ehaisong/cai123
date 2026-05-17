@@ -133,11 +133,13 @@ function CustomersPage() {
 
   const unbindAgent = async (r: Row) => {
     if (!confirm(`确定解绑「${r.nickname ?? r.user_code}」与代理「${r.upline_nickname ?? "-"}」的绑定关系？`)) return;
+    if (!r.upline_merchant_id) { toast.error("缺少归属店铺信息，无法解绑"); return; }
     const { error } = await supabase
-      .from("agent_relations")
-      .update({ upline_id: null, upline_l2_id: null, bound_merchant_id: null })
-      .eq("user_id", r.user_id);
-    if (error) { reportRpcError(error, { op: "agent_relations.unbind", scope: "PcCustomers" }); return; }
+      .from("shop_memberships")
+      .update({ upline_user_id: null })
+      .eq("user_id", r.user_id)
+      .eq("merchant_id", r.upline_merchant_id);
+    if (error) { reportRpcError(error, { op: "shop_memberships.unbind_upline", scope: "PcCustomers" }); return; }
     toast.success("已解绑归属代理");
     load();
   };

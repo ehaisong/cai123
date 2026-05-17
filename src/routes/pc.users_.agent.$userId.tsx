@@ -43,19 +43,21 @@ function AgentDetail() {
     const mSum = (cr ?? []).filter((c: any) => new Date(c.created_at) >= monthStart).reduce((a, c: any) => a + Number(c.amount), 0);
     setStats({ total, today: tSum, month: mSum });
 
-    if (p?.id) {
-      const { data: cs } = await supabase.from("agent_relations").select("user_id,created_at,is_agent").eq("upline_id", p.id);
-      const cuids = (cs ?? []).map((c: any) => c.user_id);
-      const { data: cps } = cuids.length ? await supabase.from("profiles").select("user_id,nickname,phone,user_code").in("user_id", cuids) : { data: [] as any[] };
-      const cmap = Object.fromEntries((cps ?? []).map((x: any) => [x.user_id, x]));
-      setCustomers((cs ?? []).map((c: any) => ({ ...c, profile: cmap[c.user_id] })));
-    }
+    // 下线列表：直接读 shop_memberships（每行带 merchant_id，解绑更精确）
+    const { data: cs } = await supabase
+      .from("shop_memberships")
+      .select("user_id,merchant_id,is_agent,joined_at")
+      .eq("upline_user_id", userId);
+    const cuids = Array.from(new Set((cs ?? []).map((c: any) => c.user_id)));
+    const { data: cps } = cuids.length ? await supabase.from("profiles").select("user_id,nickname,phone,user_code").in("user_id", cuids) : { data: [] as any[] };
+    const cmap = Object.fromEntries((cps ?? []).map((x: any) => [x.user_id, x]));
+    setCustomers((cs ?? []).map((c: any) => ({ ...c, created_at: c.joined_at, profile: cmap[c.user_id] })));
   };
   useEffect(() => { load(); }, [userId]);
 
   const unbindCustomer = async (c: any) => {
     if (!confirm(`确定将「${c.profile?.nickname ?? c.user_id}」从该代理解绑？`)) return;
-    const { error } = await supabase.from("agent_relations").update({ upline_id: null }).eq("user_id", c.user_id);
+    const { error } = await supabase.from("shop_memberships").update({ upline_user_id: null }).eq("user_id", c.user_id).eq("merchant_id", c.merchant_id);
     if (error) { toast.error(error.message); return; }
     toast.success("已解绑");
     load();
