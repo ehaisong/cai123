@@ -120,11 +120,9 @@ function AgentsPage() {
             {loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">加载中…</TableCell></TableRow>}
             {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">暂无代理</TableCell></TableRow>}
             {filtered.map((r) => (
-              <TableRow key={r.user_id}>
+              <TableRow key={`${r.user_id}::${r.merchant_id ?? "_"}`}>
                 <TableCell>
-                  {r.profile_id ? (
-                    <Link to="/pc/customers" search={{ agentId: r.profile_id }} className="font-medium hover:underline">{r.nickname ?? "—"}</Link>
-                  ) : <div className="font-medium">{r.nickname ?? "—"}</div>}
+                  <Link to="/pc/customers" search={{ agentId: r.user_id }} className="font-medium hover:underline">{r.nickname ?? "—"}</Link>
                   <div className="text-xs text-muted-foreground">{r.agent_code ?? r.user_code ?? "—"}</div>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{r.phone ?? "—"}</TableCell>
@@ -132,7 +130,7 @@ function AgentsPage() {
                 <TableCell className="text-right">{r.l1_rate != null ? `${(r.l1_rate * 100).toFixed(0)}%` : <span className="text-muted-foreground">默认</span>}</TableCell>
                 <TableCell className="text-right">{fmtMoney(r.total_commission)}</TableCell>
                 <TableCell className="text-right">{r.customer_count}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{fmtDate(r.created_at)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{fmtDate(r.joined_at)}</TableCell>
                 <TableCell className="text-right">
                   <Link to="/pc/users/agent/$userId" params={{ userId: r.user_id }}>
                     <Button size="sm" variant="outline"><Eye className="h-3 w-3 mr-1" />详情</Button>
