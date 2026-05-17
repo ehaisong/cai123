@@ -46,29 +46,34 @@ function SharePage() {
     const load = async () => {
       if (!user) { setLoading(false); return; }
       preloadRelayBase();
-      const [arRes, pRes, cfgRes, bmRes] = await Promise.all([
-        supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
+      const [smRes, pRes, cfgRes, bmRes] = await Promise.all([
+        supabase.from("shop_memberships").select("merchant_id,is_agent,agent_code,joined_at").eq("user_id", user.id),
         supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
         supabase.from("commission_config").select("l1_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.rpc("agent_my_bound_merchants"),
       ]);
-      if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "SharePage" });
-      setInfo(arRes.data);
+      if (smRes.error) reportRpcError(smRes.error, { op: "shop_memberships.select", scope: "SharePage" });
+      const agentRows = ((smRes.data ?? []) as any[]).filter((r) => r.is_agent);
+      const arData = {
+        is_agent: agentRows.length > 0,
+        agent_code: agentRows[0]?.agent_code ?? null,
+        bound_merchant_id: agentRows[0]?.merchant_id ?? null,
+      };
+      setInfo(arData);
       setProfile(pRes.data);
       setConfig(cfgRes.data ?? null);
 
-      // 优先从已绑定商家列表里取「当前活跃」商家，其次回落到 agent_relations.bound_merchant_id。
-      // 这样代理切换商家后，分享码会立即跟着更新。
+      // 优先从已绑定商家列表里取「当前活跃」商家，其次回落到第一条代理行的 merchant_id。
       const list = ((bmRes.data as any[]) ?? []);
       setBindCount(list.length);
       const active = list.find((r) => r.is_active) ?? null;
       if (active) {
         setMerchant({ id: active.merchant_id, shop_name: active.shop_name, shop_avatar_url: active.shop_avatar_url });
-      } else if (arRes.data?.bound_merchant_id) {
+      } else if (arData.bound_merchant_id) {
         const { data: m } = await supabase
           .from("merchants")
           .select("id, shop_name, shop_avatar_url")
-          .eq("id", arRes.data.bound_merchant_id)
+          .eq("id", arData.bound_merchant_id)
           .maybeSingle();
         setMerchant(m);
       }
