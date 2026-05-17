@@ -70,14 +70,19 @@ function ShopPage() {
       setAgentInfo(null); setIsShopOwner(false); setBoundMerchantName(null); setAgentCode("");
       return;
     }
-    const { data: ar } = await supabase
-      .from("agent_relations")
-      .select("is_agent, bound_merchant_id, agent_code")
+    const { data: sm } = await supabase
+      .from("shop_memberships")
+      .select("is_agent, merchant_id, agent_code")
       .eq("user_id", user.id)
+      .eq("is_agent", true)
+      .limit(1)
       .maybeSingle();
-    setAgentInfo(ar ?? { is_agent: false, bound_merchant_id: null });
+    const ar = sm
+      ? { is_agent: true, bound_merchant_id: sm.merchant_id, agent_code: sm.agent_code }
+      : { is_agent: false, bound_merchant_id: null, agent_code: null };
+    setAgentInfo(ar);
 
-    if (ar?.is_agent && ar.bound_merchant_id && ar.bound_merchant_id !== merchantId) {
+    if (ar.is_agent && ar.bound_merchant_id && ar.bound_merchant_id !== merchantId) {
       const { data: bm } = await supabase
         .from("merchants").select("shop_name").eq("id", ar.bound_merchant_id).maybeSingle();
       setBoundMerchantName(bm?.shop_name ?? "未知商家");
@@ -85,7 +90,7 @@ function ShopPage() {
       setBoundMerchantName(null);
     }
 
-    let code = (ar as any)?.agent_code ?? "";
+    let code = ar.agent_code ?? "";
     if (!code) {
       const { data: p } = await supabase.from("profiles").select("user_code").eq("user_id", user.id).maybeSingle();
       code = p?.user_code ?? "";

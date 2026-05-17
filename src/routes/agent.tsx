@@ -53,42 +53,47 @@ function AgentPage() {
     since14.setDate(since14.getDate() - 13);
     since14.setHours(0, 0, 0, 0);
 
-    const [arRes, pRes, cRes, cfgRes] = await Promise.all([
-      supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
+    const [smRes, pRes, cRes, cfgRes] = await Promise.all([
+      supabase.from("shop_memberships").select("merchant_id,is_agent,agent_code,joined_at").eq("user_id", user.id),
       supabase.from("profiles").select("id, user_code, nickname").eq("user_id", user.id).maybeSingle(),
       supabase.from("commission_records").select("amount, level, created_at, order_id").eq("beneficiary_id", user.id).order("created_at", { ascending: false }).limit(500),
       supabase.from("commission_config").select("l1_rate, platform_rate").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
 
-    if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "AgentPage" });
+    if (smRes.error) reportRpcError(smRes.error, { op: "shop_memberships.select", scope: "AgentPage" });
     if (cRes.error) reportRpcError(cRes.error, { op: "commission_records.select", scope: "AgentPage" });
     if (cfgRes.error) reportRpcError(cfgRes.error, { op: "commission_config.select", scope: "AgentPage" });
 
-    setInfo(arRes.data);
+    // 汇总：任一店铺为代理即视为代理，agent_code 取第一行
+    const smList = (smRes.data ?? []) as any[];
+    const agentRows = smList.filter((r) => r.is_agent);
+    setInfo({
+      is_agent: agentRows.length > 0,
+      agent_code: agentRows[0]?.agent_code ?? null,
+      bound_merchant_id: agentRows[0]?.merchant_id ?? null,
+    });
     setProfile(pRes.data);
     setCommissions(cRes.data ?? []);
     setConfig(cfgRes.data ?? null);
 
-    // 引流人数 + 最近 14 天每日新增引流（基于 agent_relations.created_at）
-    if (pRes.data?.id) {
-      const [l1, recentRel] = await Promise.all([
-        supabase.from("agent_relations").select("*", { count: "exact", head: true }).eq("upline_id", pRes.data.id),
-        supabase.from("agent_relations").select("created_at").eq("upline_id", pRes.data.id).gte("created_at", since14.toISOString()),
-      ]);
-      setCounts({ l1: l1.count ?? 0 });
+    // 引流人数 + 最近 14 天每日新增引流（基于 shop_memberships.joined_at, upline_user_id=自己）
+    const [l1, recentRel] = await Promise.all([
+      supabase.from("shop_memberships").select("*", { count: "exact", head: true }).eq("upline_user_id", user.id),
+      supabase.from("shop_memberships").select("joined_at").eq("upline_user_id", user.id).gte("joined_at", since14.toISOString()),
+    ]);
+    setCounts({ l1: l1.count ?? 0 });
 
-      // 按日聚合
-      const buckets: Record<string, number> = {};
-      for (let i = 0; i < 14; i++) {
-        const d = new Date(since14); d.setDate(since14.getDate() + i);
-        buckets[d.toISOString().slice(0, 10)] = 0;
-      }
-      (recentRel.data ?? []).forEach((r) => {
-        const k = new Date(r.created_at).toISOString().slice(0, 10);
-        if (k in buckets) buckets[k] += 1;
-      });
-      setRecentInvitees(Object.entries(buckets).map(([date, count]) => ({ date, count })));
+    // 按日聚合
+    const buckets: Record<string, number> = {};
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(since14); d.setDate(since14.getDate() + i);
+      buckets[d.toISOString().slice(0, 10)] = 0;
     }
+    (recentRel.data ?? []).forEach((r: any) => {
+      const k = new Date(r.joined_at).toISOString().slice(0, 10);
+      if (k in buckets) buckets[k] += 1;
+    });
+    setRecentInvitees(Object.entries(buckets).map(([date, count]) => ({ date, count })));
     setLoading(false);
   };
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user?.id]);
