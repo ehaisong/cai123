@@ -1,0 +1,2 @@
+UPDATE payment_orders SET status='pending', paid_at=NULL WHERE order_no='PROD_20260517040147_61d278f4' AND status='failed';
+SELECT mark_payment_paid('PROD_20260517040147_61d278f4'::text, 4.00::numeric, 'P202605171201510660735'::text);
