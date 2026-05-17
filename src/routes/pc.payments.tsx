@@ -45,6 +45,11 @@ const PROVIDER_FIELDS: Record<Provider, { key: string; label: string; type?: "pa
     { key: "alipay.productCode", label: "支付宝 AUT 编号 productCode", placeholder: "A000558443631" },
     { key: "alipay.paySubType", label: "支付宝 paySubType", placeholder: "NATIVE（默认）" },
   ],
+  "13pay": [
+    { key: "pid", label: "商户ID（pid）", placeholder: "10078" },
+    { key: "merchantPrivateKey", label: "商户私钥（PEM，仅 RSA 模式）", type: "textarea", placeholder: "-----BEGIN PRIVATE KEY-----\n..." },
+    { key: "platformPublicKey", label: "平台公钥（PEM）", type: "textarea", placeholder: "-----BEGIN PUBLIC KEY-----\n..." },
+  ],
   wechat: [
     { key: "app_id", label: "AppID" },
     { key: "mch_id", label: "商户号 MCHID" },
