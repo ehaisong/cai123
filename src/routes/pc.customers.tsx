@@ -183,7 +183,7 @@ function CustomersPage() {
               <SelectItem value="all">全部代理</SelectItem>
               <SelectItem value="__none__">未绑定代理</SelectItem>
               {agents.map((a) => (
-                <SelectItem key={a.profile_id} value={a.profile_id}>
+                <SelectItem key={a.user_id} value={a.user_id}>
                   {a.nickname ?? "未命名"}{a.phone ? ` · ${a.phone}` : ""}
                 </SelectItem>
               ))}
