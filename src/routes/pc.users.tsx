@@ -229,11 +229,11 @@ function MerchantTreeRow({ m, onToggleDisable }: { m: Row; onToggleDisable: () =
     setOpen(next);
     if (next && agents === null) {
       setLoadingAgents(true);
-      const { data: ar } = await supabase
-        .from("agent_relations")
-        .select("user_id,agent_code,l1_rate,created_at")
-        .eq("bound_merchant_id", m.id).eq("is_agent", true);
-      const list = ar ?? [];
+      const { data: sm } = await supabase
+        .from("shop_memberships")
+        .select("user_id,agent_code,l1_rate,joined_at")
+        .eq("merchant_id", m.id).eq("is_agent", true);
+      const list = (sm ?? []).map((a: any) => ({ ...a, created_at: a.joined_at }));
       const uids = list.map((a: any) => a.user_id);
       const [{ data: profs }, { data: ws }] = await Promise.all([
         uids.length ? supabase.from("profiles").select("user_id,id,nickname,phone,user_code").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
@@ -241,7 +241,7 @@ function MerchantTreeRow({ m, onToggleDisable }: { m: Row; onToggleDisable: () =
       ]);
       const pmap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p]));
       const wmap = Object.fromEntries((ws ?? []).map((w: any) => [w.user_id, Number(w.total_commission)]));
-      setAgents(list.map((a: any) => ({ ...a, profile: pmap[a.user_id], total_commission: wmap[a.user_id] ?? 0 })));
+      setAgents(list.map((a: any) => ({ ...a, merchant_id: m.id, profile: pmap[a.user_id], total_commission: wmap[a.user_id] ?? 0 })));
       setLoadingAgents(false);
     }
   };
