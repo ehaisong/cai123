@@ -549,6 +549,8 @@ export type Database = {
           issue_id: string | null
           merchant_id: string
           paid_at: string | null
+          platform_fee: number | null
+          platform_rate: number | null
           product_id: string
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
@@ -563,6 +565,8 @@ export type Database = {
           issue_id?: string | null
           merchant_id: string
           paid_at?: string | null
+          platform_fee?: number | null
+          platform_rate?: number | null
           product_id: string
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
@@ -577,6 +581,8 @@ export type Database = {
           issue_id?: string | null
           merchant_id?: string
           paid_at?: string | null
+          platform_fee?: number | null
+          platform_rate?: number | null
           product_id?: string
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
