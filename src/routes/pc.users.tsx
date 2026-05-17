@@ -52,15 +52,15 @@ function UsersPage() {
 
     const userIds = (merchants ?? []).map((m: any) => m.user_id);
     const merchantIds = (merchants ?? []).map((m: any) => m.id);
-    const [{ data: profs }, { data: ar }] = await Promise.all([
+    const [{ data: profs }, { data: sm }] = await Promise.all([
       userIds.length ? supabase.from("profiles").select("user_id,phone").in("user_id", userIds) : Promise.resolve({ data: [] as any[] }),
-      merchantIds.length ? supabase.from("agent_relations").select("bound_merchant_id,is_agent").in("bound_merchant_id", merchantIds) : Promise.resolve({ data: [] as any[] }),
+      merchantIds.length ? supabase.from("shop_memberships").select("merchant_id,is_agent").in("merchant_id", merchantIds) : Promise.resolve({ data: [] as any[] }),
     ]);
     const phoneMap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p.phone]));
     const agentCount: Record<string, number> = {};
     const custCount: Record<string, number> = {};
-    (ar ?? []).forEach((a: any) => {
-      const k = a.bound_merchant_id;
+    (sm ?? []).forEach((a: any) => {
+      const k = a.merchant_id;
       if (a.is_agent) agentCount[k] = (agentCount[k] ?? 0) + 1;
       else custCount[k] = (custCount[k] ?? 0) + 1;
     });
