@@ -25,15 +25,15 @@ function Inner() {
 
   const load = async () => {
     setLoading(true);
-    const { data: ar, error } = await supabase
-      .from("agent_relations")
-      .select("user_id, agent_code, bound_merchant_id, created_at, is_agent")
+    const { data: sm, error } = await supabase
+      .from("shop_memberships")
+      .select("user_id, agent_code, merchant_id, joined_at, is_agent")
       .eq("is_agent", true)
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (error) { reportRpcError(error, { op: "agent_relations.select", scope: "AdminAgents" }); setLoading(false); return; }
-    const userIds = (ar ?? []).map((a: any) => a.user_id);
-    const merchantIds = Array.from(new Set((ar ?? []).map((a: any) => a.bound_merchant_id).filter(Boolean)));
+      .order("joined_at", { ascending: false })
+      .limit(1000);
+    if (error) { reportRpcError(error, { op: "shop_memberships.select", scope: "AdminAgents" }); setLoading(false); return; }
+    const userIds = Array.from(new Set((sm ?? []).map((a: any) => a.user_id)));
+    const merchantIds = Array.from(new Set((sm ?? []).map((a: any) => a.merchant_id).filter(Boolean)));
     let pmap: Record<string, any> = {};
     let mmap: Record<string, any> = {};
     let wmap: Record<string, { commission: number; balance: number }> = {};
@@ -49,10 +49,12 @@ function Inner() {
       const { data: ms } = await supabase.from("merchants").select("id, shop_name").in("id", merchantIds as string[]);
       mmap = Object.fromEntries((ms ?? []).map((m: any) => [m.id, m]));
     }
-    setRows((ar ?? []).map((a: any) => ({
+    setRows((sm ?? []).map((a: any) => ({
       ...a,
+      created_at: a.joined_at,
+      bound_merchant_id: a.merchant_id,
       profile: pmap[a.user_id],
-      merchant: a.bound_merchant_id ? mmap[a.bound_merchant_id] : null,
+      merchant: a.merchant_id ? mmap[a.merchant_id] : null,
       total_commission: wmap[a.user_id]?.commission ?? 0,
       balance: wmap[a.user_id]?.balance ?? 0,
     })));
