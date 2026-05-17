@@ -1,0 +1,2 @@
+ALTER TABLE public.payment_channels DROP CONSTRAINT IF EXISTS payment_channels_provider_check;
+ALTER TABLE public.payment_channels ADD CONSTRAINT payment_channels_provider_check CHECK (provider IN ('3ypay','13pay','wechat','alipay','custom'));
