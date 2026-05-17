@@ -53,27 +53,6 @@ export type Database = {
         }
         Relationships: []
       }
-      agent_merchant_bindings: {
-        Row: {
-          created_at: string
-          id: string
-          merchant_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          merchant_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          merchant_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       agent_relations: {
         Row: {
           agent_code: string | null
@@ -1073,8 +1052,6 @@ export type Database = {
           is_disabled: boolean
           nickname: string | null
           phone: string | null
-          referred_merchant_id: string | null
-          referrer_id: string | null
           updated_at: string
           user_code: string
           user_id: string
@@ -1090,8 +1067,6 @@ export type Database = {
           is_disabled?: boolean
           nickname?: string | null
           phone?: string | null
-          referred_merchant_id?: string | null
-          referrer_id?: string | null
           updated_at?: string
           user_code: string
           user_id: string
@@ -1107,23 +1082,13 @@ export type Database = {
           is_disabled?: boolean
           nickname?: string | null
           phone?: string | null
-          referred_merchant_id?: string | null
-          referrer_id?: string | null
           updated_at?: string
           user_code?: string
           user_id?: string
           wechat_openid?: string | null
           wechat_unionid?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_referrer_id_fkey"
-            columns: ["referrer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       shop_memberships: {
         Row: {
