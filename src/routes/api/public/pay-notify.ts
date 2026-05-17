@@ -116,13 +116,16 @@ export const Route = createFileRoute("/api/public/pay-notify")({
           if (!order) return ok();
           if (order.status === "paid") return ok();
 
-          // 状态判断：3ypay state 字段（2=支付成功，3=失败，4=已取消，5=已退款）
+          // 状态判断：3ypay state 字段
+          // 0/1=初始/待支付，2=支付中（已下单），3=支付成功，4=支付失败，5=已关闭/退款
+          // 异步通知中 state=3 表示成功（同时会带 successTime）
           const state = Number(biz.state ?? body.state ?? 0);
-          const tradeStatus = state === 2
+          const hasSuccessTime = !!(biz.successTime ?? body.successTime);
+          const tradeStatus = (state === 3 || (state === 2 && hasSuccessTime))
             ? "SUCCESS"
-            : state === 3
+            : state === 4
               ? "FAILED"
-              : state === 4
+              : state === 5
                 ? "CLOSED"
                 : "WAIT";
 
