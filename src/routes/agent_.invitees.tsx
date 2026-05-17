@@ -101,7 +101,7 @@ function InviteesPage() {
           commByBuyer.set(bid, (commByBuyer.get(bid) ?? 0) + Number(c.amount));
         });
 
-        const list: Invitee[] = (rels ?? []).map((r) => {
+        const list: Invitee[] = dedupRels.map((r) => {
           const p = profMap.get(r.user_id);
           const agg = orderAgg.get(r.user_id);
           return {
