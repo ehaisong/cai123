@@ -103,11 +103,30 @@ function ShopPage() {
 
     // 登记入店：登录的非店主、非本店代理用户进入任意店铺即写入 shop_memberships。
     // 一旦写入就锁定终身归属（首次入店决定 upline / 分佣对象）。
-    // 关键：必须把 URL 上的 ?ref= 带上，否则代理推广码进来会丢失上线，
-    // 只有当 URL 没有 ref 时才回落到「店铺自带招客户码」M_<mid>。
+    // 关键：必须把 URL 上的 ?ref= 带上，否则代理推广码进来会丢失上线。
+    // 优先级：URL refParam > localStorage 暂存的 pending_referrer（仅当配套
+    // pending_merchant_id 匹配当前店铺时）> 店铺自带招客户码 M_<mid>。
+    // 中转站经 WeChat OAuth 回跳到 /shop/<mid> 时往往丢失 ?ref=，
+    // 此时必须从 localStorage 兜底，否则代理上线会丢。
     if (!m && (!ar?.is_agent || ar?.bound_merchant_id !== merchantId)) {
-      const effectiveRef = refParam && refParam.length > 0 ? refParam : `M_${merchantId}`;
-      await supabase.rpc("bind_shop_referrer", { _merchant_id: merchantId, _ref: effectiveRef });
+      let pendingRef: string | null = null;
+      let pendingMid: string | null = null;
+      try {
+        pendingRef = localStorage.getItem("pending_referrer");
+        pendingMid = localStorage.getItem("pending_merchant_id");
+      } catch {}
+      const stashedRef = pendingRef && pendingMid === merchantId ? pendingRef : null;
+      const effectiveRef = refParam && refParam.length > 0
+        ? refParam
+        : (stashedRef ?? `M_${merchantId}`);
+      const { error: bindErr } = await supabase.rpc("bind_shop_referrer", { _merchant_id: merchantId, _ref: effectiveRef });
+      if (!bindErr && stashedRef) {
+        // 已经使用过，清掉避免日后访问其他店铺时被错误复用
+        try {
+          localStorage.removeItem("pending_referrer");
+          localStorage.removeItem("pending_merchant_id");
+        } catch {}
+      }
     }
   };
 

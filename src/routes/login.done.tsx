@@ -104,6 +104,25 @@ function LoginDonePage() {
     }
     return_path = safeBusinessRedirect(return_path);
 
+    // 中转站回跳时如果 return_path 形如 /shop/<mid>?ref=A_xxx_M_<mid>，
+    // 把推广码 + 店铺 id 提前写入 localStorage，确保后续 SIGNED_IN 事件
+    // 触发的 auth-context 重放能调用 bind_shop_referrer 完成"客户-代理"绑定。
+    // 否则即便 return_path 在后续 resolveLoginDestination 里被替换为别的路径，
+    // 推广码也已经落盘，不会丢。
+    try {
+      if (typeof window !== "undefined" && return_path && return_path.startsWith("/shop/")) {
+        const u = new URL(return_path, window.location.origin);
+        const refInPath = u.searchParams.get("ref");
+        const midMatch = u.pathname.match(/^\/shop\/([0-9a-fA-F-]{36})$/);
+        if (refInPath && midMatch) {
+          localStorage.setItem("pending_referrer", refInPath);
+          localStorage.setItem("pending_merchant_id", midMatch[1]);
+        }
+      }
+    } catch {
+      // 忽略 URL 解析失败
+    }
+
     if (provider === "phone") setHint("正在完成短信登录，请稍候…");
     else if (provider === "wechat") setHint("微信授权成功，正在创建会话…");
 
