@@ -62,31 +62,37 @@ function CustomersPage() {
     const allUids = list.map((p: any) => p.user_id);
 
     // Identify agents and merchants to exclude
-    const [{ data: agentRels }, { data: ms }] = await Promise.all([
-      allUids.length ? supabase.from("agent_relations").select("user_id").in("user_id", allUids).eq("is_agent", true) : Promise.resolve({ data: [] as any[] }),
+    const [{ data: smAgents }, { data: ms }] = await Promise.all([
+      allUids.length ? supabase.from("shop_memberships").select("user_id").in("user_id", allUids).eq("is_agent", true) : Promise.resolve({ data: [] as any[] }),
       allUids.length ? supabase.from("merchants").select("user_id").in("user_id", allUids) : Promise.resolve({ data: [] as any[] }),
     ]);
-    const agentUids = new Set((agentRels ?? []).map((r: any) => r.user_id));
+    const agentUids = new Set((smAgents ?? []).map((r: any) => r.user_id));
     const merchantUids = new Set((ms ?? []).map((m: any) => m.user_id));
     const buyers = list.filter((p: any) => !agentUids.has(p.user_id) && !merchantUids.has(p.user_id));
     const uids = buyers.map((p: any) => p.user_id);
 
     const [{ data: rels }, { data: wallets }] = await Promise.all([
-      uids.length ? supabase.from("agent_relations").select("user_id,upline_id,bound_merchant_id").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
+      uids.length ? supabase.from("shop_memberships").select("user_id,upline_user_id,merchant_id,joined_at").in("user_id", uids).order("joined_at", { ascending: true }) : Promise.resolve({ data: [] as any[] }),
       uids.length ? supabase.from("wallets").select("user_id,balance,total_recharge").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
     ]);
-    const relMap = Object.fromEntries((rels ?? []).map((r: any) => [r.user_id, r]));
-    const upIds = Array.from(new Set((rels ?? []).map((r: any) => r.upline_id).filter(Boolean) as string[]));
-    const { data: upProfs } = upIds.length
-      ? await supabase.from("profiles").select("id,nickname,phone").in("id", upIds)
+    // 取每个 user 第一个有 upline 的店；否则任取第一行
+    const relMap: Record<string, any> = {};
+    (rels ?? []).forEach((r: any) => {
+      const cur = relMap[r.user_id];
+      if (!cur) relMap[r.user_id] = r;
+      else if (!cur.upline_user_id && r.upline_user_id) relMap[r.user_id] = r;
+    });
+    const upUids = Array.from(new Set(Object.values(relMap).map((r: any) => r.upline_user_id).filter(Boolean) as string[]));
+    const { data: upProfs } = upUids.length
+      ? await supabase.from("profiles").select("user_id,nickname,phone").in("user_id", upUids)
       : { data: [] as any[] };
-    const upPMap = Object.fromEntries((upProfs ?? []).map((p: any) => [p.id, p]));
+    const upPMap = Object.fromEntries((upProfs ?? []).map((p: any) => [p.user_id, p]));
     const wMap = Object.fromEntries((wallets ?? []).map((w: any) => [w.user_id, w]));
 
     setRows(buyers.map((p: any) => {
       const rel = relMap[p.user_id];
-      const upId = rel?.upline_id ?? null;
-      const up = upId ? upPMap[upId] : null;
+      const upUid = rel?.upline_user_id ?? null;
+      const up = upUid ? upPMap[upUid] : null;
       const w = wMap[p.user_id];
       return {
         user_id: p.user_id,
@@ -96,10 +102,10 @@ function CustomersPage() {
         phone: p.phone,
         created_at: p.created_at,
         is_disabled: p.is_disabled,
-        upline_profile_id: upId,
+        upline_user_id: upUid,
         upline_nickname: up?.nickname ?? null,
         upline_phone: up?.phone ?? null,
-        upline_merchant_id: rel?.bound_merchant_id ?? null,
+        upline_merchant_id: rel?.merchant_id ?? null,
         balance: Number(w?.balance ?? 0),
         total_recharge: Number(w?.total_recharge ?? 0),
       };
@@ -110,20 +116,18 @@ function CustomersPage() {
   useEffect(() => {
     (async () => {
       // Load agents and merchants for filter dropdowns
-      const { data: ar } = await supabase
-        .from("agent_relations")
-        .select("user_id,bound_merchant_id")
+      const { data: sm } = await supabase
+        .from("shop_memberships")
+        .select("user_id")
         .eq("is_agent", true)
-        .limit(500);
-      const agUids = (ar ?? []).map((a: any) => a.user_id);
+        .limit(2000);
+      const agUids = Array.from(new Set((sm ?? []).map((a: any) => a.user_id)));
       const { data: agProfs } = agUids.length
-        ? await supabase.from("profiles").select("id,user_id,nickname,phone").in("user_id", agUids)
+        ? await supabase.from("profiles").select("user_id,nickname,phone").in("user_id", agUids)
         : { data: [] as any[] };
-      const aprofMap = Object.fromEntries((agProfs ?? []).map((p: any) => [p.user_id, p]));
-      setAgents((ar ?? []).map((a: any) => {
-        const p = aprofMap[a.user_id];
-        return { profile_id: p?.id ?? "", nickname: p?.nickname ?? null, phone: p?.phone ?? null, bound_merchant_id: a.bound_merchant_id };
-      }).filter((x) => x.profile_id));
+      setAgents((agProfs ?? []).map((p: any) => ({
+        user_id: p.user_id, nickname: p.nickname ?? null, phone: p.phone ?? null,
+      })));
 
       const { data: mList } = await supabase.from("merchants").select("id,shop_name").order("shop_name");
       setMerchants(((mList ?? []) as any[]).map((m) => ({ id: m.id, shop_name: m.shop_name })));
