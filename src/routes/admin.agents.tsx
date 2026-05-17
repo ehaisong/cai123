@@ -80,7 +80,7 @@ function Inner() {
         {loading && <p className="text-center py-4 text-sm text-muted-foreground">加载中…</p>}
         {!loading && filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无代理</p>}
         {filtered.map((r) => (
-          <button key={r.user_id} onClick={() => setSelected(r)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
+          <button key={`${r.user_id}::${r.merchant_id ?? "_"}`} onClick={() => setSelected(r)} className="w-full text-left bg-card rounded-md p-3 hover:bg-accent">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium truncate">{r.profile?.nickname ?? "未命名"}</div>
               <span className="text-xs text-success">{fmtMoney(r.total_commission)} 累计佣金</span>
