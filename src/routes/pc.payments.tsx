@@ -28,6 +28,7 @@ type Channel = {
 
 const PROVIDER_LABEL: Record<Provider, string> = {
   "3ypay": "3ypay 聚合（微信+支付宝）",
+  "13pay": "13pay 聚合（微信 JSAPI 不关页）",
   wechat: "微信支付（直连）",
   alipay: "支付宝（直连）",
   custom: "自定义",
