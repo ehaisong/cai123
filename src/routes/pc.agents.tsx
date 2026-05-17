@@ -14,11 +14,10 @@ export const Route = createFileRoute("/pc/agents")({
 
 type Row = {
   user_id: string;
-  profile_id: string | null;
   agent_code: string | null;
   l1_rate: number | null;
-  bound_merchant_id: string | null;
-  created_at: string;
+  merchant_id: string | null;
+  joined_at: string;
   nickname: string | null;
   phone: string | null;
   user_code: string | null;
@@ -35,17 +34,17 @@ function AgentsPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: ar } = await supabase
-        .from("agent_relations")
-        .select("user_id,agent_code,l1_rate,bound_merchant_id,created_at")
+      const { data: sm } = await supabase
+        .from("shop_memberships")
+        .select("user_id,agent_code,l1_rate,merchant_id,joined_at")
         .eq("is_agent", true)
-        .order("created_at", { ascending: false })
-        .limit(500);
-      const list = ar ?? [];
-      const uids = list.map((a: any) => a.user_id);
-      const mids = Array.from(new Set(list.map((a: any) => a.bound_merchant_id).filter(Boolean)));
+        .order("joined_at", { ascending: false })
+        .limit(1000);
+      const list = sm ?? [];
+      const uids = Array.from(new Set(list.map((a: any) => a.user_id)));
+      const mids = Array.from(new Set(list.map((a: any) => a.merchant_id).filter(Boolean)));
       const [{ data: profs }, { data: ms }, { data: ws }] = await Promise.all([
-        uids.length ? supabase.from("profiles").select("user_id,id,nickname,phone,user_code").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
+        uids.length ? supabase.from("profiles").select("user_id,nickname,phone,user_code").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
         mids.length ? supabase.from("merchants").select("id,shop_name").in("id", mids as string[]) : Promise.resolve({ data: [] as any[] }),
         uids.length ? supabase.from("wallets").select("user_id,total_commission").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
       ]);
@@ -53,22 +52,32 @@ function AgentsPage() {
       const mmap = Object.fromEntries((ms ?? []).map((m: any) => [m.id, m.shop_name]));
       const wmap = Object.fromEntries((ws ?? []).map((w: any) => [w.user_id, Number(w.total_commission)]));
 
-      const profileIds = (profs ?? []).map((p: any) => p.id);
+      // 每个 (agent user_id, merchant_id) 的客户数
       const custMap: Record<string, number> = {};
-      if (profileIds.length) {
-        const { data: cs } = await supabase.from("agent_relations").select("upline_id").in("upline_id", profileIds).eq("is_agent", false);
-        (cs ?? []).forEach((c: any) => { custMap[c.upline_id] = (custMap[c.upline_id] ?? 0) + 1; });
+      if (uids.length) {
+        const { data: cs } = await supabase
+          .from("shop_memberships")
+          .select("upline_user_id,merchant_id")
+          .in("upline_user_id", uids)
+          .eq("is_agent", false);
+        (cs ?? []).forEach((c: any) => {
+          const k = `${c.upline_user_id}::${c.merchant_id}`;
+          custMap[k] = (custMap[k] ?? 0) + 1;
+        });
       }
 
       setRows(list.map((a: any) => ({
-        ...a,
-        profile_id: pmap[a.user_id]?.id ?? null,
+        user_id: a.user_id,
+        agent_code: a.agent_code,
+        l1_rate: a.l1_rate,
+        merchant_id: a.merchant_id,
+        joined_at: a.joined_at,
         nickname: pmap[a.user_id]?.nickname ?? null,
         phone: pmap[a.user_id]?.phone ?? null,
         user_code: pmap[a.user_id]?.user_code ?? null,
-        shop_name: a.bound_merchant_id ? mmap[a.bound_merchant_id] ?? null : null,
+        shop_name: a.merchant_id ? mmap[a.merchant_id] ?? null : null,
         total_commission: wmap[a.user_id] ?? 0,
-        customer_count: custMap[pmap[a.user_id]?.id] ?? 0,
+        customer_count: custMap[`${a.user_id}::${a.merchant_id}`] ?? 0,
       })));
       setLoading(false);
     })();
