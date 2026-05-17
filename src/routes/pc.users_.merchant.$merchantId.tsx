@@ -20,42 +20,46 @@ function MerchantDetail() {
   const [orders, setOrders] = useState<any[]>([]);
 
   const load = async () => {
-    const [{ data: merchant }, { data: ar }, { data: ords }] = await Promise.all([
+    const [{ data: merchant }, { data: sm }, { data: ords }] = await Promise.all([
       supabase.from("merchants").select("*").eq("id", merchantId).maybeSingle(),
-      supabase.from("agent_relations").select("user_id,agent_code,l1_rate,is_agent,created_at").eq("bound_merchant_id", merchantId).eq("is_agent", true),
+      supabase.from("shop_memberships").select("user_id,agent_code,l1_rate,is_agent,joined_at").eq("merchant_id", merchantId).eq("is_agent", true),
       supabase.from("orders").select("id,amount,status,created_at,paid_at,buyer_id,product_id,agent_l1_id").eq("merchant_id", merchantId).order("created_at", { ascending: false }).limit(200),
     ]);
     setM(merchant);
+    const ar = (sm ?? []).map((a: any) => ({ ...a, created_at: a.joined_at }));
 
-    const userIds = (ar ?? []).map((a: any) => a.user_id);
+    const userIds = ar.map((a: any) => a.user_id);
     const buyerIds = Array.from(new Set((ords ?? []).map((o: any) => o.buyer_id)));
     const productIds = Array.from(new Set((ords ?? []).map((o: any) => o.product_id)));
     const allUserIds = Array.from(new Set([...userIds, ...buyerIds]));
 
-    const [{ data: profs }, { data: wallets }, custCounts, { data: products }] = await Promise.all([
+    const [{ data: profs }, { data: wallets }, _custCounts, { data: products }] = await Promise.all([
       allUserIds.length ? supabase.from("profiles").select("user_id,nickname,phone,user_code,id").in("user_id", allUserIds) : Promise.resolve({ data: [] as any[] }),
       userIds.length ? supabase.from("wallets").select("user_id,total_commission").in("user_id", userIds) : Promise.resolve({ data: [] as any[] }),
-      Promise.resolve(null), // 占位
+      Promise.resolve(null),
       productIds.length ? supabase.from("products").select("id,title").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
     ]);
     const pmap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p]));
-    const pidByUid = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p.id]));
     const wmap = Object.fromEntries((wallets ?? []).map((w: any) => [w.user_id, Number(w.total_commission)]));
     const prodMap = Object.fromEntries((products ?? []).map((p: any) => [p.id, p.title]));
 
-    // 客户数：upline_id = 该代理的 profile.id
-    const agentProfIds = userIds.map((uid) => pidByUid[uid]).filter(Boolean);
+    // 客户数：本店中 upline_user_id = 该代理 user_id 的非代理成员
     const custMap: Record<string, number> = {};
-    if (agentProfIds.length) {
-      const { data: cs } = await supabase.from("agent_relations").select("upline_id").in("upline_id", agentProfIds).eq("is_agent", false);
-      (cs ?? []).forEach((c: any) => { custMap[c.upline_id] = (custMap[c.upline_id] ?? 0) + 1; });
+    if (userIds.length) {
+      const { data: cs } = await supabase
+        .from("shop_memberships")
+        .select("upline_user_id")
+        .eq("merchant_id", merchantId)
+        .eq("is_agent", false)
+        .in("upline_user_id", userIds);
+      (cs ?? []).forEach((c: any) => { custMap[c.upline_user_id] = (custMap[c.upline_user_id] ?? 0) + 1; });
     }
 
-    setAgents((ar ?? []).map((a: any) => ({
+    setAgents(ar.map((a: any) => ({
       ...a,
       profile: pmap[a.user_id],
       total_commission: wmap[a.user_id] ?? 0,
-      customer_count: custMap[pidByUid[a.user_id]] ?? 0,
+      customer_count: custMap[a.user_id] ?? 0,
     })));
     setOrders((ords ?? []).map((o: any) => ({
       ...o,
@@ -79,7 +83,7 @@ function MerchantDetail() {
 
   const unbindAgent = async (a: any) => {
     if (!confirm(`确定将「${a.profile?.nickname ?? a.user_id}」从本店解绑？该代理将不再归属本店。`)) return;
-    // 解绑：把本店的代理身份取消（保留客户关系），agent_relations 由触发器自动同步
+    // 解绑：把本店的代理身份取消（保留客户关系）
     const { error } = await supabase.from("shop_memberships").update({
       is_agent: false,
       agent_code: null,

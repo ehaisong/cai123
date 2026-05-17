@@ -41,18 +41,20 @@
 ### Batch 3：店铺落地/客户绑定读迁移（P1）
 - `src/routes/shop.$merchantId.tsx`：进店时检查/写入绑定关系（如果还有写入路径，确保只写 SM）
 
-### Batch 4：管理端/PC 列表读迁移（P2，可选优化）
-派生表读目前仍正确，只是为单一真源清晰起见：
+### Batch 4：管理端/PC 列表读迁移（已完成 ✅）
+全部迁至 `shop_memberships`：
 - `admin.agents.tsx`、`admin.kyc.tsx`
-- `pc.agents.tsx`、`pc.customers.tsx`（reads）、`pc.index.tsx` 统计、`pc.users.tsx`、`pc.users_.*.tsx` 读
-- `pc.users_.merchant.$merchantId.tsx` 读
+- `pc.agents.tsx`、`pc.customers.tsx`（reads + 过滤器）、`pc.index.tsx`（代理总数去重）、`pc.users.tsx`（含商家展开/代理子表）、`pc.users_.merchant.$merchantId.tsx`、`pc.users_.agent.$userId.tsx`
 
-迁移收益：去掉 `profiles.id ↔ upline_id` 的间接 join；分店视图天然支持多店。
+注意：
+- `pc.customers.tsx` 的 `agentId` URL 参数语义从 `profile.id` 改为 `user_id`；`pc.agents.tsx` 已同步更新跳转。
+- 代理列表（pc.agents / admin.agents）从「每用户一行」变为「每 (用户, 店铺) 一行」，更准确反映多店身份；列表 key 使用 `user_id::merchant_id`。
+- 客户数按 (代理 user_id, merchant_id) 统计。
 
-### Batch 5：派生表淘汰（最终步）
-全部读迁完后：
+### Batch 5：派生表淘汰（下一步可执行）
+全部读已迁完，可以安全：
 - 删除 `agent_relations` 表及触发器 `trg_sync_agent_relations_sm`
-- 清理 `src/integrations/supabase/types.ts` 中对应类型（自动重生成）
+- 重新生成 `src/integrations/supabase/types.ts`
 
 ---
 

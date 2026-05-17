@@ -23,12 +23,13 @@ function AgentDetail() {
   const [stats, setStats] = useState({ total: 0, today: 0, month: 0 });
 
   const load = async () => {
-    const [{ data: p }, { data: ar }, { data: cr }] = await Promise.all([
+    const [{ data: p }, { data: smAgent }, { data: cr }] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      supabase.from("agent_relations").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("shop_memberships").select("merchant_id,agent_code,l1_rate,joined_at,is_agent").eq("user_id", userId).eq("is_agent", true).order("joined_at", { ascending: true }),
       supabase.from("commission_records").select("*").eq("beneficiary_id", userId).order("created_at", { ascending: false }).limit(200),
     ]);
     setProfile(p);
+    const ar = (smAgent && smAgent[0]) ? { ...smAgent[0], bound_merchant_id: smAgent[0].merchant_id, user_id: userId } : null;
     setRelation(ar);
     if (ar?.bound_merchant_id) {
       const { data: m } = await supabase.from("merchants").select("id,shop_name").eq("id", ar.bound_merchant_id).maybeSingle();

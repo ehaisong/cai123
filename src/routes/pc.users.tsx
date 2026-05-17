@@ -52,15 +52,15 @@ function UsersPage() {
 
     const userIds = (merchants ?? []).map((m: any) => m.user_id);
     const merchantIds = (merchants ?? []).map((m: any) => m.id);
-    const [{ data: profs }, { data: ar }] = await Promise.all([
+    const [{ data: profs }, { data: sm }] = await Promise.all([
       userIds.length ? supabase.from("profiles").select("user_id,phone").in("user_id", userIds) : Promise.resolve({ data: [] as any[] }),
-      merchantIds.length ? supabase.from("agent_relations").select("bound_merchant_id,is_agent").in("bound_merchant_id", merchantIds) : Promise.resolve({ data: [] as any[] }),
+      merchantIds.length ? supabase.from("shop_memberships").select("merchant_id,is_agent").in("merchant_id", merchantIds) : Promise.resolve({ data: [] as any[] }),
     ]);
     const phoneMap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p.phone]));
     const agentCount: Record<string, number> = {};
     const custCount: Record<string, number> = {};
-    (ar ?? []).forEach((a: any) => {
-      const k = a.bound_merchant_id;
+    (sm ?? []).forEach((a: any) => {
+      const k = a.merchant_id;
       if (a.is_agent) agentCount[k] = (agentCount[k] ?? 0) + 1;
       else custCount[k] = (custCount[k] ?? 0) + 1;
     });
@@ -229,11 +229,11 @@ function MerchantTreeRow({ m, onToggleDisable }: { m: Row; onToggleDisable: () =
     setOpen(next);
     if (next && agents === null) {
       setLoadingAgents(true);
-      const { data: ar } = await supabase
-        .from("agent_relations")
-        .select("user_id,agent_code,l1_rate,created_at")
-        .eq("bound_merchant_id", m.id).eq("is_agent", true);
-      const list = ar ?? [];
+      const { data: sm } = await supabase
+        .from("shop_memberships")
+        .select("user_id,agent_code,l1_rate,joined_at")
+        .eq("merchant_id", m.id).eq("is_agent", true);
+      const list = (sm ?? []).map((a: any) => ({ ...a, created_at: a.joined_at }));
       const uids = list.map((a: any) => a.user_id);
       const [{ data: profs }, { data: ws }] = await Promise.all([
         uids.length ? supabase.from("profiles").select("user_id,id,nickname,phone,user_code").in("user_id", uids) : Promise.resolve({ data: [] as any[] }),
@@ -241,7 +241,7 @@ function MerchantTreeRow({ m, onToggleDisable }: { m: Row; onToggleDisable: () =
       ]);
       const pmap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p]));
       const wmap = Object.fromEntries((ws ?? []).map((w: any) => [w.user_id, Number(w.total_commission)]));
-      setAgents(list.map((a: any) => ({ ...a, profile: pmap[a.user_id], total_commission: wmap[a.user_id] ?? 0 })));
+      setAgents(list.map((a: any) => ({ ...a, merchant_id: m.id, profile: pmap[a.user_id], total_commission: wmap[a.user_id] ?? 0 })));
       setLoadingAgents(false);
     }
   };
@@ -320,12 +320,13 @@ function AgentSubRow({ a }: { a: any }) {
   const expand = async () => {
     const next = !open;
     setOpen(next);
-    if (next && customers === null && a.profile?.id) {
+    if (next && customers === null && a.user_id && a.merchant_id) {
       setLoadingC(true);
       const { data: cs } = await supabase
-        .from("agent_relations").select("user_id,is_agent,created_at")
-        .eq("upline_id", a.profile.id);
-      const list = cs ?? [];
+        .from("shop_memberships").select("user_id,is_agent,joined_at")
+        .eq("upline_user_id", a.user_id)
+        .eq("merchant_id", a.merchant_id);
+      const list = (cs ?? []).map((c: any) => ({ ...c, created_at: c.joined_at }));
       const uids = list.map((c: any) => c.user_id);
       const { data: profs } = uids.length
         ? await supabase.from("profiles").select("user_id,nickname,phone,user_code").in("user_id", uids)
