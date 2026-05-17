@@ -145,7 +145,7 @@ function ShopPage() {
     }
     loadAgent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merchantId, user?.id]);
+  }, [merchantId, user?.id, refParam]);
 
   const becomeAgentHere = async () => {
     setBusy(true);
