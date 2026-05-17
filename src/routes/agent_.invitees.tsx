@@ -44,25 +44,34 @@ function InviteesPage() {
       if (!user) { setLoading(false); return; }
       setLoading(true);
       try {
-        const [arRes, pRes] = await Promise.all([
-          supabase.from("agent_relations").select("*").eq("user_id", user.id).maybeSingle(),
+        const [smSelfRes, pRes] = await Promise.all([
+          supabase.from("shop_memberships").select("is_agent").eq("user_id", user.id).eq("is_agent", true).limit(1).maybeSingle(),
           supabase.from("profiles").select("id, user_code").eq("user_id", user.id).maybeSingle(),
         ]);
-        if (arRes.error) reportRpcError(arRes.error, { op: "agent_relations.select", scope: "Invitees" });
-        setInfo(arRes.data);
+        if (smSelfRes.error) reportRpcError(smSelfRes.error, { op: "shop_memberships.self_check", scope: "Invitees" });
+        const isAgent = !!smSelfRes.data?.is_agent;
+        setInfo({ is_agent: isAgent });
 
-        if (!pRes.data?.id || !arRes.data?.is_agent) { setItems([]); return; }
-        const myPid = pRes.data.id;
+        if (!pRes.data?.id || !isAgent) { setItems([]); return; }
 
-        // 拉取直接下级 agent_relations（仅 L1）
+        // 拉取直接下级（按 SM.upline_user_id = 自己），可能跨多个店铺，按 user_id 去重
         const { data: rels, error: rErr } = await supabase
-          .from("agent_relations")
-          .select("user_id, upline_id, created_at")
-          .eq("upline_id", myPid)
-          .order("created_at", { ascending: false });
-        if (rErr) reportRpcError(rErr, { op: "agent_relations.list_invitees", scope: "Invitees" });
+          .from("shop_memberships")
+          .select("user_id, joined_at")
+          .eq("upline_user_id", user.id)
+          .order("joined_at", { ascending: false });
+        if (rErr) reportRpcError(rErr, { op: "shop_memberships.list_invitees", scope: "Invitees" });
 
-        const userIds = (rels ?? []).map((r) => r.user_id);
+        // 去重：同一个 user 可能在多家店都挂在我下面，取最早一次
+        const dedupMap = new Map<string, { user_id: string; created_at: string }>();
+        (rels ?? []).forEach((r: any) => {
+          const prev = dedupMap.get(r.user_id);
+          if (!prev || new Date(r.joined_at) < new Date(prev.created_at)) {
+            dedupMap.set(r.user_id, { user_id: r.user_id, created_at: r.joined_at });
+          }
+        });
+        const dedupRels = Array.from(dedupMap.values());
+        const userIds = dedupRels.map((r) => r.user_id);
         if (userIds.length === 0) { setItems([]); return; }
 
         const [profsRes, ordsRes, commsRes] = await Promise.all([
