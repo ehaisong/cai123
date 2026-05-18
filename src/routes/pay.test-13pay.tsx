@@ -163,7 +163,7 @@ function Test13Page() {
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground space-y-1">
             <p>当前环境：<strong>{inWechat ? "微信内" : "外部浏览器"}</strong></p>
             <p>此通道走 <strong>跳转支付</strong>，付款后页面会自动回跳到 <code>/pay/return</code>，无需手动重新打开本站。</p>
-            <p>通道配置：管理后台 → 支付通道 → 13pay（apiBase / pid / key）</p>
+            <p>通道配置：管理后台 → 支付通道 → 13pay（apiBase / pid / 商户私钥 / 平台公钥）</p>
             <p>回调：<code>https://wordpro.cn/api/public/pay-13pay-notify</code></p>
           </div>
 
@@ -236,7 +236,7 @@ function Test13Page() {
           <p className="font-semibold text-foreground">使用步骤</p>
           <ol className="list-decimal list-inside space-y-0.5">
             <li>管理后台 /pc/payments → 新增/编辑「13pay 聚合」通道（启用）</li>
-            <li>填写 apiBase（默认 https://pay.13pay.cn/）、商户 ID（pid）、商户密钥（MD5 通讯密钥）</li>
+            <li>填写 apiBase（默认 https://pay.13pay.cn/api）、商户 ID（pid）、商户私钥（PKCS#8）、平台公钥</li>
             <li>用微信扫码打开本页 /pay/test-13pay，点击支付</li>
             <li>页面短暂跳转到 13pay 收银台 → 微信自动弹出支付键盘 → 付完自动回跳本站</li>
           </ol>

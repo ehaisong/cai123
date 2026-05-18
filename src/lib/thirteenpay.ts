@@ -1,7 +1,6 @@
-// @deprecated 13pay 当前走彩虹易支付 MD5 协议（见 src/lib/epay-sign.ts）。本文件保留备用。
 // 13pay（pay.13pay.cn）签名/验签工具
-// 文档：https://pay.13pay.cn/doc/sign_note.html
-// 算法：SHA256withRSA（sign_type=RSA）
+// 文档：https://pay.13pay.cn/doc/index.html
+// 算法：SHA256withRSA（sign_type=RSA），PKCS1v15 padding
 // 待签字符串：剔除 sign / sign_type / 空值，按 key ASCII 升序，k=v&k=v 拼接（不 URL 编码）
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {

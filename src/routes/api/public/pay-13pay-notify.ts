@@ -2,7 +2,7 @@
 // notify_url 用 GET，验签通过后必须返回纯文本 "success"
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { verifyEpay } from "@/lib/epay-sign";
+import { verify13 } from "@/lib/thirteenpay";
 
 const ok = () =>
   new Response("success", { status: 200, headers: { "Content-Type": "text/plain" } });
@@ -39,19 +39,19 @@ async function handle(params: Record<string, string>, mode: "GET" | "POST") {
   const sign = String(params.sign ?? "");
   if (!sign) return failPlain("missing sign");
 
-  // 取 13pay key
+  // 取 13pay 平台公钥
   const { data: chans } = await supabaseAdmin
     .from("payment_channels")
     .select("provider, config")
     .eq("is_enabled", true);
   const chan = (chans ?? []).find((c: { provider: string }) => c.provider === "13pay");
-  const key = String(((chan?.config ?? {}) as Record<string, unknown>).key ?? "");
-  if (!key) {
-    await log(orderNo || null, "notify_verify", "error", "未配置 13pay key", {});
+  const platformPubKey = String(((chan?.config ?? {}) as Record<string, unknown>).platformPublicKey ?? "");
+  if (!platformPubKey) {
+    await log(orderNo || null, "notify_verify", "error", "未配置 13pay 平台公钥", {});
     return failPlain("no key", 500);
   }
 
-  const verified = verifyEpay(params, sign, key);
+  const verified = await verify13(params, sign, platformPubKey);
   if (!verified) {
     await log(orderNo || null, "notify_verify", "error", "13pay 验签失败", { params });
     return failPlain("fail", 401);
