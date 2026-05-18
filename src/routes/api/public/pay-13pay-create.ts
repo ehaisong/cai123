@@ -1,12 +1,11 @@
-// 13pay 统一下单接口（pay.13pay.cn /api/pay/create）
-// 文档：https://pay.13pay.cn/doc/pay_create.html
-// 此路由会按 method=jsapi 创建订单并返回原生 jsApiParameters，
-// 前端在微信内直接 WeixinJSBridge.invoke('getBrandWCPayRequest', ...) 拉起，不会跳转任何外部页面。
+// 13pay / 彩虹易支付（Epay）统一下单接口
+// 协议：POST {apiBase}mapi.php，application/x-www-form-urlencoded，MD5 签名
+// 文档：彩虹易支付 SDK（EpayCore），见上传的 epay_plugin.php 范例
+// 返回 code===1 成功，优先取 payurl（跳转） → qrcode（二维码） → urlscheme（小程序）
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sign13 } from "@/lib/thirteenpay";
+import { signEpay } from "@/lib/epay-sign";
 
-const GATEWAY = "https://pay.13pay.cn/api/pay/create";
 const NOTIFY_URL = "https://wordpro.cn/api/public/pay-13pay-notify";
 
 const CORS = {
@@ -55,13 +54,22 @@ function sanitize(s: string): string {
     .slice(0, 60) || "支付订单";
 }
 
+function detectDevice(ua: string): "wechat" | "alipay" | "qq" | "mobile" | "pc" {
+  const u = (ua || "").toLowerCase();
+  if (/micromessenger|wechat|weixin/.test(u)) return "wechat";
+  if (/alipayclient/.test(u)) return "alipay";
+  if (/qq\//.test(u)) return "qq";
+  if (/mobile|android|iphone|ipad/.test(u)) return "mobile";
+  return "pc";
+}
+
 export const Route = createFileRoute("/api/public/pay-13pay-create")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       GET: async () => json({ ok: true, endpoint: "pay-13pay-create", method: "POST" }),
       POST: async ({ request }) => {
-        let body: { orderNo?: string; payType?: string; returnOrigin?: string; method?: string } = {};
+        let body: { orderNo?: string; payType?: string; returnOrigin?: string } = {};
         try {
           body = await request.json();
         } catch {
@@ -69,8 +77,6 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
         }
         const orderNo = String(body.orderNo || "");
         const payType = String(body.payType || "wechat");
-        // method 默认 jsapi（微信内直拉），可传 jump 走跳转兜底
-        const method = String(body.method || "jsapi");
         if (!orderNo) return json({ success: false, error: "缺少 orderNo" });
 
         // 1. 取订单
@@ -99,62 +105,55 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
         }
         const cfg = (chan.config ?? {}) as Record<string, unknown>;
         const pid = String(cfg.pid ?? "").trim();
-        const merchantPrivateKey = String(cfg.merchantPrivateKey ?? "");
-        const platformPublicKey = String(cfg.platformPublicKey ?? "");
-        if (!pid || !merchantPrivateKey || !platformPublicKey) {
+        const key = String(cfg.key ?? "").trim();
+        let apiBase = String(cfg.apiBase ?? "https://pay.13pay.cn/").trim();
+        if (!apiBase.endsWith("/")) apiBase += "/";
+        const siteName = String(cfg.siteName ?? "").trim();
+        if (!pid || !key) {
           await log(orderNo, "create_error", "error", "13pay 通道配置不完整", {
-            hasPid: !!pid, hasPriv: !!merchantPrivateKey, hasPub: !!platformPublicKey,
+            hasPid: !!pid, hasKey: !!key, apiBase,
           });
-          return json({ success: false, error: "13pay 通道配置不完整（pid / 私钥 / 公钥）" });
+          return json({ success: false, error: "13pay 通道配置不完整（apiBase / pid / key）" });
         }
 
-        // 3. 客户端 IP
+        // 3. 客户端 IP & device
         const xff = request.headers.get("x-forwarded-for") || "";
         const clientip =
           xff.split(",")[0].trim() ||
           request.headers.get("cf-connecting-ip") ||
           request.headers.get("x-real-ip") ||
           "127.0.0.1";
+        const device = detectDevice(request.headers.get("user-agent") || "");
 
-        // 4. 组装请求参数
+        // 4. 组装参数
         const params: Record<string, string> = {
           pid,
-          method, // jsapi | jump | web ...
           type: payType === "alipay" ? "alipay" : "wxpay",
-          out_trade_no: orderNo,
+          device,
+          clientip,
           notify_url: NOTIFY_URL,
           return_url: `https://wordpro.cn/pay/return?orderNo=${encodeURIComponent(orderNo)}`,
+          out_trade_no: orderNo,
           name: sanitize(order.subject || "支付订单"),
           money: Number(order.amount).toFixed(2),
-          clientip,
-          timestamp: String(Math.floor(Date.now() / 1000)),
-          sign_type: "RSA",
         };
-        // 微信内 method=web 时建议带 device=wechat
-        if (method === "web") params.device = "wechat";
+        if (siteName) params.sitename = siteName;
 
-        let sign: string;
-        try {
-          sign = await sign13(params, merchantPrivateKey);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          await log(orderNo, "create_error", "error", `签名失败：${msg}`, { params });
-          return json({ success: false, error: `签名失败：${msg}` });
-        }
-        const fullParams = { ...params, sign };
-
-        // 5. POST form-urlencoded
+        const sign = signEpay(params, key);
+        const fullParams: Record<string, string> = { ...params, sign, sign_type: "MD5" };
+        const gateway = `${apiBase}mapi.php`;
         const formBody = new URLSearchParams(fullParams).toString();
-        await log(orderNo, "create_request", "info", "POST 13pay /api/pay/create", {
-          params: fullParams, gateway: GATEWAY,
+
+        await log(orderNo, "create_request", "info", `POST ${gateway}`, {
+          params: fullParams, gateway,
         });
 
-        // 带重试 + UA 头 + 超时；workerd 偶发对国内站点首包 TLS 握手失败
+        // 5. fetch with UA + 15s timeout + 1 retry
         const doFetch = async (): Promise<Response> => {
           const ac = new AbortController();
           const t = setTimeout(() => ac.abort(), 15000);
           try {
-            return await fetch(GATEWAY, {
+            return await fetch(gateway, {
               method: "POST",
               headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -195,7 +194,7 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
         });
 
         const code = Number(respJson.code ?? -1);
-        if (code !== 0) {
+        if (code !== 1) {
           return json({
             success: false,
             error: String(respJson.msg ?? `13pay 返回 code=${code}`),
@@ -204,11 +203,11 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
           });
         }
 
-        const payType13 = String(respJson.pay_type ?? "");
-        const payInfo = String(respJson.pay_info ?? "");
+        const payurl = String(respJson.payurl ?? "");
+        const qrcode = String(respJson.qrcode ?? "");
+        const urlscheme = String(respJson.urlscheme ?? "");
         const tradeNo = String(respJson.trade_no ?? "");
 
-        // 写回平台单号
         if (tradeNo) {
           await supabaseAdmin
             .from("payment_orders")
@@ -216,23 +215,25 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
             .eq("order_no", orderNo);
         }
 
-        // 解析 pay_info：jsapi 时是 jsApiParameters JSON 字符串，jump/qrcode 时是 URL
-        let jsApiParams: Record<string, string> | null = null;
-        if (payType13 === "jsapi") {
-          try {
-            jsApiParams = JSON.parse(payInfo) as Record<string, string>;
-          } catch {
-            jsApiParams = null;
-          }
+        let outPayType: "jump" | "qrcode" | "scheme" | "unknown" = "unknown";
+        let outUrl = "";
+        if (payurl) { outPayType = "jump"; outUrl = payurl; }
+        else if (qrcode) { outPayType = "qrcode"; outUrl = qrcode; }
+        else if (urlscheme) { outPayType = "scheme"; outUrl = urlscheme; }
+        else {
+          return json({
+            success: false,
+            error: "13pay 未返回支付链接",
+            raw: respJson,
+          });
         }
 
         return json({
           success: true,
-          payType: payType13,           // jsapi | jump | qrcode ...
-          payInfo,                       // 原始字符串
-          jsApiParams,                   // 仅 jsapi
-          payUrl: payType13 === "jump" ? payInfo : null,
-          qrcode: payType13 === "qrcode" ? payInfo : null,
+          payType: outPayType,
+          payUrl: outPayType === "jump" ? outUrl : null,
+          qrcode: outPayType === "qrcode" ? outUrl : null,
+          urlscheme: outPayType === "scheme" ? outUrl : null,
           tradeNo,
         });
       },

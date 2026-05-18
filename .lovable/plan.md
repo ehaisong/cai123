@@ -1,72 +1,55 @@
-## 方案 A 步骤一缺漏检查
+## 结论
 
-代码搜索结果：
-- `agent_merchant_bindings`、`profiles.referrer_id`、`profiles.referred_merchant_id` 已无任何业务代码引用 ✅
-- `agent_relations` 仍有 **20+ 处读** 和 **4 处写**
+按彩虹易支付（Epay）**MD5 + mapi.php** 协议重写 13pay 对接。不需要 openid，"sub_openid 不能为空"是之前错走 RSA JSAPI 接口的副作用。微信内体验：**点付款 → 整页跳到 13pay 收银台 → 付完 13pay 自动回跳 `https://wordpro.cn/pay/return?orderNo=...` → 该页轮询订单状态 → 显示成功**。不使用 iframe（X-Frame-Options / 微信内 iframe 唤起支付不稳定）。
 
-**关键缺漏（P0，必须立刻修，目前是 bug）**
+## 文件改动
 
-`agent_relations` 现在是由 `shop_memberships` 触发器生成的派生表，对它的任何直接写入都会在下一次 SM 变更时被覆盖；而且单店 `l1_rate` 等字段的"真源"已经是 SM。但前端仍有 4 处直接写 AR：
+### 新增 `src/lib/epay-sign.ts`
+- 纯 JS MD5 实现（约 30 行，workerd 的 `crypto.subtle` 不支持 MD5）
+- 导出 `md5(s)` / `signEpay(params, key)` / `verifyEpay(params, sign, key)`
+- 签名规则：剔除 `sign`/`sign_type`/空值 → key ASCII 升序 → `k=v&k=v` 拼接 → 末尾追加 `key`（直接拼字符串，不加 `&`）→ MD5 小写
 
-| 文件 | 行 | 现状写入 | 应改为 |
-|---|---|---|---|
-| `src/routes/pc.customers.tsx` | 137 | `agent_relations.update({upline_id:null})` | `shop_memberships.update({upline_user_id:null})`（按 user_id+merchant_id） |
-| `src/routes/pc.users_.agent.$userId.tsx` | 58 | 同上 | 同上 |
-| `src/routes/pc.users_.buyer.$userId.tsx` | 48 | 同上 | 同上 |
-| `src/routes/pc.users_.merchant.$merchantId.tsx` | 74 | `agent_relations.update({l1_rate})` | `shop_memberships.update({l1_rate})` |
+### 改写 `src/routes/api/public/pay-13pay-create.ts`
+- 通道配置改读：`apiBase`（如 `https://pay.13pay.cn/`，需以 `/` 结尾，缺时自动补）/ `pid` / `key` / `siteName`
+- 构造参数：`{pid, type:'wxpay'|'alipay', device:'wechat'|'mobile'|'pc', clientip, notify_url, return_url, out_trade_no, name, money, sitename?}`
+- MD5 签名 → `POST {apiBase}mapi.php`（`application/x-www-form-urlencoded`）
+- 解析 `code===1`：优先取 `payurl`（跳转）→ `qrcode`（二维码）→ `urlscheme`（小程序）；否则透传 `msg`
+- 返回 `{ success, payType:'jump'|'qrcode'|'scheme', payUrl, qrcode, tradeNo }`，**删除 `jsApiParams`**
+- 保留 UA / 15s 超时 / 一次重试
 
-注意：AR 是"每用户一行"的全局派生视图；SM 是"每(用户,店铺)一行"。所以解绑客户、改分成都需要 **指定 merchant_id**——这恰恰是新模型期望的行为（多店时只解绑/调整当前店）。
+### 改写 `src/routes/api/public/pay-13pay-notify.ts`
+- 读 **GET 查询串**（彩虹易支付的 notify 是 GET）
+- 用 `key` 重算 MD5 验签
+- 验签通过 + `trade_status === 'TRADE_SUCCESS'` + 金额校验 → `mark_payment_paid` → 返回**纯文本 `success`**；否则 `fail`
+- 全程写 `payment_logs`
 
----
+### 改写 `src/routes/pay.test-13pay.tsx`
+- 删除 WeixinJSBridge / JSAPI 直拉逻辑
+- 流程：创建订单 → 调 create 接口 → 拿 `payUrl` → 顶部提示"即将跳转到 13pay 安全收银台，付完会自动返回本站"→ 1 秒后 `window.location.href = payUrl`
+- 微信外若返回 `qrcode` 则展示二维码图片
+- 文案更新："此通道走跳转支付。付款后页面会自动回跳到 `/pay/return`，无需手动重新打开。"
 
-## 分批迁移计划
+### 改 `src/routes/pay.return.tsx`
+- 已存在；确认会读 `?orderNo=` 并调 `PaymentService.startPolling` 等异步通知，把成功 UI 显示出来。如果当前没启动轮询则补上（≤2 min，每 2.5s 一次）。
 
-### Batch 1：修写入（P0，本批必须做完）
-- `pc.customers.tsx`、`pc.users_.agent.$userId.tsx`、`pc.users_.buyer.$userId.tsx`：解绑改为 `shop_memberships` 按 (user_id, merchant_id) 更新 `upline_user_id=null`，需要先确定"在哪个店解绑"
-  - 客户详情/代理详情页：使用该客户所在的 `bound_merchant_id` 作为 merchant_id
-  - PC 客户列表：每行已知归属店铺
-- `pc.users_.merchant.$merchantId.tsx` 改比例：直接 `shop_memberships.update({l1_rate})` where user_id+merchant_id=本店
+### 改 `src/routes/pc.payments.tsx`
+- `channelFields["13pay"]` 改为：
+  - `apiBase`（默认 `https://pay.13pay.cn/`）
+  - `pid`（商户 ID）
+  - `key`（**MD5 商户密钥/通讯密钥**，password 类型）
+  - `siteName`（可选，传给 13pay 用于收银台显示）
+- 移除 `merchantPrivateKey` / `platformPublicKey` 字段（旧数据保留在 JSON 不影响）
 
-验收：执行解绑/改比例后，触发器自动同步 AR，刷新无回滚。
+### `src/lib/thirteenpay.ts`
+- 顶部加 `@deprecated` 注释，保留备用（万一以后真要做 13pay 公众号 JSAPI）
 
-### Batch 2：H5 代理中心读迁移（P1）
-- `src/routes/agent.tsx`：当前读 AR 取代理身份/绑定店铺 → 改读 SM（`is_agent=true`，可能多行，按当前激活店选一行；或汇总）
-- `src/routes/agent_.invitees.tsx`：下级列表 `upline_id=profile.id` → 改 SM `upline_user_id=auth.user.id`（少一次 profiles 查询）
-- `src/routes/agent_.share.tsx`：取 agent_code/bound_merchant → 直接 SM 按当前激活店
-- `src/routes/merchants.tsx`：取 bound_merchant_id → SM 列出所有 `is_agent=true` 的店
-- `src/routes/merchant.messages.tsx`：商家给旗下代理推送 → SM where merchant_id+is_agent
+## 你需要做的事
+1. 计划通过后我会落地代码。
+2. 落地后请到 **PC 管理后台 → 支付通道 → 编辑 13pay**，把字段重新填一遍：
+   - apiBase：`https://pay.13pay.cn/`
+   - pid：你的商户 ID
+   - **key：13pay 后台"通讯密钥(MD5)"那串字符**（不是 RSA 私钥）
+   - siteName：可选
+3. 在微信内打开 `/pay/test-13pay`，1 元测试。
 
-验收：代理中心、邀请列表、分享码、店铺列表四个入口数据一致。
-
-### Batch 3：店铺落地/客户绑定读迁移（P1）
-- `src/routes/shop.$merchantId.tsx`：进店时检查/写入绑定关系（如果还有写入路径，确保只写 SM）
-
-### Batch 4：管理端/PC 列表读迁移（已完成 ✅）
-全部迁至 `shop_memberships`：
-- `admin.agents.tsx`、`admin.kyc.tsx`
-- `pc.agents.tsx`、`pc.customers.tsx`（reads + 过滤器）、`pc.index.tsx`（代理总数去重）、`pc.users.tsx`（含商家展开/代理子表）、`pc.users_.merchant.$merchantId.tsx`、`pc.users_.agent.$userId.tsx`
-
-注意：
-- `pc.customers.tsx` 的 `agentId` URL 参数语义从 `profile.id` 改为 `user_id`；`pc.agents.tsx` 已同步更新跳转。
-- 代理列表（pc.agents / admin.agents）从「每用户一行」变为「每 (用户, 店铺) 一行」，更准确反映多店身份；列表 key 使用 `user_id::merchant_id`。
-- 客户数按 (代理 user_id, merchant_id) 统计。
-
-### Batch 5：派生表淘汰（下一步可执行）
-全部读已迁完，可以安全：
-- 删除 `agent_relations` 表及触发器 `trg_sync_agent_relations_sm`
-- 重新生成 `src/integrations/supabase/types.ts`
-
----
-
-## 技术备注
-
-- `shop_memberships` 字段：`user_id, merchant_id, upline_user_id, is_agent, agent_code, l1_rate, joined_at` — 完全覆盖 AR 的语义，且 upline 直接用 auth user_id（无需 profiles 跳板）。
-- "当前激活店"概念：H5 代理中心若用户在多个店都是代理，需要约定一个选择规则（如最近加入 / URL 参数 / 用户切换）。本次以"最早加入的店"或"任取一行"做最小实现，后续按需求加切换器。
-- RLS 已就绪：SM 现有 `sm_select_self`、`sm_select_merchant_owner`、`sm_admin_all`，覆盖所有读路径。
-
----
-
-## 本次建议执行范围
-
-只做 **Batch 1**（修 P0 写入 bug）。Batch 2–4 在你确认 Batch 1 测试通过后再分批推进。Batch 5 在所有读都迁完后再做。
-
+无数据库迁移；如果你确认 MD5 密钥已就绪，回复"开干"我就开始改。
