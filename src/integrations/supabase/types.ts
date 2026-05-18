@@ -1424,6 +1424,15 @@ export type Database = {
         Args: { _merchant_owner_phone: string }
         Returns: string
       }
+      agent_finance: {
+        Args: {
+          _from?: string
+          _limit?: number
+          _merchant_id?: string
+          _to?: string
+        }
+        Returns: Json
+      }
       agent_my_bound_merchants: {
         Args: never
         Returns: {
@@ -1531,6 +1540,10 @@ export type Database = {
       merchant_broadcast: {
         Args: { _audience?: string; _content: string; _title: string }
         Returns: number
+      }
+      merchant_finance: {
+        Args: { _from?: string; _limit?: number; _to?: string }
+        Returns: Json
       }
       merchant_send_message: {
         Args: { _content: string; _title: string; _user_id: string }

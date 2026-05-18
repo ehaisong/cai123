@@ -48,6 +48,7 @@ import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantMessagesRouteImport } from './routes/merchant.messages'
+import { Route as MerchantFinanceRouteImport } from './routes/merchant.finance'
 import { Route as MerchantCommissionRouteImport } from './routes/merchant.commission'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
@@ -63,6 +64,7 @@ import { Route as ApplyAgentMerchantIdRouteImport } from './routes/apply-agent.$
 import { Route as AgentShareRouteImport } from './routes/agent_.share'
 import { Route as AgentMerchantsRouteImport } from './routes/agent_.merchants'
 import { Route as AgentInviteesRouteImport } from './routes/agent_.invitees'
+import { Route as AgentFinanceRouteImport } from './routes/agent.finance'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
 import { Route as AdminWechatRouteImport } from './routes/admin.wechat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -290,6 +292,11 @@ const MerchantMessagesRoute = MerchantMessagesRouteImport.update({
   path: '/merchant/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantFinanceRoute = MerchantFinanceRouteImport.update({
+  id: '/merchant/finance',
+  path: '/merchant/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantCommissionRoute = MerchantCommissionRouteImport.update({
   id: '/merchant/commission',
   path: '/merchant/commission',
@@ -365,6 +372,11 @@ const AgentInviteesRoute = AgentInviteesRouteImport.update({
   id: '/agent_/invitees',
   path: '/agent/invitees',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AgentFinanceRoute = AgentFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AgentRoute,
 } as any)
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   id: '/admin/withdrawals',
@@ -530,7 +542,7 @@ const MerchantProductsProductIdIssuesIssueIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
+  '/agent': typeof AgentRouteWithChildren
   '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
@@ -558,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/finance': typeof AgentFinanceRoute
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
@@ -573,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
+  '/merchant/finance': typeof MerchantFinanceRoute
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
@@ -617,7 +631,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
+  '/agent': typeof AgentRouteWithChildren
   '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
@@ -644,6 +658,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/finance': typeof AgentFinanceRoute
   '/agent/invitees': typeof AgentInviteesRoute
   '/agent/merchants': typeof AgentMerchantsRoute
   '/agent/share': typeof AgentShareRoute
@@ -659,6 +674,7 @@ export interface FileRoutesByTo {
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
+  '/merchant/finance': typeof MerchantFinanceRoute
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
@@ -704,7 +720,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/agent': typeof AgentRoute
+  '/agent': typeof AgentRouteWithChildren
   '/apply': typeof ApplyRoute
   '/contact': typeof ContactRoute
   '/feedback': typeof FeedbackRoute
@@ -732,6 +748,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wechat': typeof AdminWechatRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agent/finance': typeof AgentFinanceRoute
   '/agent_/invitees': typeof AgentInviteesRoute
   '/agent_/merchants': typeof AgentMerchantsRoute
   '/agent_/share': typeof AgentShareRoute
@@ -747,6 +764,7 @@ export interface FileRoutesById {
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
   '/merchant/commission': typeof MerchantCommissionRoute
+  '/merchant/finance': typeof MerchantFinanceRoute
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
@@ -821,6 +839,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/finance'
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
@@ -836,6 +855,7 @@ export interface FileRouteTypes {
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
+    | '/merchant/finance'
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
@@ -907,6 +927,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/finance'
     | '/agent/invitees'
     | '/agent/merchants'
     | '/agent/share'
@@ -922,6 +943,7 @@ export interface FileRouteTypes {
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
+    | '/merchant/finance'
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
@@ -994,6 +1016,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wechat'
     | '/admin/withdrawals'
+    | '/agent/finance'
     | '/agent_/invitees'
     | '/agent_/merchants'
     | '/agent_/share'
@@ -1009,6 +1032,7 @@ export interface FileRouteTypes {
     | '/merchant/agents'
     | '/merchant/apply'
     | '/merchant/commission'
+    | '/merchant/finance'
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
@@ -1054,7 +1078,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AgentRoute: typeof AgentRoute
+  AgentRoute: typeof AgentRouteWithChildren
   ApplyRoute: typeof ApplyRoute
   ContactRoute: typeof ContactRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -1097,6 +1121,7 @@ export interface RootRouteChildren {
   MerchantAgentsRoute: typeof MerchantAgentsRouteWithChildren
   MerchantApplyRoute: typeof MerchantApplyRoute
   MerchantCommissionRoute: typeof MerchantCommissionRoute
+  MerchantFinanceRoute: typeof MerchantFinanceRoute
   MerchantMessagesRoute: typeof MerchantMessagesRoute
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
@@ -1401,6 +1426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/finance': {
+      id: '/merchant/finance'
+      path: '/merchant/finance'
+      fullPath: '/merchant/finance'
+      preLoaderRoute: typeof MerchantFinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/commission': {
       id: '/merchant/commission'
       path: '/merchant/commission'
@@ -1505,6 +1537,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/agent/invitees'
       preLoaderRoute: typeof AgentInviteesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/agent/finance': {
+      id: '/agent/finance'
+      path: '/finance'
+      fullPath: '/agent/finance'
+      preLoaderRoute: typeof AgentFinanceRouteImport
+      parentRoute: typeof AgentRoute
     }
     '/admin/withdrawals': {
       id: '/admin/withdrawals'
@@ -1726,6 +1765,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AgentRouteChildren {
+  AgentFinanceRoute: typeof AgentFinanceRoute
+}
+
+const AgentRouteChildren: AgentRouteChildren = {
+  AgentFinanceRoute: AgentFinanceRoute,
+}
+
+const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
+
 interface PcRouteChildren {
   PcAgentsRoute: typeof PcAgentsRoute
   PcCommissionsRoute: typeof PcCommissionsRoute
@@ -1774,7 +1823,7 @@ const MerchantAgentsRouteWithChildren = MerchantAgentsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AgentRoute: AgentRoute,
+  AgentRoute: AgentRouteWithChildren,
   ApplyRoute: ApplyRoute,
   ContactRoute: ContactRoute,
   FeedbackRoute: FeedbackRoute,
@@ -1817,6 +1866,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantAgentsRoute: MerchantAgentsRouteWithChildren,
   MerchantApplyRoute: MerchantApplyRoute,
   MerchantCommissionRoute: MerchantCommissionRoute,
+  MerchantFinanceRoute: MerchantFinanceRoute,
   MerchantMessagesRoute: MerchantMessagesRoute,
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,
@@ -1852,12 +1902,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
