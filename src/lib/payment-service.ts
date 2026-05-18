@@ -1,5 +1,6 @@
-// 直连 3ypay 收银台。前端只负责调用 Edge Function pay-create 拿到 payUrl 后跳转，
-// 微信内/外的 JSAPI 拉起完全交给 3ypay 收银台页面。
+// 默认走 13pay method=jump 收银台。前端调 /api/public/pay-13pay-create 拿到
+// payUrl（H5 收银台 URL）后跳转，13pay 收银台页面在微信内自行拉起 JSAPI。
+// 不需要 openid，不需要公众号配置。
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { logPayment } from "./payment-logger";
@@ -108,16 +109,23 @@ export const PaymentService = {
     logPayment({
       orderNo,
       stage: "create_request",
-      message: "调用 pay-create",
+      message: "调用 13pay pay-create",
       payload: { payType, inWechat },
     });
 
-    let data: { success?: boolean; payUrl?: string; error?: string } | null = null;
+    let data: {
+      success?: boolean;
+      payType?: string;
+      payUrl?: string | null;
+      qrcode?: string | null;
+      tradeNo?: string;
+      error?: string;
+    } | null = null;
     let fetchErr: Error | null = null;
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      const resp = await fetch("/api/public/pay-create", {
+      const resp = await fetch("/api/public/pay-13pay-create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -126,8 +134,7 @@ export const PaymentService = {
         body: JSON.stringify({
           orderNo,
           payType,
-          // 让 3ypay 支付完成后跳回用户当前所在的站点（cai123.lovable.app / 预览域 / wordpro.cn）
-          // 而不是写死的 wordpro.cn，避免用户支付完成后被"踢出"到另一个域名
+          // 让 13pay 完成后跳回用户当前域名（cai123.lovable.app / 预览 / wordpro.cn）
           returnOrigin: typeof window !== "undefined" ? window.location.origin : undefined,
         }),
       });
@@ -140,7 +147,7 @@ export const PaymentService = {
       fetchErr = e instanceof Error ? e : new Error(String(e));
     }
 
-    if (fetchErr || !data?.success || !data?.payUrl) {
+    if (fetchErr || !data?.success) {
       hideLoadingMask();
       const msg = data?.error || fetchErr?.message || "创建支付订单失败";
       logPayment({
@@ -153,12 +160,17 @@ export const PaymentService = {
       throw new Error(msg);
     }
 
-    const payUrl = String(data.payUrl);
+    const payUrl = data.payUrl ? String(data.payUrl) : "";
+    const qrcode = data.qrcode ? String(data.qrcode) : "";
     logPayment({
       orderNo,
       stage: "create_response",
-      message: "已获取收银台 URL，准备跳转",
-      payload: { urlPreview: payUrl.slice(0, 200) },
+      message: "已获取 13pay 收银台 URL，准备跳转",
+      payload: {
+        payTypeResp: data.payType,
+        tradeNo: data.tradeNo,
+        urlPreview: (payUrl || qrcode).slice(0, 200),
+      },
     });
 
     // 微信内点支付宝 → 提示在外部浏览器打开
@@ -176,15 +188,19 @@ export const PaymentService = {
       return;
     }
 
-    // PC 浏览器扫码场景：3ypay NATIVE 返回的可能是二维码内容（weixin://wxpay/...）
-    // 这里简单判断：以 weixin:// 或非 http 开头视为二维码
+    // PC 浏览器扫码场景：13pay 极少返回二维码内容，但兜底处理
+    if (qrcode && !payUrl) {
+      hideLoadingMask();
+      await showQrCodeMask(qrcode, subject);
+      return;
+    }
     if (!inWechat && /^(weixin:|alipayqr:|alipays:)/i.test(payUrl)) {
       hideLoadingMask();
       await showQrCodeMask(payUrl, subject);
       return;
     }
 
-    // 默认：直接跳转 3ypay 收银台 URL（微信内会自动拉起 JSAPI）
+    // 默认：直接跳转 13pay 收银台 URL（微信内自动拉起支付）
     window.location.href = payUrl;
   },
 

@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       GET: async () => json({ ok: true, endpoint: "pay-13pay-create", method: "POST" }),
       POST: async ({ request }) => {
-        let body: { orderNo?: string; payType?: string } = {};
+        let body: { orderNo?: string; payType?: string; returnOrigin?: string } = {};
         try {
           body = await request.json();
         } catch {
@@ -76,6 +76,27 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
         const orderNo = String(body.orderNo || "");
         const payType = String(body.payType || "wechat");
         if (!orderNo) return json({ success: false, error: "缺少 orderNo" });
+
+        // returnOrigin 白名单
+        const allowHost = (host: string) =>
+          host === "wordpro.cn" ||
+          host === "www.wordpro.cn" ||
+          host === "cai123.lovable.app" ||
+          host.endsWith(".lovable.app");
+        const pickOrigin = (raw: string | null | undefined): string | null => {
+          if (!raw) return null;
+          try {
+            const u = new URL(raw);
+            if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+            if (!allowHost(u.host)) return null;
+            return `${u.protocol}//${u.host}`;
+          } catch { return null; }
+        };
+        const returnOrigin =
+          pickOrigin(body.returnOrigin) ||
+          pickOrigin(request.headers.get("origin")) ||
+          pickOrigin(request.headers.get("referer")) ||
+          "https://wordpro.cn";
 
         // 1. 订单
         const { data: order } = await supabaseAdmin
@@ -136,7 +157,7 @@ export const Route = createFileRoute("/api/public/pay-13pay-create")({
           type,
           out_trade_no: orderNo,
           notify_url: NOTIFY_URL,
-          return_url: `https://wordpro.cn/pay/return?orderNo=${encodeURIComponent(orderNo)}`,
+          return_url: `${returnOrigin}/pay/return?orderNo=${encodeURIComponent(orderNo)}`,
           name: sanitize(order.subject || "支付订单"),
           money: Number(order.amount).toFixed(2),
           clientip,
