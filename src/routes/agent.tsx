@@ -314,12 +314,13 @@ function AgentPage() {
       </div>
 
       {/* 分成记录 */}
-      <div className="px-3 pt-3 pb-2">
+      <div className="px-3 pt-3 pb-2 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">分成记录</div>
+        <Link to="/agent/finance" className="text-xs text-info">查看财务 ›</Link>
       </div>
       <div className="bg-card mx-3 mb-6 rounded-xl divide-y divide-border">
         {commissions.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">暂无分成记录</p>}
-        {commissions.map((c, i) => (
+        {commissions.slice(0, 10).map((c, i) => (
           <div key={i} className="p-3 flex items-center justify-between">
             <div>
               <div className="text-sm">代理分成</div>
