@@ -278,6 +278,16 @@ function AgentPage() {
           </div>
         </Link>
         <Link
+          to="/agent/finance"
+          className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
+        >
+          <PieChart className="h-5 w-5 text-success" />
+          <div>
+            <div className="text-sm font-semibold">财务</div>
+            <div className="text-[11px] text-muted-foreground">分成与流水</div>
+          </div>
+        </Link>
+        <Link
           to="/wallet"
           className="rounded-2xl p-4 bg-card flex flex-col items-start justify-between min-h-[88px] border border-border"
         >
