@@ -1,3 +1,4 @@
+// @deprecated 13pay 当前走彩虹易支付 MD5 协议（见 src/lib/epay-sign.ts）。本文件保留备用。
 // 13pay（pay.13pay.cn）签名/验签工具
 // 文档：https://pay.13pay.cn/doc/sign_note.html
 // 算法：SHA256withRSA（sign_type=RSA）
