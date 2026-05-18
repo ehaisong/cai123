@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { reportRpcError } from "@/lib/error-logger";
-import { Users, Share2, Wallet, CalendarDays, ArrowRightLeft, Store, ShieldCheck } from "lucide-react";
+import { Users, Share2, Wallet, CalendarDays, ArrowRightLeft, Store, ShieldCheck, PieChart } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
