@@ -1,8 +1,7 @@
-// 13pay JSAPI 测试页
-// 在微信内：点击发起支付 → 调 /api/public/pay-13pay-create (method=jsapi)
-//   → 拿到 jsApiParameters → WeixinJSBridge.invoke('getBrandWCPayRequest', ...)
-//   → 支付完成不离开当前页，监听 res.err_msg 后开始轮询订单状态
-// 微信外：提示请在微信内打开，或可选 method=jump 跳转兜底
+// 13pay（彩虹易支付）测试页
+// 流程：创建订单 → /api/public/pay-13pay-create → 拿 payUrl → 跳转 13pay 收银台
+//   → 13pay 完成后自动回跳 /pay/return?orderNo=...（该页轮询订单状态）
+// 微信内/外通用；微信内 13pay 收银台会自动拉起支付键盘。
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,20 +19,9 @@ export const Route = createFileRoute("/pay/test-13pay")({
   component: Test13Page,
 });
 
-type WxBridge = {
-  invoke: (
-    api: string,
-    params: Record<string, string>,
-    cb: (res: { err_msg: string; [k: string]: unknown }) => void,
-  ) => void;
-};
-type WxWin = Window & { WeixinJSBridge?: WxBridge };
-
 function isWechat() {
   if (typeof window === "undefined") return false;
-  return /micromessenger|wechat|weixin/i.test(navigator.userAgent || "")
-    || typeof (window as WxWin).WeixinJSBridge !== "undefined"
-    || new URLSearchParams(window.location.search).get("env") === "wechat";
+  return /micromessenger|wechat|weixin/i.test(navigator.userAgent || "");
 }
 
 type LogLine = { t: string; level: "info" | "ok" | "err"; msg: string };
@@ -45,6 +33,7 @@ function Test13Page() {
   const [busy, setBusy] = useState(false);
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [orderNo, setOrderNo] = useState<string | null>(null);
+  const [qrcode, setQrcode] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const inWechat = isWechat();
   const stopRef = useRef<(() => void) | null>(null);
@@ -63,6 +52,7 @@ function Test13Page() {
     if (!(amount >= 1)) { toast.error("最低 1 元"); return; }
     setBusy(true);
     setPaid(false);
+    setQrcode(null);
     setLogs([]);
     setOrderNo(null);
 
@@ -83,8 +73,7 @@ function Test13Page() {
     setOrderNo(String(oNo));
     push("ok", `订单号 ${oNo}`);
 
-    // 调 13pay 创建接口
-    push("info", `请求 /api/public/pay-13pay-create (method=${inWechat ? "jsapi" : "jump"})`);
+    push("info", "请求 /api/public/pay-13pay-create");
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
     let resp: Response;
@@ -95,11 +84,7 @@ function Test13Page() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          orderNo: oNo,
-          payType: "wechat",
-          method: inWechat ? "jsapi" : "jump",
-        }),
+        body: JSON.stringify({ orderNo: oNo, payType: "wechat" }),
       });
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
@@ -109,9 +94,8 @@ function Test13Page() {
     }
     let data: {
       success?: boolean; error?: string;
-      payType?: string; payInfo?: string;
-      jsApiParams?: Record<string, string> | null;
-      payUrl?: string | null; qrcode?: string | null;
+      payType?: string;
+      payUrl?: string | null; qrcode?: string | null; urlscheme?: string | null;
       tradeNo?: string;
     } = {};
     try { data = await resp.json(); } catch { /* ignore */ }
@@ -122,45 +106,24 @@ function Test13Page() {
     }
     push("ok", `13pay pay_type=${data.payType}，trade_no=${data.tradeNo}`);
 
-    // 微信内 + jsapi → 直拉
-    if (inWechat && data.payType === "jsapi" && data.jsApiParams) {
-      const params = data.jsApiParams;
-      push("info", "调用 WeixinJSBridge.getBrandWCPayRequest");
-      const bridge = (window as WxWin).WeixinJSBridge;
-      const invoke = () => {
-        if (!bridge) {
-          push("err", "WeixinJSBridge 不存在，可能未在微信内打开");
-          setBusy(false);
-          return;
-        }
-        bridge.invoke("getBrandWCPayRequest", params, (res) => {
-          push("info", `JSBridge 返回 err_msg=${res.err_msg}`);
-          if (res.err_msg === "get_brand_wcpay_request:ok") {
-            push("ok", "用户支付完成，开始轮询订单状态");
-            startPolling(String(oNo));
-          } else if (res.err_msg === "get_brand_wcpay_request:cancel") {
-            push("err", "用户取消支付");
-            setBusy(false);
-          } else {
-            push("err", `支付失败：${res.err_msg}`);
-            setBusy(false);
-          }
-        });
-      };
-      if (bridge) invoke();
-      else document.addEventListener("WeixinJSBridgeReady", invoke, { once: true });
-      return;
-    }
+    // 启动轮询（即使页面跳走，回到 /pay/return 也会继续轮询；这里是保险）
+    startPolling(String(oNo));
 
-    // 微信外或 jump → 跳转兜底
     if (data.payType === "jump" && data.payUrl) {
-      push("info", `跳转 ${data.payUrl.slice(0, 80)}…`);
-      window.location.href = data.payUrl;
+      push("info", `1 秒后跳转 13pay 收银台…付完会自动回到本站 /pay/return`);
+      setTimeout(() => {
+        window.location.href = data.payUrl as string;
+      }, 1000);
       return;
     }
     if (data.payType === "qrcode" && data.qrcode) {
-      push("info", `二维码内容：${data.qrcode}`);
-      setBusy(false);
+      setQrcode(data.qrcode);
+      push("info", "请使用对应 App 扫码完成支付");
+      return;
+    }
+    if (data.payType === "scheme" && data.urlscheme) {
+      push("info", `跳转 scheme：${data.urlscheme}`);
+      window.location.href = data.urlscheme;
       return;
     }
     push("err", `未处理的 pay_type=${data.payType}`);
@@ -194,12 +157,13 @@ function Test13Page() {
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
-      <PageHeader title="13pay JSAPI 测试" />
+      <PageHeader title="13pay 测试" />
       <main className="flex-1 px-3 py-3 space-y-3">
         <Card className="p-4 space-y-3">
           <div className="text-xs rounded-md bg-muted p-3 leading-relaxed text-muted-foreground space-y-1">
-            <p>当前环境：<strong>{inWechat ? "微信内 → 走 JSAPI" : "外部浏览器 → 走 jump 跳转"}</strong></p>
-            <p>通道：管理后台 → 支付通道 → 新增 13pay（填 pid / 商户私钥 / 平台公钥）</p>
+            <p>当前环境：<strong>{inWechat ? "微信内" : "外部浏览器"}</strong></p>
+            <p>此通道走 <strong>跳转支付</strong>，付款后页面会自动回跳到 <code>/pay/return</code>，无需手动重新打开本站。</p>
+            <p>通道配置：管理后台 → 支付通道 → 13pay（apiBase / pid / key）</p>
             <p>回调：<code>https://wordpro.cn/api/public/pay-13pay-notify</code></p>
           </div>
 
@@ -216,7 +180,7 @@ function Test13Page() {
           </div>
 
           <Button size="lg" className="w-full" disabled={busy} onClick={startPay}>
-            {busy ? "处理中…" : inWechat ? "微信内发起 JSAPI 支付" : "微信外发起跳转支付"}
+            {busy ? "处理中…" : "发起 13pay 支付"}
           </Button>
 
           {orderNo && (
@@ -225,9 +189,21 @@ function Test13Page() {
             </Button>
           )}
 
+          {qrcode && !paid && (
+            <div className="rounded-md border border-border p-3 text-center text-xs space-y-2">
+              <p>二维码内容：</p>
+              <p className="break-all font-mono">{qrcode}</p>
+              <img
+                alt="支付二维码"
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrcode)}`}
+                className="mx-auto"
+              />
+            </div>
+          )}
+
           {paid && (
             <div className="rounded-md bg-success/10 text-success text-sm p-3 text-center font-medium">
-              🎉 支付成功（页面未跳转，未关闭）
+              🎉 支付成功
             </div>
           )}
         </Card>
@@ -259,11 +235,10 @@ function Test13Page() {
         <Card className="p-3 text-xs text-muted-foreground space-y-1">
           <p className="font-semibold text-foreground">使用步骤</p>
           <ol className="list-decimal list-inside space-y-0.5">
-            <li>管理后台 /admin/payment → 新增「13pay 聚合」通道（启用）</li>
-            <li>填写 13pay 商户ID、商户私钥、平台公钥（在 13pay 后台 → API 信息）</li>
-            <li>用微信扫码打开本页 /pay/test-13pay</li>
-            <li>点支付，应直接弹出微信支付密码框；完成后页面不会跳走</li>
-            <li>如未弹起，按上方日志排查；日志同步写入 payment_logs 表</li>
+            <li>管理后台 /pc/payments → 新增/编辑「13pay 聚合」通道（启用）</li>
+            <li>填写 apiBase（默认 https://pay.13pay.cn/）、商户 ID（pid）、商户密钥（MD5 通讯密钥）</li>
+            <li>用微信扫码打开本页 /pay/test-13pay，点击支付</li>
+            <li>页面短暂跳转到 13pay 收银台 → 微信自动弹出支付键盘 → 付完自动回跳本站</li>
           </ol>
         </Card>
       </main>

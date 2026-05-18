@@ -46,9 +46,10 @@ const PROVIDER_FIELDS: Record<Provider, { key: string; label: string; type?: "pa
     { key: "alipay.paySubType", label: "支付宝 paySubType", placeholder: "NATIVE（默认）" },
   ],
   "13pay": [
+    { key: "apiBase", label: "接口地址（apiBase）", placeholder: "https://pay.13pay.cn/（以 / 结尾）" },
     { key: "pid", label: "商户ID（pid）", placeholder: "10078" },
-    { key: "merchantPrivateKey", label: "商户私钥（PEM，仅 RSA 模式）", type: "textarea", placeholder: "-----BEGIN PRIVATE KEY-----\n..." },
-    { key: "platformPublicKey", label: "平台公钥（PEM）", type: "textarea", placeholder: "-----BEGIN PUBLIC KEY-----\n..." },
+    { key: "key", label: "商户密钥（MD5 通讯密钥）", type: "password", placeholder: "13pay 后台 → API 信息 → MD5 通讯密钥" },
+    { key: "siteName", label: "站点名（可选，sitename）", placeholder: "wordpro" },
   ],
   wechat: [
     { key: "app_id", label: "AppID" },
