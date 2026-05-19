@@ -80,6 +80,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try { localStorage.removeItem("pending_merchant_id"); } catch {}
           } catch {}
         }, 0);
+        // 兜底：登录前若用户访问过 /apply-agent/<mid>，无论登录后落到哪个页面，
+        // 这里都补提交一次代理申请，确保商家审核列表能看到。
+        setTimeout(async () => {
+          try {
+            const pendingMid = typeof window !== "undefined"
+              ? sessionStorage.getItem("pending_apply_agent") : null;
+            if (!pendingMid) return;
+            sessionStorage.removeItem("pending_apply_agent");
+            const { error } = await supabase.rpc("apply_agent_for_merchant" as any, {
+              _merchant_id: pendingMid, _note: null,
+            });
+            if (error) {
+              // "已是本店代理"/"商家本人无法申请代理" 等业务错误静默忽略
+              console.warn("[auth] auto apply_agent failed", error.message);
+            }
+          } catch (e) {
+            console.warn("[auth] auto apply_agent exception", e);
+          }
+        }, 0);
       }
     });
     return () => sub.subscription.unsubscribe();
