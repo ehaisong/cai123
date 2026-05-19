@@ -71,6 +71,16 @@ function ApplyAgentPage() {
     return () => { cancelled = true; };
   }, [merchantId, user?.id, authLoading]);
 
+  // 进入页面即记录意向：即便用户没点"登录并申请"按钮，而是从其它入口（如顶部"登录"链接、
+  // 微信 OAuth 跳转丢失了 redirect 等）完成登录，auth-context 也能在 SIGNED_IN 时
+  // 自动补提交一次，避免商家审核列表收不到申请。
+  useEffect(() => {
+    if (authLoading || loading) return;
+    if (user) return;
+    if (!merchant || merchant.status !== "approved") return;
+    try { sessionStorage.setItem("pending_apply_agent", merchantId); } catch {}
+  }, [authLoading, loading, user?.id, merchant?.id, merchant?.status, merchantId]);
+
   const submit = async () => {
     if (!user) {
       try { sessionStorage.setItem("pending_apply_agent", merchantId); } catch {}
