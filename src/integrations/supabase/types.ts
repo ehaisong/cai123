@@ -159,6 +159,41 @@ export type Database = {
         }
         Relationships: []
       }
+      authors: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          name: string
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          name: string
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          name?: string
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authors_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_error_logs: {
         Row: {
           created_at: string
@@ -829,6 +864,7 @@ export type Database = {
       }
       product_issues: {
         Row: {
+          author_id: string | null
           created_at: string
           id: string
           issue_no: string
@@ -843,6 +879,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          author_id?: string | null
           created_at?: string
           id?: string
           issue_no: string
@@ -857,6 +894,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          author_id?: string | null
           created_at?: string
           id?: string
           issue_no?: string
@@ -871,6 +909,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_issues_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_issues_product_id_fkey"
             columns: ["product_id"]
