@@ -50,6 +50,7 @@ import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantMessagesRouteImport } from './routes/merchant.messages'
 import { Route as MerchantFinanceRouteImport } from './routes/merchant.finance'
 import { Route as MerchantCommissionRouteImport } from './routes/merchant.commission'
+import { Route as MerchantAuthorsRouteImport } from './routes/merchant.authors'
 import { Route as MerchantApplyRouteImport } from './routes/merchant.apply'
 import { Route as MerchantAgentsRouteImport } from './routes/merchant.agents'
 import { Route as MerchantAgentRecruitRouteImport } from './routes/merchant.agent-recruit'
@@ -83,6 +84,7 @@ import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcem
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as MerchantProductsIndexRouteImport } from './routes/merchant.products.index'
 import { Route as MerchantProductsNewRouteImport } from './routes/merchant.products.new'
+import { Route as MerchantAuthorsNewRouteImport } from './routes/merchant.authors_.new'
 import { Route as MerchantAgentsUserIdRouteImport } from './routes/merchant.agents.$userId'
 import { Route as ApiPublicPayNotifyRouteImport } from './routes/api/public/pay-notify'
 import { Route as ApiPublicPayCreateRouteImport } from './routes/api/public/pay-create'
@@ -91,6 +93,7 @@ import { Route as ApiPublicPay13payCreateRouteImport } from './routes/api/public
 import { Route as PcUsersMerchantMerchantIdRouteImport } from './routes/pc.users_.merchant.$merchantId'
 import { Route as PcUsersBuyerUserIdRouteImport } from './routes/pc.users_.buyer.$userId'
 import { Route as PcUsersAgentUserIdRouteImport } from './routes/pc.users_.agent.$userId'
+import { Route as MerchantAuthorsAuthorIdEditRouteImport } from './routes/merchant.authors_.$authorId.edit'
 import { Route as AdminMerchantsMerchantIdAgentsRouteImport } from './routes/admin.merchants_.$merchantId.agents'
 import { Route as MerchantProductsProductIdIssuesIndexRouteImport } from './routes/merchant.products.$productId.issues.index'
 import { Route as MerchantProductsProductIdIssuesNewRouteImport } from './routes/merchant.products.$productId.issues.new'
@@ -302,6 +305,11 @@ const MerchantCommissionRoute = MerchantCommissionRouteImport.update({
   path: '/merchant/commission',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantAuthorsRoute = MerchantAuthorsRouteImport.update({
+  id: '/merchant/authors',
+  path: '/merchant/authors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantApplyRoute = MerchantApplyRouteImport.update({
   id: '/merchant/apply',
   path: '/merchant/apply',
@@ -468,6 +476,11 @@ const MerchantProductsNewRoute = MerchantProductsNewRouteImport.update({
   path: '/merchant/products/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantAuthorsNewRoute = MerchantAuthorsNewRouteImport.update({
+  id: '/merchant/authors_/new',
+  path: '/merchant/authors/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantAgentsUserIdRoute = MerchantAgentsUserIdRouteImport.update({
   id: '/$userId',
   path: '/$userId',
@@ -509,6 +522,12 @@ const PcUsersAgentUserIdRoute = PcUsersAgentUserIdRouteImport.update({
   path: '/users/agent/$userId',
   getParentRoute: () => PcRoute,
 } as any)
+const MerchantAuthorsAuthorIdEditRoute =
+  MerchantAuthorsAuthorIdEditRouteImport.update({
+    id: '/merchant/authors_/$authorId/edit',
+    path: '/merchant/authors/$authorId/edit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminMerchantsMerchantIdAgentsRoute =
   AdminMerchantsMerchantIdAgentsRouteImport.update({
     id: '/admin/merchants_/$merchantId/agents',
@@ -585,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/merchant/agent-recruit': typeof MerchantAgentRecruitRoute
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
+  '/merchant/authors': typeof MerchantAuthorsRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/finance': typeof MerchantFinanceRoute
   '/merchant/messages': typeof MerchantMessagesRoute
@@ -618,9 +638,11 @@ export interface FileRoutesByFullPath {
   '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
+  '/merchant/authors/new': typeof MerchantAuthorsNewRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
   '/admin/merchants/$merchantId/agents': typeof AdminMerchantsMerchantIdAgentsRoute
+  '/merchant/authors/$authorId/edit': typeof MerchantAuthorsAuthorIdEditRoute
   '/pc/users/agent/$userId': typeof PcUsersAgentUserIdRoute
   '/pc/users/buyer/$userId': typeof PcUsersBuyerUserIdRoute
   '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
@@ -673,6 +695,7 @@ export interface FileRoutesByTo {
   '/merchant/agent-recruit': typeof MerchantAgentRecruitRoute
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
+  '/merchant/authors': typeof MerchantAuthorsRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/finance': typeof MerchantFinanceRoute
   '/merchant/messages': typeof MerchantMessagesRoute
@@ -706,9 +729,11 @@ export interface FileRoutesByTo {
   '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
+  '/merchant/authors/new': typeof MerchantAuthorsNewRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products': typeof MerchantProductsIndexRoute
   '/admin/merchants/$merchantId/agents': typeof AdminMerchantsMerchantIdAgentsRoute
+  '/merchant/authors/$authorId/edit': typeof MerchantAuthorsAuthorIdEditRoute
   '/pc/users/agent/$userId': typeof PcUsersAgentUserIdRoute
   '/pc/users/buyer/$userId': typeof PcUsersBuyerUserIdRoute
   '/pc/users/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
@@ -763,6 +788,7 @@ export interface FileRoutesById {
   '/merchant/agent-recruit': typeof MerchantAgentRecruitRoute
   '/merchant/agents': typeof MerchantAgentsRouteWithChildren
   '/merchant/apply': typeof MerchantApplyRoute
+  '/merchant/authors': typeof MerchantAuthorsRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/finance': typeof MerchantFinanceRoute
   '/merchant/messages': typeof MerchantMessagesRoute
@@ -796,9 +822,11 @@ export interface FileRoutesById {
   '/api/public/pay-create': typeof ApiPublicPayCreateRoute
   '/api/public/pay-notify': typeof ApiPublicPayNotifyRoute
   '/merchant/agents/$userId': typeof MerchantAgentsUserIdRoute
+  '/merchant/authors_/new': typeof MerchantAuthorsNewRoute
   '/merchant/products/new': typeof MerchantProductsNewRoute
   '/merchant/products/': typeof MerchantProductsIndexRoute
   '/admin/merchants_/$merchantId/agents': typeof AdminMerchantsMerchantIdAgentsRoute
+  '/merchant/authors_/$authorId/edit': typeof MerchantAuthorsAuthorIdEditRoute
   '/pc/users_/agent/$userId': typeof PcUsersAgentUserIdRoute
   '/pc/users_/buyer/$userId': typeof PcUsersBuyerUserIdRoute
   '/pc/users_/merchant/$merchantId': typeof PcUsersMerchantMerchantIdRoute
@@ -854,6 +882,7 @@ export interface FileRouteTypes {
     | '/merchant/agent-recruit'
     | '/merchant/agents'
     | '/merchant/apply'
+    | '/merchant/authors'
     | '/merchant/commission'
     | '/merchant/finance'
     | '/merchant/messages'
@@ -887,9 +916,11 @@ export interface FileRouteTypes {
     | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
+    | '/merchant/authors/new'
     | '/merchant/products/new'
     | '/merchant/products/'
     | '/admin/merchants/$merchantId/agents'
+    | '/merchant/authors/$authorId/edit'
     | '/pc/users/agent/$userId'
     | '/pc/users/buyer/$userId'
     | '/pc/users/merchant/$merchantId'
@@ -942,6 +973,7 @@ export interface FileRouteTypes {
     | '/merchant/agent-recruit'
     | '/merchant/agents'
     | '/merchant/apply'
+    | '/merchant/authors'
     | '/merchant/commission'
     | '/merchant/finance'
     | '/merchant/messages'
@@ -975,9 +1007,11 @@ export interface FileRouteTypes {
     | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
+    | '/merchant/authors/new'
     | '/merchant/products/new'
     | '/merchant/products'
     | '/admin/merchants/$merchantId/agents'
+    | '/merchant/authors/$authorId/edit'
     | '/pc/users/agent/$userId'
     | '/pc/users/buyer/$userId'
     | '/pc/users/merchant/$merchantId'
@@ -1031,6 +1065,7 @@ export interface FileRouteTypes {
     | '/merchant/agent-recruit'
     | '/merchant/agents'
     | '/merchant/apply'
+    | '/merchant/authors'
     | '/merchant/commission'
     | '/merchant/finance'
     | '/merchant/messages'
@@ -1064,9 +1099,11 @@ export interface FileRouteTypes {
     | '/api/public/pay-create'
     | '/api/public/pay-notify'
     | '/merchant/agents/$userId'
+    | '/merchant/authors_/new'
     | '/merchant/products/new'
     | '/merchant/products/'
     | '/admin/merchants_/$merchantId/agents'
+    | '/merchant/authors_/$authorId/edit'
     | '/pc/users_/agent/$userId'
     | '/pc/users_/buyer/$userId'
     | '/pc/users_/merchant/$merchantId'
@@ -1120,6 +1157,7 @@ export interface RootRouteChildren {
   MerchantAgentRecruitRoute: typeof MerchantAgentRecruitRoute
   MerchantAgentsRoute: typeof MerchantAgentsRouteWithChildren
   MerchantApplyRoute: typeof MerchantApplyRoute
+  MerchantAuthorsRoute: typeof MerchantAuthorsRoute
   MerchantCommissionRoute: typeof MerchantCommissionRoute
   MerchantFinanceRoute: typeof MerchantFinanceRoute
   MerchantMessagesRoute: typeof MerchantMessagesRoute
@@ -1142,9 +1180,11 @@ export interface RootRouteChildren {
   ApiPublicPay13payNotifyRoute: typeof ApiPublicPay13payNotifyRoute
   ApiPublicPayCreateRoute: typeof ApiPublicPayCreateRoute
   ApiPublicPayNotifyRoute: typeof ApiPublicPayNotifyRoute
+  MerchantAuthorsNewRoute: typeof MerchantAuthorsNewRoute
   MerchantProductsNewRoute: typeof MerchantProductsNewRoute
   MerchantProductsIndexRoute: typeof MerchantProductsIndexRoute
   AdminMerchantsMerchantIdAgentsRoute: typeof AdminMerchantsMerchantIdAgentsRoute
+  MerchantAuthorsAuthorIdEditRoute: typeof MerchantAuthorsAuthorIdEditRoute
   MerchantProductsProductIdIssuesBulkImportRoute: typeof MerchantProductsProductIdIssuesBulkImportRoute
   MerchantProductsProductIdIssuesNewRoute: typeof MerchantProductsProductIdIssuesNewRoute
   MerchantProductsProductIdIssuesIndexRoute: typeof MerchantProductsProductIdIssuesIndexRoute
@@ -1440,6 +1480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantCommissionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/authors': {
+      id: '/merchant/authors'
+      path: '/merchant/authors'
+      fullPath: '/merchant/authors'
+      preLoaderRoute: typeof MerchantAuthorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/apply': {
       id: '/merchant/apply'
       path: '/merchant/apply'
@@ -1671,6 +1718,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantProductsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/authors_/new': {
+      id: '/merchant/authors_/new'
+      path: '/merchant/authors/new'
+      fullPath: '/merchant/authors/new'
+      preLoaderRoute: typeof MerchantAuthorsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/agents/$userId': {
       id: '/merchant/agents/$userId'
       path: '/$userId'
@@ -1726,6 +1780,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pc/users/agent/$userId'
       preLoaderRoute: typeof PcUsersAgentUserIdRouteImport
       parentRoute: typeof PcRoute
+    }
+    '/merchant/authors_/$authorId/edit': {
+      id: '/merchant/authors_/$authorId/edit'
+      path: '/merchant/authors/$authorId/edit'
+      fullPath: '/merchant/authors/$authorId/edit'
+      preLoaderRoute: typeof MerchantAuthorsAuthorIdEditRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/merchants_/$merchantId/agents': {
       id: '/admin/merchants_/$merchantId/agents'
@@ -1865,6 +1926,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantAgentRecruitRoute: MerchantAgentRecruitRoute,
   MerchantAgentsRoute: MerchantAgentsRouteWithChildren,
   MerchantApplyRoute: MerchantApplyRoute,
+  MerchantAuthorsRoute: MerchantAuthorsRoute,
   MerchantCommissionRoute: MerchantCommissionRoute,
   MerchantFinanceRoute: MerchantFinanceRoute,
   MerchantMessagesRoute: MerchantMessagesRoute,
@@ -1887,9 +1949,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPay13payNotifyRoute: ApiPublicPay13payNotifyRoute,
   ApiPublicPayCreateRoute: ApiPublicPayCreateRoute,
   ApiPublicPayNotifyRoute: ApiPublicPayNotifyRoute,
+  MerchantAuthorsNewRoute: MerchantAuthorsNewRoute,
   MerchantProductsNewRoute: MerchantProductsNewRoute,
   MerchantProductsIndexRoute: MerchantProductsIndexRoute,
   AdminMerchantsMerchantIdAgentsRoute: AdminMerchantsMerchantIdAgentsRoute,
+  MerchantAuthorsAuthorIdEditRoute: MerchantAuthorsAuthorIdEditRoute,
   MerchantProductsProductIdIssuesBulkImportRoute:
     MerchantProductsProductIdIssuesBulkImportRoute,
   MerchantProductsProductIdIssuesNewRoute:
