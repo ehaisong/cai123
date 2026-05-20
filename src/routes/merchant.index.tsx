@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck, Wallet } from "lucide-react";
+import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck, Wallet, PenSquare } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
 import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
@@ -84,6 +84,7 @@ function MerchantHomeInner() {
         <Cell icon={<Store className="w-6 h-6 text-success" />} label="店铺信息" to="/merchant/shop" />
         <Cell icon={<Plus className="w-6 h-6 text-success" />} label="发布商品" to="/merchant/products/new" />
         <Cell icon={<Package className="w-6 h-6 text-info" />} label="商品管理" to="/merchant/products" />
+        <Cell icon={<PenSquare className="w-6 h-6 text-primary" />} label="作者管理" to="/merchant/authors" />
         
         <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
         <Cell icon={<UserPlus className="w-6 h-6 text-primary" />} label="代理招募码" to="/merchant/agent-recruit" />
