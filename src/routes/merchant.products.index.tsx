@@ -32,11 +32,7 @@ type ProductRow = {
   latest_status: string | null; latest_result: string | null;
 };
 
-type PackageRow = {
-  id: string; title: string; price: number; status: string; sales_count: number;
-  duration_days: number; types: string[] | null; logo_url: string | null;
-  show_on_home: boolean; show_in_zone: boolean; created_at: string;
-};
+
 
 function Inner() {
   const { user } = useAuth();
