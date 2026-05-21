@@ -1,0 +1,4 @@
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS is_public boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_locked boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS sort integer NOT NULL DEFAULT 0;
