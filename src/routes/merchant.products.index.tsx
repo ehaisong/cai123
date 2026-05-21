@@ -130,6 +130,9 @@ function Inner() {
         <Link to="/merchant/products/new" className="flex-1 text-center py-3 text-sm text-info">
           +添加新方案
         </Link>
+        <Link to="/merchant/products/bulk-import" className="flex-1 text-center py-3 text-sm text-info">
+          批量导入
+        </Link>
       </div>
 
       <div className="px-3 pt-3 flex items-center gap-2">
@@ -139,13 +142,8 @@ function Inner() {
           placeholder="🔍 搜索产品名"
           className="bg-muted/40 border-0 flex-1"
         />
-        <Link
-          to="/merchant/products/bulk-import"
-          className="text-xs text-info whitespace-nowrap px-2"
-        >
-          批量导入
-        </Link>
       </div>
+
 
       <main className="flex-1 px-3 py-3 space-y-3">
         {filtered.length === 0 && (
