@@ -34,8 +34,11 @@ interface Product {
   publish_at: string;
   category_id: string;
   merchant_id: string;
+  is_public: boolean;
+  result: "pending" | "won" | "lost" | string;
   is_affiliated?: boolean;
 }
+
 interface Category { id: string; name: string; code: string; }
 interface Merchant {
   id: string; shop_name: string; shop_avatar_url: string | null; shop_description: string | null;
