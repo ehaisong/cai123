@@ -17,7 +17,9 @@ export const Route = createFileRoute("/product/$productId")({
 interface Product {
   id: string; merchant_id: string; title: string; subtitle: string | null;
   is_recommended: boolean; price: number; disclaimer: string | null;
+  is_public?: boolean;
 }
+
 interface Issue {
   id: string; issue_no: string; paid_content: string | null;
   publish_at: string; reveal_at: string | null;
