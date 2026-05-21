@@ -166,6 +166,14 @@
   box-shadow: 0 0 40px oklch(0.5 0.05 30 / 0.08);
 }
 
+/* PC 端全屏变体：商品发布模块在桌面浏览时不受 480px 限制 */
+@media (min-width: 768px) {
+  .h5-shell.h5-shell-fluid {
+    max-width: none;
+    box-shadow: none;
+  }
+}
+
 /* 印章效果 */
 .stamp {
   display: inline-flex;
