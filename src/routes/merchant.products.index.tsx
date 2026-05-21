@@ -111,112 +111,63 @@ function Inner() {
         right={<Link to="/merchant/products/new" className="text-xs text-info">＋ 新建</Link>}
       />
 
-      <div className="flex items-center justify-center gap-10 py-3 bg-card border-b border-border">
-        {(["single", "package"] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={cn(
-              "text-sm relative pb-1.5",
-              tab === k ? "font-semibold text-foreground" : "text-muted-foreground"
-            )}
-          >
-            {k === "single" ? `单卖 (${products.length})` : `包时套餐 (${packages.length})`}
-            {tab === k && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />}
-          </button>
-        ))}
+      <div className="flex items-center justify-around bg-card border-b border-border">
+        <div className="flex-1 text-center py-3 text-sm font-medium text-foreground relative">
+          售卖中 ({products.filter((p) => p.status === "published").length})
+          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full" />
+        </div>
+        <div className="flex-1 text-center py-3 text-sm text-muted-foreground">
+          已停售 ({products.filter((p) => p.status !== "published").length})
+        </div>
+        <Link to="/merchant/products/new" className="flex-1 text-center py-3 text-sm text-info">
+          +添加新方案
+        </Link>
       </div>
 
       <main className="flex-1 px-3 py-3 space-y-2">
-        {tab === "single" && (
-          <>
-            {products.length === 0 && <p className="text-center py-12 text-muted-foreground text-sm">暂无单卖商品</p>}
-            {products.map((p) => (
-              <div key={p.id} className="bg-card rounded-md p-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-1">{p.title}</h3>
-                  <span className="text-primary font-semibold text-sm">{fmtCredits(p.price)}</span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className={`px-1.5 py-0.5 rounded ${p.status === "published" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-                    {p.status === "published" ? "已上架" : p.status === "unpublished" ? "已下架" : "草稿"}
-                  </span>
-                  {(p.types ?? []).map((t) => (
-                    <span key={t} className="px-1.5 py-0.5 rounded bg-accent text-primary">{t}</span>
-                  ))}
-                  {p.is_presale && <span className="px-1.5 py-0.5 rounded bg-warning/10 text-warning">预售</span>}
-                  {p.no_win_refund && <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">不中退还</span>}
-                  <span className="text-muted-foreground ml-auto">销量 {p.sales_count}</span>
-                </div>
-                {p.has_self_issue && (
-                  <div className="mt-2 text-xs flex items-center gap-2">
-                    <span className="text-muted-foreground">最新期：</span>
-                    <span className="font-medium">{p.latest_issue_no ?? "—"}</span>
-                    {issueBadge(p)}
-                    <span className="text-muted-foreground ml-auto">{p.latest_publish_at ? fmtDate(p.latest_publish_at) : ""}</span>
-                  </div>
-                )}
-                <div className="mt-2 flex gap-2">
-                  {p.has_self_issue && (
-                    <Link to="/merchant/products/$productId/issues" params={{ productId: p.id }} className="flex-1">
-                      <Button variant="default" size="sm" className="w-full">管理期数</Button>
-                    </Link>
-                  )}
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => toggleProductStatus(p)}>
-                    {p.status === "published" ? "下架" : "上架"}
-                  </Button>
-                  <Link to="/product/$productId" params={{ productId: p.id }} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">预览</Button>
-                  </Link>
-                </div>
+        {products.length === 0 && <p className="text-center py-12 text-muted-foreground text-sm">暂无方案</p>}
+        {products.map((p) => (
+          <div key={p.id} className="bg-card rounded-md p-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-1">{p.title}</h3>
+              <span className="text-primary font-semibold text-sm">{fmtCredits(p.price)}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className={`px-1.5 py-0.5 rounded ${p.status === "published" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                {p.status === "published" ? "已上架" : p.status === "unpublished" ? "已下架" : "草稿"}
+              </span>
+              {(p.types ?? []).map((t) => (
+                <span key={t} className="px-1.5 py-0.5 rounded bg-accent text-primary">{t}</span>
+              ))}
+              {p.is_presale && <span className="px-1.5 py-0.5 rounded bg-warning/10 text-warning">预售</span>}
+              {p.no_win_refund && <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">不中退还</span>}
+              <span className="text-muted-foreground ml-auto">销量 {p.sales_count}</span>
+            </div>
+            {p.has_self_issue && (
+              <div className="mt-2 text-xs flex items-center gap-2">
+                <span className="text-muted-foreground">最新期：</span>
+                <span className="font-medium">{p.latest_issue_no ?? "—"}</span>
+                {issueBadge(p)}
+                <span className="text-muted-foreground ml-auto">{p.latest_publish_at ? fmtDate(p.latest_publish_at) : ""}</span>
               </div>
-            ))}
-          </>
-        )}
-
-        {tab === "package" && (
-          <>
-            {packages.length === 0 && <p className="text-center py-12 text-muted-foreground text-sm">暂无套餐</p>}
-            {packages.map((p) => (
-              <div key={p.id} className="bg-card rounded-md p-3">
-                <div className="flex items-start gap-3">
-                  {p.logo_url ? (
-                    <img src={p.logo_url} alt="" className="w-12 h-12 rounded object-cover" />
-                  ) : (
-                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">LOGO</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-1">{p.title}</h3>
-                      <span className="text-primary font-semibold text-sm">{fmtCredits(p.price)}</span>
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                      <span className={`px-1.5 py-0.5 rounded ${p.status === "published" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-                        {p.status === "published" ? "已上架" : "已下架"}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded bg-accent text-primary">{p.duration_days} 天</span>
-                      {(p.types ?? []).map((t) => (
-                        <span key={t} className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{t}</span>
-                      ))}
-                      {p.show_on_home && <span className="px-1.5 py-0.5 rounded bg-info/10 text-info">首页</span>}
-                      {p.show_in_zone && <span className="px-1.5 py-0.5 rounded bg-warning/10 text-warning">专区</span>}
-                      <span className="text-muted-foreground ml-auto">销量 {p.sales_count}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => togglePackageStatus(p)}>
-                    {p.status === "published" ? "下架" : "上架"}
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 text-destructive" onClick={() => deletePackage(p.id)}>
-                    删除
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </>
-        )}
+            )}
+            <div className="mt-2 flex gap-2">
+              {p.has_self_issue && (
+                <Link to="/merchant/products/$productId/issues" params={{ productId: p.id }} className="flex-1">
+                  <Button variant="default" size="sm" className="w-full">管理期数</Button>
+                </Link>
+              )}
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => toggleProductStatus(p)}>
+                {p.status === "published" ? "下架" : "上架"}
+              </Button>
+              <Link to="/product/$productId" params={{ productId: p.id }} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">预览</Button>
+              </Link>
+            </div>
+          </div>
+        ))}
       </main>
+
     </div>
   );
 }
