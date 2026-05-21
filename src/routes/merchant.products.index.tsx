@@ -54,7 +54,7 @@ function Inner() {
     if (!m) return;
     const { data } = await (supabase as any)
       .from("products")
-      .select("id, title, price, status, sales_count, tags, issue_no, virtual_views, result, is_public, is_locked, sort, created_at, publish_at")
+      .select("id, title, price, status, sales_count, tags, issue_no, virtual_views, result, is_public, is_locked, sort, created_at, publish_at, author_id, authors(name)")
       .eq("merchant_id", m.id)
       .order("sort", { ascending: false })
       .order("created_at", { ascending: false });
