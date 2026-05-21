@@ -294,29 +294,24 @@ function ShopPage() {
         </Link>
       )}
 
-      {/* 栏目筛选 */}
-      <div className="bg-card mx-3 mt-3 rounded-md p-3 flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">栏目</span>
-        <select
-          className="text-sm bg-transparent focus:outline-none"
-          value={activeCat}
-          onChange={(e) => setActiveCat(e.target.value)}
-        >
-          <option value="all">全部 ›</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* 搜索 */}
-      <div className="px-3 mt-2">
+      {/* 搜索 + 栏目筛选 */}
+      <div className="px-3 mt-3 flex items-center gap-2">
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="输入关键词搜索"
-          className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none"
+          className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none"
         />
+        <select
+          className="rounded-md border border-border bg-card px-2 py-2 text-sm focus:outline-none"
+          value={activeCat}
+          onChange={(e) => setActiveCat(e.target.value)}
+        >
+          <option value="all">全部栏目</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* 分享 */}
