@@ -81,16 +81,6 @@ function Inner() {
     const { error } = await supabase.from("products").update({ status: next }).eq("id", p.id);
     if (error) toast.error(error.message); else { toast.success("已更新"); load(); }
   };
-  const togglePackageStatus = async (p: PackageRow) => {
-    const next = p.status === "published" ? "unpublished" : "published";
-    const { error } = await supabase.from("product_packages").update({ status: next }).eq("id", p.id);
-    if (error) toast.error(error.message); else { toast.success("已更新"); load(); }
-  };
-  const deletePackage = async (id: string) => {
-    if (!confirm("确认删除该套餐？")) return;
-    const { error } = await supabase.from("product_packages").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("已删除"); load(); }
-  };
 
   const issueBadge = (p: ProductRow) => {
     if (!p.latest_issue_no) return <span className="text-muted-foreground">未添加期号</span>;
