@@ -40,9 +40,8 @@ type PackageRow = {
 
 function Inner() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<"single" | "package">("single");
   const [products, setProducts] = useState<ProductRow[]>([]);
-  const [packages, setPackages] = useState<PackageRow[]>([]);
+
 
   const load = async () => {
     if (!user) return;
