@@ -38,6 +38,8 @@ type ProductRow = {
   sort: number;
   created_at: string;
   publish_at: string | null;
+  author_id: string | null;
+  authors?: { name: string } | null;
 };
 
 function Inner() {
