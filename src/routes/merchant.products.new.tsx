@@ -92,7 +92,7 @@ function Inner() {
   };
 
   return (
-    <div className="h5-shell flex min-h-screen flex-col bg-background">
+    <div className="h5-shell h5-shell-fluid flex min-h-screen flex-col bg-background">
       <PageHeader title="新建" />
 
       {/* 顶部 Tab */}

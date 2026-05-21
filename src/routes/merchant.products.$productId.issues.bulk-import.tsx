@@ -104,7 +104,7 @@ function Inner() {
   };
 
   return (
-    <div className="h5-shell flex min-h-screen flex-col">
+    <div className="h5-shell h5-shell-fluid flex min-h-screen flex-col">
       <PageHeader title="批量添加期号" />
       <main className="flex-1 px-3 py-3 space-y-3">
         <div className="bg-card rounded-md p-3">

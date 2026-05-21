@@ -159,7 +159,7 @@ function Inner() {
   };
 
   return (
-    <div className="h5-shell flex min-h-screen flex-col bg-background">
+    <div className="h5-shell h5-shell-fluid flex min-h-screen flex-col bg-background">
       <PageHeader title="批量导入方案" />
       <main className="flex-1 px-3 py-3 space-y-3">
         <div className="bg-card rounded-md p-3 space-y-2">

@@ -66,10 +66,10 @@ function Inner() {
     navigate({ to: "/merchant/products/$productId/issues", params: { productId } });
   };
 
-  if (!form) return <div className="h5-shell"><PageHeader title="编辑期号" /><p className="p-4 text-sm text-muted-foreground">加载中…</p></div>;
+  if (!form) return <div className="h5-shell h5-shell-fluid"><PageHeader title="编辑期号" /><p className="p-4 text-sm text-muted-foreground">加载中…</p></div>;
 
   return (
-    <div className="h5-shell flex min-h-screen flex-col">
+    <div className="h5-shell h5-shell-fluid flex min-h-screen flex-col">
       <PageHeader title="编辑期号" />
       <main className="flex-1 px-3 py-3 space-y-3">
         <Field label="期号"><Input value={form.issue_no} onChange={(e) => setForm({ ...form, issue_no: e.target.value })} /></Field>
