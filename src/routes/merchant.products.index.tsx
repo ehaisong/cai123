@@ -74,7 +74,9 @@ function Inner() {
           latest_result: it?.result ?? null,
         } as ProductRow;
       })
+    );
   };
+
 
   useEffect(() => { load(); }, [user?.id]);
 
