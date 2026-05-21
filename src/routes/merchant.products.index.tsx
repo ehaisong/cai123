@@ -163,7 +163,7 @@ function Inner() {
                 params={{ productId: p.id }}
                 className="block text-base font-medium text-foreground hover:text-info"
               >
-                {p.issue_no ? `${p.issue_no}期 ` : ""}{p.title}
+                {p.issue_no ? `${p.issue_no}期 ` : ""}{p.authors?.name ?? p.title}
               </Link>
 
               {tab === "off" && (
