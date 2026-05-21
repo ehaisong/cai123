@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
+import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/merchant/products/")({
@@ -226,6 +227,7 @@ function Inner() {
 
         <p className="text-center text-xs text-muted-foreground py-6">没有更多了</p>
       </main>
+      <MerchantBottomNav />
     </div>
   );
 }
