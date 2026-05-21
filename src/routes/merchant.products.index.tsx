@@ -151,9 +151,13 @@ function Inner() {
           const hit = p.result === "won";
           return (
             <div key={p.id} className="bg-card rounded-md p-3 space-y-2">
-              <div className="text-base font-medium text-foreground">
+              <Link
+                to="/product/$productId"
+                params={{ productId: p.id }}
+                className="block text-base font-medium text-foreground hover:text-info"
+              >
                 {p.issue_no ? `${p.issue_no}期 ` : ""}{p.title}
-              </div>
+              </Link>
 
               {tab === "off" && (
                 <div className="text-lg font-semibold text-foreground">{p.issue_no ?? ""}期</div>
