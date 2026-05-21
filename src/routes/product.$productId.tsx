@@ -41,8 +41,8 @@ function ProductDetailPage() {
   const [lastPayType, setLastPayType] = useState<PayType | null>(null);
 
   const load = async () => {
-    const { data: p } = await supabase.from("products")
-      .select("id, merchant_id, title, subtitle, is_recommended, price, disclaimer")
+    const { data: p } = await (supabase as any).from("products")
+      .select("id, merchant_id, title, subtitle, is_recommended, price, disclaimer, is_public")
       .eq("id", productId).maybeSingle();
     setProduct(p as Product | null);
 
@@ -65,7 +65,10 @@ function ProductDetailPage() {
     setCurrent(list[0] ?? null);
     setHistory(list.slice(1));
 
-    if (user && list[0] && !owner) {
+    // 公开方案：付费内容对所有人可见
+    if (p && (p as Product).is_public) {
+      setPurchased(true);
+    } else if (user && list[0] && !owner) {
       const { data: ord } = await supabase.from("orders").select("id")
         .eq("buyer_id", user.id).eq("issue_id", list[0].id).eq("status", "paid").maybeSingle();
       setPurchased(!!ord);
@@ -73,6 +76,7 @@ function ProductDetailPage() {
       setPurchased(false);
     }
   };
+
 
   useEffect(() => { load(); }, [productId, user?.id]);
 
