@@ -979,7 +979,9 @@ export type Database = {
           id: string
           intro: string | null
           intro_images: string[]
+          is_locked: boolean
           is_presale: boolean
+          is_public: boolean
           is_recommended: boolean
           issue_no: string
           kind: string
@@ -996,6 +998,7 @@ export type Database = {
           sales_count: number
           share_unlock: boolean
           show_in_zone: boolean
+          sort: number
           status: Database["public"]["Enums"]["product_status"]
           streak: number
           subtitle: string | null
@@ -1014,7 +1017,9 @@ export type Database = {
           id?: string
           intro?: string | null
           intro_images?: string[]
+          is_locked?: boolean
           is_presale?: boolean
+          is_public?: boolean
           is_recommended?: boolean
           issue_no: string
           kind?: string
@@ -1031,6 +1036,7 @@ export type Database = {
           sales_count?: number
           share_unlock?: boolean
           show_in_zone?: boolean
+          sort?: number
           status?: Database["public"]["Enums"]["product_status"]
           streak?: number
           subtitle?: string | null
@@ -1049,7 +1055,9 @@ export type Database = {
           id?: string
           intro?: string | null
           intro_images?: string[]
+          is_locked?: boolean
           is_presale?: boolean
+          is_public?: boolean
           is_recommended?: boolean
           issue_no?: string
           kind?: string
@@ -1066,6 +1074,7 @@ export type Database = {
           sales_count?: number
           share_unlock?: boolean
           show_in_zone?: boolean
+          sort?: number
           status?: Database["public"]["Enums"]["product_status"]
           streak?: number
           subtitle?: string | null
