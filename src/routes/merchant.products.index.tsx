@@ -74,15 +74,8 @@ function Inner() {
           latest_result: it?.result ?? null,
         } as ProductRow;
       })
-    );
-
-    const { data: pkgs } = await supabase
-      .from("product_packages")
-      .select("id, title, price, status, sales_count, duration_days, types, logo_url, show_on_home, show_in_zone, created_at")
-      .eq("merchant_id", m.id)
-      .order("created_at", { ascending: false });
-    setPackages((pkgs ?? []) as PackageRow[]);
   };
+
   useEffect(() => { load(); }, [user?.id]);
 
   const toggleProductStatus = async (p: ProductRow) => {
