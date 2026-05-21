@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { fmtDate, fmtCredits } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
 import { cn } from "@/lib/utils";
@@ -151,9 +151,13 @@ function Inner() {
           const hit = p.result === "won";
           return (
             <div key={p.id} className="bg-card rounded-md p-3 space-y-2">
-              <div className="text-base font-medium text-foreground">
+              <Link
+                to="/product/$productId"
+                params={{ productId: p.id }}
+                className="block text-base font-medium text-foreground hover:text-info"
+              >
                 {p.issue_no ? `${p.issue_no}期 ` : ""}{p.title}
-              </div>
+              </Link>
 
               {tab === "off" && (
                 <div className="text-lg font-semibold text-foreground">{p.issue_no ?? ""}期</div>
@@ -180,7 +184,7 @@ function Inner() {
                 <span>浏览:{p.virtual_views ?? 0}次</span>
                 <span>已售:{p.sales_count}次</span>
                 <span className="text-destructive font-semibold text-sm ml-auto">
-                  {fmtCredits(p.price)} 面包 ›
+                  ¥{Number(p.price).toFixed(2)} ›
                 </span>
               </div>
 
