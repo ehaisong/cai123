@@ -184,7 +184,7 @@ function Inner() {
                 <span>浏览:{p.virtual_views ?? 0}次</span>
                 <span>已售:{p.sales_count}次</span>
                 <span className="text-destructive font-semibold text-sm ml-auto">
-                  {fmtCredits(p.price)} 面包 ›
+                  ¥{Number(p.price).toFixed(2)} ›
                 </span>
               </div>
 
