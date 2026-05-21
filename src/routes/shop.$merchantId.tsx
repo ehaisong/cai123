@@ -332,13 +332,15 @@ function ShopPage() {
         </div>
       )}
 
-      {/* 平台公告项 */}
-      <div className="bg-card mx-3 mt-3 rounded-md p-3 border-l-2 border-primary">
-        <div className="flex items-center justify-between text-xs">
-          <span className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded">平台公告</span>
-          <span className="text-muted-foreground">{fmtDate(ann?.created_at)}</span>
+      {/* 平台公告项 - 仅当有未读公告/消息时显示 */}
+      {ann && (
+        <div className="bg-card mx-3 mt-3 rounded-md p-3 border-l-2 border-primary">
+          <div className="flex items-center justify-between text-xs">
+            <span className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded">平台公告</span>
+            <span className="text-muted-foreground">{fmtDate(ann.created_at)}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 商品列表 */}
       <main className="flex-1 px-3 py-3 space-y-2">
