@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { fmtDate, fmtCredits } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
 import { cn } from "@/lib/utils";
