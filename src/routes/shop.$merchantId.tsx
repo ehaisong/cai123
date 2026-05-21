@@ -319,22 +319,18 @@ function ShopPage() {
         />
       </div>
 
-      {/* 全部文章 / 默认排序 / 分享 */}
-      <div className="bg-card mx-3 mt-2 rounded-md p-3 flex items-center justify-between text-sm">
-        <span>全部文章 ▾</span>
-        <div className="flex items-center gap-3">
-          <span className="text-muted-foreground">默认排序 ▾</span>
-          {agentInfo?.is_agent && agentInfo.bound_merchant_id === merchantId && (
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium"
-            >
-              <Share2 className="h-3.5 w-3.5" /> 分享
-            </button>
-          )}
+      {/* 分享 */}
+      {agentInfo?.is_agent && agentInfo.bound_merchant_id === merchantId && (
+        <div className="mx-3 mt-2 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium"
+          >
+            <Share2 className="h-3.5 w-3.5" /> 分享
+          </button>
         </div>
-      </div>
+      )}
 
       {/* 平台公告项 */}
       <div className="bg-card mx-3 mt-3 rounded-md p-3 border-l-2 border-primary">
