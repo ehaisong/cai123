@@ -38,6 +38,8 @@ type ProductRow = {
   sort: number;
   created_at: string;
   publish_at: string | null;
+  author_id: string | null;
+  authors?: { name: string } | null;
 };
 
 function Inner() {
@@ -52,7 +54,7 @@ function Inner() {
     if (!m) return;
     const { data } = await (supabase as any)
       .from("products")
-      .select("id, title, price, status, sales_count, tags, issue_no, virtual_views, result, is_public, is_locked, sort, created_at, publish_at")
+      .select("id, title, price, status, sales_count, tags, issue_no, virtual_views, result, is_public, is_locked, sort, created_at, publish_at, author_id, authors(name)")
       .eq("merchant_id", m.id)
       .order("sort", { ascending: false })
       .order("created_at", { ascending: false });
@@ -161,7 +163,7 @@ function Inner() {
                 params={{ productId: p.id }}
                 className="block text-base font-medium text-foreground hover:text-info"
               >
-                {p.issue_no ? `${p.issue_no}期 ` : ""}{p.title}
+                {p.issue_no ? `${p.issue_no}期 ` : ""}{p.authors?.name ?? p.title}
               </Link>
 
               {tab === "off" && (
