@@ -225,6 +225,7 @@ function Inner() {
           {saving ? "提交中…" : "确认"}
         </Button>
       </div>
+      <MerchantBottomNav />
     </div>
   );
 }
