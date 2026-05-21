@@ -355,11 +355,20 @@ function ShopPage() {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-2">{p.title}</h3>
-              <span className="text-primary font-semibold text-sm">{fmtMoney(p.price)}</span>
+              {p.result === "won" ? (
+                <span className="font-semibold text-sm text-primary">红</span>
+              ) : p.result === "lost" ? (
+                <span className="font-semibold text-sm text-foreground">黑</span>
+              ) : (
+                <span className="text-primary font-semibold text-sm">{fmtMoney(p.price)}</span>
+              )}
             </div>
             <div className="mt-1.5 flex items-center gap-1.5">
               {p.is_recommended && (
                 <span className="inline-block text-[10px] text-primary-foreground bg-primary px-2 py-0.5 rounded">★ 强烈推荐 ★</span>
+              )}
+              {p.is_public && (
+                <span className="inline-block text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded">👍 公开</span>
               )}
               {p.is_affiliated && (
                 <span className="inline-block text-[10px] text-info bg-info/10 px-2 py-0.5 rounded">挂靠</span>
@@ -369,6 +378,7 @@ function ShopPage() {
               <span>发布时间</span>
               <span>{fmtDate(p.publish_at)}</span>
             </div>
+
           </Link>
         ))}
       </main>
