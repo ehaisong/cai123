@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { fmtDate, fmtCredits } from "@/lib/format";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
-import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/merchant/products/")({
   component: ProductsList,
