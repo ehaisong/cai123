@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/route-guard";
+import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/merchant/products/new")({
