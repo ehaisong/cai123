@@ -124,8 +124,8 @@ function Inner() {
               value={authorId}
               onChange={(e) => setAuthorId(e.target.value)}
               className={cn(
-                "w-full appearance-none bg-transparent border-0 border-b border-border",
-                "py-2 pr-6 text-sm focus:outline-none",
+                "w-full appearance-none bg-background border border-input rounded-md",
+                "h-9 px-3 pr-8 text-sm shadow-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 authorId ? "text-foreground" : "text-muted-foreground",
               )}
             >
@@ -134,7 +134,7 @@ function Inner() {
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground">›</span>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">›</span>
           </div>
           {authors.length === 0 && (
             <div className="text-xs text-muted-foreground mt-1">
@@ -151,7 +151,6 @@ function Inner() {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="请输入内容"
-            className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 shadow-none"
           />
         </Field>
 
@@ -160,7 +159,6 @@ function Inner() {
             value={issueNo}
             onChange={(e) => setIssueNo(e.target.value)}
             placeholder="请输入内容"
-            className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 shadow-none"
           />
         </Field>
 
@@ -169,21 +167,23 @@ function Inner() {
             value={tagText}
             onChange={(e) => setTagText(e.target.value)}
             placeholder="手动输入，使用英文逗号,分割"
-            className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 shadow-none"
           />
         </Field>
 
         {/* 付费内容 */}
         <div>
-          <div className="text-sm font-medium text-destructive mb-2">付费内容</div>
-          <div className="bg-muted/40 rounded-md p-3 relative">
+          <div className="mb-2 flex items-baseline gap-1">
+            <span className="text-destructive">*</span>
+            <span className="text-sm font-medium text-foreground">付费内容</span>
+          </div>
+          <div className="relative rounded-md border border-input bg-background shadow-sm">
             <Textarea
               rows={6}
               maxLength={500}
               value={paidContent}
               onChange={(e) => setPaidContent(e.target.value)}
               placeholder="请输入内容"
-              className="bg-transparent border-0 resize-none focus-visible:ring-0 shadow-none p-0 min-h-[120px]"
+              className="bg-transparent border-0 resize-none focus-visible:ring-0 shadow-none min-h-[120px]"
             />
             <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
               {paidContent.length}/500
@@ -197,7 +197,6 @@ function Inner() {
             inputMode="numeric"
             value={virtualViews}
             onChange={(e) => setVirtualViews(e.target.value)}
-            className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 shadow-none"
           />
         </Field>
 
@@ -207,10 +206,10 @@ function Inner() {
             inputMode="numeric"
             value={purchaseLimit}
             onChange={(e) => setPurchaseLimit(e.target.value)}
-            className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 shadow-none"
           />
         </Field>
       </main>
+
 
       <div className="p-4 flex items-center justify-center gap-6 bg-card border-t border-border">
         <Button
