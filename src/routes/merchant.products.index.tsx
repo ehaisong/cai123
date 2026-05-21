@@ -132,13 +132,19 @@ function Inner() {
         </Link>
       </div>
 
-      <div className="px-3 pt-3">
+      <div className="px-3 pt-3 flex items-center gap-2">
         <Input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="🔍 搜索产品名"
-          className="bg-muted/40 border-0"
+          className="bg-muted/40 border-0 flex-1"
         />
+        <Link
+          to="/merchant/products/bulk-import"
+          className="text-xs text-info whitespace-nowrap px-2"
+        >
+          批量导入
+        </Link>
       </div>
 
       <main className="flex-1 px-3 py-3 space-y-3">
