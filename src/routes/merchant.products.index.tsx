@@ -227,6 +227,7 @@ function Inner() {
 
         <p className="text-center text-xs text-muted-foreground py-6">没有更多了</p>
       </main>
+      <MerchantBottomNav />
     </div>
   );
 }
