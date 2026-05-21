@@ -67,7 +67,7 @@ function Inner() {
     };
     // 锁定后“料”（付费内容）不可修改
     if (!isLocked) patch.paid_content = form.paid_content || null;
-    const { error } = await supabase.from("product_issues").update(patch).eq("id", issueId);
+    const { error } = await (supabase as any).from("product_issues").update(patch).eq("id", issueId);
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("已保存");
