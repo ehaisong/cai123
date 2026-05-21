@@ -864,7 +864,6 @@ export type Database = {
       }
       product_issues: {
         Row: {
-          author_id: string | null
           created_at: string
           id: string
           issue_no: string
@@ -879,7 +878,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          author_id?: string | null
           created_at?: string
           id?: string
           issue_no: string
@@ -894,7 +892,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          author_id?: string | null
           created_at?: string
           id?: string
           issue_no?: string
@@ -909,13 +906,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "product_issues_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "authors"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "product_issues_product_id_fkey"
             columns: ["product_id"]
@@ -981,6 +971,7 @@ export type Database = {
       }
       products: {
         Row: {
+          author_id: string | null
           category_id: string
           created_at: string
           disclaimer: string | null
@@ -998,6 +989,7 @@ export type Database = {
           paid_images: string[]
           price: number
           publish_at: string
+          purchase_limit: number
           result: Database["public"]["Enums"]["product_result"]
           result_note: string | null
           reveal_at: string | null
@@ -1011,8 +1003,10 @@ export type Database = {
           title: string
           types: string[]
           updated_at: string
+          virtual_views: number
         }
         Insert: {
+          author_id?: string | null
           category_id: string
           created_at?: string
           disclaimer?: string | null
@@ -1030,6 +1024,7 @@ export type Database = {
           paid_images?: string[]
           price?: number
           publish_at?: string
+          purchase_limit?: number
           result?: Database["public"]["Enums"]["product_result"]
           result_note?: string | null
           reveal_at?: string | null
@@ -1043,8 +1038,10 @@ export type Database = {
           title: string
           types?: string[]
           updated_at?: string
+          virtual_views?: number
         }
         Update: {
+          author_id?: string | null
           category_id?: string
           created_at?: string
           disclaimer?: string | null
@@ -1062,6 +1059,7 @@ export type Database = {
           paid_images?: string[]
           price?: number
           publish_at?: string
+          purchase_limit?: number
           result?: Database["public"]["Enums"]["product_result"]
           result_note?: string | null
           reveal_at?: string | null
@@ -1075,8 +1073,16 @@ export type Database = {
           title?: string
           types?: string[]
           updated_at?: string
+          virtual_views?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "products_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
