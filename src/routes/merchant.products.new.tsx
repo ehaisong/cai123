@@ -115,6 +115,12 @@ function Inner() {
           +添加新方案
           <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-info rounded-full" />
         </div>
+        <Link
+          to="/merchant/products/bulk-import"
+          className="flex-1 text-center py-3 text-sm text-info"
+        >
+          批量导入
+        </Link>
       </div>
 
       <main className="flex-1 px-4 py-4 space-y-5">
