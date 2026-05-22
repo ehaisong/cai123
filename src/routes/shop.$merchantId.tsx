@@ -355,42 +355,62 @@ function ShopPage() {
         {filtered.length === 0 && (
           <p className="text-center py-10 text-sm text-muted-foreground">暂无商品</p>
         )}
-        {filtered.map((p) => (
-          <Link
-            key={p.id}
-            to="/product/$productId"
-            params={{ productId: p.id }}
-            search={{ from: merchantId } as any}
-            className="block bg-card rounded-md p-3 border-l-2 border-primary"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium flex-1 pr-2 line-clamp-2">{p.title}</h3>
-              {p.result === "won" ? (
-                <span className="font-semibold text-sm text-primary">红</span>
-              ) : p.result === "lost" ? (
-                <span className="font-semibold text-sm text-foreground">黑</span>
-              ) : (
-                <span className="text-primary font-semibold text-sm">{fmtMoney(p.price)}</span>
-              )}
-            </div>
-            <div className="mt-1.5 flex items-center gap-1.5">
-              {p.is_recommended && (
-                <span className="inline-block text-[10px] text-primary-foreground bg-primary px-2 py-0.5 rounded">★ 强烈推荐 ★</span>
-              )}
-              {p.is_public && (
-                <span className="inline-block text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded">👍 公开</span>
-              )}
-              {p.is_affiliated && (
-                <span className="inline-block text-[10px] text-info bg-info/10 px-2 py-0.5 rounded">挂靠</span>
-              )}
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>发布时间</span>
-              <span>{fmtDate(p.publish_at)}</span>
-            </div>
+        {filtered.map((p) => {
+          const hit = p.result === "won";
+          const lost = p.result === "lost";
+          const pinned = (p.sort ?? 0) > 0;
+          const displayTitle = `${p.issue_no ? `${p.issue_no}期 ` : ""}${p.authors?.name ?? p.title}`;
+          return (
+            <Link
+              key={p.id}
+              to="/product/$productId"
+              params={{ productId: p.id }}
+              search={{ from: merchantId } as any}
+              className="block bg-card rounded-md p-3 border-l-2 border-primary space-y-2"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-sm font-medium flex-1 line-clamp-2">{displayTitle}</h3>
+                {hit ? (
+                  <span className="font-semibold text-sm text-destructive shrink-0">红</span>
+                ) : lost ? (
+                  <span className="font-semibold text-sm text-foreground shrink-0">黑</span>
+                ) : (
+                  <span className="text-destructive font-semibold text-sm shrink-0">{fmtMoney(p.price)}</span>
+                )}
+              </div>
 
-          </Link>
-        ))}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {pinned && (
+                  <span className="inline-block text-[10px] text-warning-foreground bg-warning px-2 py-0.5 rounded">📌 置顶</span>
+                )}
+                {p.is_recommended && (
+                  <span className="inline-block text-[10px] text-primary-foreground bg-primary px-2 py-0.5 rounded">★ 强烈推荐 ★</span>
+                )}
+                {p.is_public && (
+                  <span className="inline-block text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded">👍 公开</span>
+                )}
+                {p.is_affiliated && (
+                  <span className="inline-block text-[10px] text-info bg-info/10 px-2 py-0.5 rounded">挂靠</span>
+                )}
+                {(p.tags?.length ?? 0) > 0 && p.tags!.map((t) => (
+                  <span
+                    key={t}
+                    className={`px-2 py-0.5 rounded text-[10px] ${hit ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex items-center text-xs text-muted-foreground gap-3 flex-wrap">
+                <span>{fmtDate(p.publish_at)} 发布</span>
+                <span>浏览:{p.virtual_views ?? 0}次</span>
+                <span>已售:{p.sales_count ?? 0}次</span>
+              </div>
+            </Link>
+          );
+        })}
+
       </main>
 
       {/* 推广二维码 Dialog */}
