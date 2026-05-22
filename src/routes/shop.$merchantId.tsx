@@ -37,7 +37,15 @@ interface Product {
   is_public: boolean;
   result: "pending" | "won" | "lost" | string;
   is_affiliated?: boolean;
+  issue_no: string | null;
+  sort: number;
+  sales_count: number;
+  virtual_views: number | null;
+  tags: string[] | null;
+  author_id: string | null;
+  authors?: { name: string } | null;
 }
+
 
 interface Category { id: string; name: string; code: string; }
 interface Merchant {
