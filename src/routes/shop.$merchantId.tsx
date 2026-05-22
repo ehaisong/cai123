@@ -183,12 +183,14 @@ function ShopPage() {
     (async () => {
       const { data: srcIds } = await supabase.rpc("shop_source_merchant_ids", { _merchant_id: merchantId });
       const ids = ((srcIds as unknown as string[]) ?? [merchantId]);
-      const { data } = await supabase.from("products")
-        .select("id, title, is_recommended, price, publish_at, category_id, merchant_id, is_public, result")
+      const { data } = await (supabase as any).from("products")
+        .select("id, title, is_recommended, price, publish_at, category_id, merchant_id, is_public, result, issue_no, sort, sales_count, virtual_views, tags, author_id, authors(name)")
         .in("merchant_id", ids).eq("status", "published")
+        .order("sort", { ascending: false })
         .order("is_recommended", { ascending: false })
         .order("publish_at", { ascending: false });
-      setProducts((data ?? []).map(p => ({ ...p, is_affiliated: p.merchant_id !== merchantId })));
+      setProducts(((data ?? []) as any[]).map((p) => ({ ...p, is_affiliated: p.merchant_id !== merchantId })));
+
     })();
     if (user) {
       supabase.from("notifications")
