@@ -115,9 +115,11 @@ function Inner() {
   };
   const onTogglePublic = async (p: ProductRow) => {
     const nextPublic = !p.is_public;
-    // 公开 = 让所有客户可见付费内容，不影响上下架状态
-    if (await upd(p.id, { is_public: nextPublic })) {
-      toast.success(nextPublic ? "已公开（客户可查看付费内容）" : "已取消公开");
+    const patch: Record<string, unknown> = { is_public: nextPublic };
+    // 公开后停售：客户可在店铺首页点开免费查看付费内容，但不可再购买
+    if (nextPublic) patch.status = "unpublished";
+    if (await upd(p.id, patch)) {
+      toast.success(nextPublic ? "已公开（停售，客户可免费查看）" : "已取消公开");
       load();
     }
   };
