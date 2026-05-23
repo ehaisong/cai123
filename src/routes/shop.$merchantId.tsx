@@ -386,9 +386,6 @@ function ShopPage() {
 
 
               <div className="flex flex-wrap items-center gap-1.5">
-                {pinned && (
-                  <span className="inline-block text-[10px] text-warning-foreground bg-warning px-2 py-0.5 rounded">📌 置顶</span>
-                )}
                 {p.is_recommended && (
                   <span className="inline-block text-[10px] text-primary-foreground bg-primary px-2 py-0.5 rounded">★ 强烈推荐 ★</span>
                 )}
