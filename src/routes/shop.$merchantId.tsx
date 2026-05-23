@@ -184,8 +184,9 @@ function ShopPage() {
       const { data: srcIds } = await supabase.rpc("shop_source_merchant_ids", { _merchant_id: merchantId });
       const ids = ((srcIds as unknown as string[]) ?? [merchantId]);
       const { data } = await (supabase as any).from("products")
-        .select("id, title, is_recommended, price, publish_at, category_id, merchant_id, is_public, result, issue_no, sort, sales_count, virtual_views, tags, author_id, authors(name)")
-        .in("merchant_id", ids).eq("status", "published")
+        .select("id, title, is_recommended, price, publish_at, category_id, merchant_id, is_public, result, issue_no, sort, sales_count, virtual_views, tags, author_id, status, authors(name)")
+        .in("merchant_id", ids)
+        .or("status.eq.published,is_public.eq.true")
         .order("sort", { ascending: false })
         .order("is_recommended", { ascending: false })
         .order("publish_at", { ascending: false });
