@@ -81,7 +81,22 @@ function Inner() {
   const onDelete = async (p: ProductRow) => {
     if (!confirm(`确认删除「${p.title}」？`)) return;
     const { error } = await supabase.from("products").delete().eq("id", p.id);
-    if (error) toast.error(error.message); else { toast.success("已删除"); load(); }
+    if (error) {
+      const msg = (error.message || "").toLowerCase();
+      // 有订单引用时无法物理删除，回退到软删除：下架 + 取消公开 + 取消置顶
+      if (msg.includes("foreign key") || msg.includes("violates")) {
+        if (!confirm("该商品已有订单记录，无法彻底删除。是否改为「下架并隐藏」？")) return;
+        if (await upd(p.id, { status: "unpublished", is_public: false, sort: 0 })) {
+          toast.success("已下架并隐藏");
+          load();
+        }
+        return;
+      }
+      toast.error(error.message);
+      return;
+    }
+    toast.success("已删除");
+    load();
   };
   const onPin = async (p: ProductRow) => {
     const next = p.sort > 0 ? 0 : Math.floor(Date.now() / 1000);
@@ -100,10 +115,11 @@ function Inner() {
   };
   const onTogglePublic = async (p: ProductRow) => {
     const nextPublic = !p.is_public;
-    const patch: Record<string, unknown> = { is_public: nextPublic };
-    // 公开后归入"已停售"，自动下架避免继续被付款
-    if (nextPublic) patch.status = "unpublished";
-    if (await upd(p.id, patch)) { toast.success(nextPublic ? "已公开" : "已取消公开"); load(); }
+    // 公开 = 让所有客户可见付费内容，不影响上下架状态
+    if (await upd(p.id, { is_public: nextPublic })) {
+      toast.success(nextPublic ? "已公开（客户可查看付费内容）" : "已取消公开");
+      load();
+    }
   };
 
   return (
