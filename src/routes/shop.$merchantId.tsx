@@ -366,10 +366,15 @@ function ShopPage() {
               to="/product/$productId"
               params={{ productId: p.id }}
               search={{ from: merchantId } as any}
-              className="block bg-card rounded-md p-3 border-l-2 border-primary space-y-2"
+              className={`block bg-card rounded-md p-3 border-l-2 space-y-2 ${pinned ? "border-warning ring-1 ring-warning/40" : "border-primary"}`}
             >
               <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-medium flex-1 line-clamp-2">{displayTitle}</h3>
+                <h3 className="text-base font-medium flex-1 break-words leading-snug">
+                  {pinned && (
+                    <span className="inline-block align-middle text-[10px] text-warning-foreground bg-warning px-1.5 py-0.5 rounded mr-1.5">📌 置顶</span>
+                  )}
+                  {displayTitle}
+                </h3>
                 {hit ? (
                   <span className="font-semibold text-sm text-destructive shrink-0">红</span>
                 ) : lost ? (
@@ -378,6 +383,7 @@ function ShopPage() {
                   <span className="text-destructive font-semibold text-sm shrink-0">{fmtMoney(p.price)}</span>
                 )}
               </div>
+
 
               <div className="flex flex-wrap items-center gap-1.5">
                 {pinned && (
