@@ -189,7 +189,11 @@ function ProductDetailPage() {
       {/* 标题卡 */}
       <div className="bg-card mx-3 mt-3 rounded-xl p-4 relative">
         <h2 className="text-lg font-bold pr-16">{product.title}</h2>
+        {product.authors?.name && (
+          <div className="text-xs text-primary mt-1">作者：{product.authors.name}</div>
+        )}
         {current && <div className="text-xs text-muted-foreground mt-1">第 {current.issue_no} 期</div>}
+
         {product.is_recommended && (
           <div className="mt-2">
             <span className="inline-block text-xs text-primary-foreground bg-primary px-3 py-0.5 rounded">★ 强烈推荐 ★</span>
