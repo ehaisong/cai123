@@ -1,55 +1,48 @@
-## 结论
+## 需求拆解
 
-按彩虹易支付（Epay）**MD5 + mapi.php** 协议重写 13pay 对接。不需要 openid，"sub_openid 不能为空"是之前错走 RSA JSAPI 接口的副作用。微信内体验：**点付款 → 整页跳到 13pay 收银台 → 付完 13pay 自动回跳 `https://wordpro.cn/pay/return?orderNo=...` → 该页轮询订单状态 → 显示成功**。不使用 iframe（X-Frame-Options / 微信内 iframe 唤起支付不稳定）。
+### 1. 在线/日访问量统计 + 商家客户关注列表
+**新建表**：
+- `page_visits`：记录每次页面访问（`user_id`、`merchant_id`、`path`、`session_id`、`created_at`）。RLS：仅 admin/对应商家可查；任何登录用户可插入。
+- 通过 `session_id`（前端 sessionStorage 生成）+ 最近 5 分钟活跃判断"当前在线"。
 
-## 文件改动
+**展示**：
+- 平台首页 / 管理后台：加"当前在线 X 人 / 今日访问 Y 次"卡片。
+- 商家后台首页（`merchant.index.tsx`）：显示"本店当前在线 / 今日访问 / 累计关注客户数"，并加"客户关注列表"页（复用现有 `shop_memberships` 中本店 user，关联 `profiles` 取微信昵称/avatar）。
 
-### 新增 `src/lib/epay-sign.ts`
-- 纯 JS MD5 实现（约 30 行，workerd 的 `crypto.subtle` 不支持 MD5）
-- 导出 `md5(s)` / `signEpay(params, key)` / `verifyEpay(params, sign, key)`
-- 签名规则：剔除 `sign`/`sign_type`/空值 → key ASCII 升序 → `k=v&k=v` 拼接 → 末尾追加 `key`（直接拼字符串，不加 `&`）→ MD5 小写
+### 2. 商品详情显示作者名 + 商家财务显示商品名
+- `src/routes/product.$productId.tsx`：query 里把 `authors(name)` 也 select 出来，标题旁加 `作者：xxx`。
+- `src/routes/merchant.finance.tsx`（商家财务订单列表）：订单 join `products(title, authors(name))`，把商品名/作者名直接渲染到每行。
 
-### 改写 `src/routes/api/public/pay-13pay-create.ts`
-- 通道配置改读：`apiBase`（如 `https://pay.13pay.cn/`，需以 `/` 结尾，缺时自动补）/ `pid` / `key` / `siteName`
-- 构造参数：`{pid, type:'wxpay'|'alipay', device:'wechat'|'mobile'|'pc', clientip, notify_url, return_url, out_trade_no, name, money, sitename?}`
-- MD5 签名 → `POST {apiBase}mapi.php`（`application/x-www-form-urlencoded`）
-- 解析 `code===1`：优先取 `payurl`（跳转）→ `qrcode`（二维码）→ `urlscheme`（小程序）；否则透传 `msg`
-- 返回 `{ success, payType:'jump'|'qrcode'|'scheme', payUrl, qrcode, tradeNo }`，**删除 `jsApiParams`**
-- 保留 UA / 15s 超时 / 一次重试
+### 3. 作者维度每日访问/购买统计
+**新建表** `author_daily_stats`：(`author_id`, `date`, `views`, `purchases`)，唯一键 (author_id, date)。
+- 浏览：商品详情页 mount 时调 RPC `bump_author_view(author_id)`，按当日 upsert +1。
+- 购买：在订单支付成功后（`pay-notify` 或 trigger）按 `products.author_id` 累加 `purchases`。
+- 商家"作者管理"页（`merchant.authors.tsx`）每行加"今日浏览/今日购买/累计"小数据。点击作者进入详情显示按天列表（最近 30 天）。
 
-### 改写 `src/routes/api/public/pay-13pay-notify.ts`
-- 读 **GET 查询串**（彩虹易支付的 notify 是 GET）
-- 用 `key` 重算 MD5 验签
-- 验签通过 + `trade_status === 'TRADE_SUCCESS'` + 金额校验 → `mark_payment_paid` → 返回**纯文本 `success`**；否则 `fail`
-- 全程写 `payment_logs`
+### 4. 红黑公开逻辑修正 + 次日自动归档历史
+**当前状态**：代码已实现"公开后 status=unpublished, is_public=true 仍在店铺显示"。需要验证一次客户端实际是否生效，并补齐：
 
-### 改写 `src/routes/pay.test-13pay.tsx`
-- 删除 WeixinJSBridge / JSAPI 直拉逻辑
-- 流程：创建订单 → 调 create 接口 → 拿 `payUrl` → 顶部提示"即将跳转到 13pay 安全收银台，付完会自动返回本站"→ 1 秒后 `window.location.href = payUrl`
-- 微信外若返回 `qrcode` 则展示二维码图片
-- 文案更新："此通道走跳转支付。付款后页面会自动回跳到 `/pay/return`，无需手动重新打开。"
+a) **公开仍可见**：保留现状（shop 查询已用 `status.eq.published,is_public.eq.true`），确认商品详情页对 `is_public=true` 时即使未购买也能看付费内容。
 
-### 改 `src/routes/pay.return.tsx`
-- 已存在；确认会读 `?orderNo=` 并调 `PaymentService.startPolling` 等异步通知，把成功 UI 显示出来。如果当前没启动轮询则补上（≤2 min，每 2.5s 一次）。
+b) **次日自动归档**：
+- 加 pg_cron 每日 00:05 调用一个 SQL 函数 `archive_revealed_products()`：
+  - 找出 `result in ('won','lost') AND is_public=true AND publish_at < today` 的商品；
+  - 把它写入 `product_history`（已有该表）；
+  - 把原商品标记为已归档（新增 `archived_at` 字段或直接 `status='archived'` 且 `is_public=false`），从店铺首页消失。
+- 这样"今天公开看红黑、明天新料一出旧的就进历史"。
 
-### 改 `src/routes/pc.payments.tsx`
-- `channelFields["13pay"]` 改为：
-  - `apiBase`（默认 `https://pay.13pay.cn/`）
-  - `pid`（商户 ID）
-  - `key`（**MD5 商户密钥/通讯密钥**，password 类型）
-  - `siteName`（可选，传给 13pay 用于收银台显示）
-- 移除 `merchantPrivateKey` / `platformPublicKey` 字段（旧数据保留在 JSON 不影响）
+---
 
-### `src/lib/thirteenpay.ts`
-- 顶部加 `@deprecated` 注释，保留备用（万一以后真要做 13pay 公众号 JSAPI）
+## 待确认的关键问题
 
-## 你需要做的事
-1. 计划通过后我会落地代码。
-2. 落地后请到 **PC 管理后台 → 支付通道 → 编辑 13pay**，把字段重新填一遍：
-   - apiBase：`https://pay.13pay.cn/`
-   - pid：你的商户 ID
-   - **key：13pay 后台"通讯密钥(MD5)"那串字符**（不是 RSA 私钥）
-   - siteName：可选
-3. 在微信内打开 `/pay/test-13pay`，1 元测试。
+由于改动较大，且第 3、4 项有几种实现方式，先确认以下几点再动手：
 
-无数据库迁移；如果你确认 MD5 密钥已就绪，回复"开干"我就开始改。
+1. **"当前在线"如何判定**？建议 = 最近 5 分钟有 page_visits 心跳的不重复用户。是否接受？（替代：用 Supabase Realtime presence，更精准但每客户端常驻一个 channel）
+
+2. **作者每日统计的浏览**：每次进商品详情就 +1（含同一用户多次刷新），还是按 (author_id, user_id, date) 去重？
+
+3. **红黑归档触发时机**：固定每天 0 点（北京时间）批量归档全部已揭晓的"公开"商品？还是按每条商品自己的 `reveal_at + 24h` 归档？
+
+4. **关注列表的"关注"定义**：等于"进入过本店、写入了 shop_memberships 的客户"，对吗？还是要单独做一个"收藏/关注"按钮？
+
+回答这 4 个问题后我会一次性下迁移 + 改代码。
