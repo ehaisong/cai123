@@ -27,6 +27,7 @@ function MerchantHomeInner() {
   const [merchant, setMerchant] = useState<any>(null);
   const [merchantLoading, setMerchantLoading] = useState(true);
   const [stats, setStats] = useState({ products: 0, orders: 0, balance: 0, monthSales: 0 });
+  const [visit, setVisit] = useState({ online: 0, today: 0, followers: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -39,18 +40,21 @@ function MerchantHomeInner() {
       setMerchantLoading(false);
       if (!m) return;
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-      const [{ count: pc }, { count: oc }, { data: w }, { data: monthOrders }] = await Promise.all([
+      const [{ count: pc }, { count: oc }, { data: w }, { data: monthOrders }, { data: vs }] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }).eq("merchant_id", m.id),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("merchant_id", m.id).eq("status", "paid"),
         supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
         supabase.from("orders").select("amount").eq("merchant_id", m.id).eq("status", "paid").gte("paid_at", monthStart.toISOString()),
+        supabase.rpc("shop_visit_stats" as any, { _merchant_id: m.id }),
       ]);
       if (cancelled) return;
       const monthSales = (monthOrders ?? []).reduce((s, r: any) => s + Number(r.amount), 0);
       setStats({ products: pc ?? 0, orders: oc ?? 0, balance: Number(w?.balance ?? 0), monthSales });
+      if (vs) setVisit({ online: Number((vs as any).online ?? 0), today: Number((vs as any).today ?? 0), followers: Number((vs as any).followers ?? 0) });
     })();
     return () => { cancelled = true; };
   }, [user?.id]);
+
 
   if (merchantLoading) {
     return (
