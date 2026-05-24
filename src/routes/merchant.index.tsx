@@ -84,8 +84,24 @@ function MerchantHomeInner() {
         </div>
       </div>
 
+      <div className="mx-3 mb-3 grid grid-cols-3 gap-2">
+        <div className="bg-card rounded-xl p-3 text-center">
+          <div className="text-xs text-muted-foreground">当前在线</div>
+          <div className="text-lg font-bold text-success">{visit.online}</div>
+        </div>
+        <div className="bg-card rounded-xl p-3 text-center">
+          <div className="text-xs text-muted-foreground">今日访问</div>
+          <div className="text-lg font-bold text-info">{visit.today}</div>
+        </div>
+        <Link to="/merchant/followers" className="bg-card rounded-xl p-3 text-center">
+          <div className="text-xs text-muted-foreground">关注客户</div>
+          <div className="text-lg font-bold text-primary">{visit.followers}</div>
+        </Link>
+      </div>
+
       <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
         <Cell icon={<Store className="w-6 h-6 text-success" />} label="店铺信息" to="/merchant/shop" />
+
         <Cell icon={<Plus className="w-6 h-6 text-success" />} label="发布商品" to="/merchant/products/new" />
         <Cell icon={<Package className="w-6 h-6 text-info" />} label="商品管理" to="/merchant/products" />
         <Cell icon={<PenSquare className="w-6 h-6 text-primary" />} label="作者管理" to="/merchant/authors" />
