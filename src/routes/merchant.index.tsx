@@ -105,6 +105,8 @@ function MerchantHomeInner() {
         <Cell icon={<Plus className="w-6 h-6 text-success" />} label="发布商品" to="/merchant/products/new" />
         <Cell icon={<Package className="w-6 h-6 text-info" />} label="商品管理" to="/merchant/products" />
         <Cell icon={<PenSquare className="w-6 h-6 text-primary" />} label="作者管理" to="/merchant/authors" />
+        <Cell icon={<Heart className="w-6 h-6 text-destructive" />} label="关注客户" to="/merchant/followers" />
+
         
         <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
         <Cell icon={<UserPlus className="w-6 h-6 text-primary" />} label="代理招募码" to="/merchant/agent-recruit" />
