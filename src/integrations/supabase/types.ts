@@ -159,6 +159,51 @@ export type Database = {
         }
         Relationships: []
       }
+      author_daily_stats: {
+        Row: {
+          author_id: string
+          date: string
+          id: string
+          purchases: number
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          author_id: string
+          date: string
+          id?: string
+          purchases?: number
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          author_id?: string
+          date?: string
+          id?: string
+          purchases?: number
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      author_view_dedup: {
+        Row: {
+          author_id: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          author_id: string
+          date: string
+          user_id: string
+        }
+        Update: {
+          author_id?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       authors: {
         Row: {
           created_at: string
@@ -683,6 +728,33 @@ export type Database = {
           order_id?: string | null
           package_id?: string
           starts_at?: string
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string | null
+          path: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id?: string | null
+          path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string | null
+          path?: string | null
+          session_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1520,6 +1592,7 @@ export type Database = {
         Args: { _merchant_id: string; _note?: string }
         Returns: string
       }
+      archive_revealed_products: { Args: never; Returns: number }
       become_agent: { Args: never; Returns: string }
       become_agent_for_merchant: {
         Args: { _merchant_id: string }
@@ -1541,6 +1614,7 @@ export type Database = {
         Returns: undefined
       }
       bootstrap_admin_role: { Args: never; Returns: boolean }
+      bump_author_view: { Args: { _author_id: string }; Returns: undefined }
       cancel_affiliation: { Args: { _id: string }; Returns: undefined }
       create_payment_order: {
         Args: {
@@ -1597,6 +1671,7 @@ export type Database = {
           yesterday_income: number
         }[]
       }
+      merchant_author_stats: { Args: { _merchant_id: string }; Returns: Json }
       merchant_broadcast: {
         Args: { _audience?: string; _content: string; _title: string }
         Returns: number
@@ -1613,6 +1688,7 @@ export type Database = {
         Args: { _rate: number; _user_id: string }
         Returns: undefined
       }
+      platform_visit_stats: { Args: never; Returns: Json }
       purchase_package: { Args: { _package_id: string }; Returns: string }
       purchase_product: {
         Args: {
@@ -1621,6 +1697,10 @@ export type Database = {
           _shop_merchant_id?: string
         }
         Returns: string
+      }
+      record_visit: {
+        Args: { _merchant_id: string; _path: string; _session_id: string }
+        Returns: undefined
       }
       resolve_my_shop: { Args: never; Returns: string }
       resolve_ref_to_merchant: { Args: { _ref: string }; Returns: string }
@@ -1632,10 +1712,15 @@ export type Database = {
         Args: { _approve: boolean; _id: string; _reason?: string }
         Returns: boolean
       }
+      shop_followers: {
+        Args: { _limit?: number; _merchant_id: string }
+        Returns: Json
+      }
       shop_source_merchant_ids: {
         Args: { _merchant_id: string }
         Returns: string[]
       }
+      shop_visit_stats: { Args: { _merchant_id: string }; Returns: Json }
       submit_withdraw: {
         Args: { _account_info: string; _amount: number; _channel: string }
         Returns: string

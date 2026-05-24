@@ -18,7 +18,10 @@ interface Product {
   id: string; merchant_id: string; title: string; subtitle: string | null;
   is_recommended: boolean; price: number; disclaimer: string | null;
   is_public?: boolean;
+  author_id?: string | null;
+  authors?: { name: string } | null;
 }
+
 
 interface Issue {
   id: string; issue_no: string; paid_content: string | null;
