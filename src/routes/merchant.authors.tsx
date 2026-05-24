@@ -82,8 +82,28 @@ function Inner() {
         ) : (
           filtered.map((a) => (
             <div key={a.id} className="bg-card rounded-xl p-4">
-              <div className="text-base font-medium">{a.name}</div>
-              <div className="text-sm text-destructive mt-1">排序 {a.sort}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-base font-medium">{a.name}</div>
+                <div className="text-xs text-muted-foreground shrink-0">排序 {a.sort}</div>
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-1 text-center">
+                <div className="bg-muted/40 rounded p-1.5">
+                  <div className="text-[10px] text-muted-foreground">今日浏览</div>
+                  <div className="text-sm font-semibold text-info">{a.today_views ?? 0}</div>
+                </div>
+                <div className="bg-muted/40 rounded p-1.5">
+                  <div className="text-[10px] text-muted-foreground">今日购买</div>
+                  <div className="text-sm font-semibold text-success">{a.today_purchases ?? 0}</div>
+                </div>
+                <div className="bg-muted/40 rounded p-1.5">
+                  <div className="text-[10px] text-muted-foreground">累计浏览</div>
+                  <div className="text-sm font-semibold">{a.total_views ?? 0}</div>
+                </div>
+                <div className="bg-muted/40 rounded p-1.5">
+                  <div className="text-[10px] text-muted-foreground">累计购买</div>
+                  <div className="text-sm font-semibold">{a.total_purchases ?? 0}</div>
+                </div>
+              </div>
               <div className="mt-3 flex justify-end gap-2">
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/40" onClick={() => onDelete(a.id)}>
                   删除
@@ -94,6 +114,7 @@ function Inner() {
               </div>
             </div>
           ))
+
         )}
       </main>
     </div>
