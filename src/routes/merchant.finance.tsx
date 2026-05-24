@@ -91,7 +91,13 @@ function Inner() {
             {orders.map((o) => (
               <div key={o.order_id} className="py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm truncate">{o.product_title ?? "—"}</div>
+                  <div className="text-sm truncate flex-1">
+                    {o.product_issue_no ? `${o.product_issue_no}期 ` : ""}
+                    {o.author_name ?? o.product_title ?? "—"}
+                    {o.author_name && o.product_title ? (
+                      <span className="text-muted-foreground text-xs ml-1">（{o.product_title}）</span>
+                    ) : null}
+                  </div>
                   <div className="text-sm font-medium text-success shrink-0">+{fmtMoney(Number(o.merchant_income))}</div>
                 </div>
                 <div className="text-[11px] text-muted-foreground flex items-center justify-between gap-2 mt-0.5">
@@ -103,6 +109,7 @@ function Inner() {
                 </div>
               </div>
             ))}
+
           </div>
           <div className="mt-3 text-center">
             <Link to="/merchant" className="text-xs text-info">返回商家后台 ›</Link>

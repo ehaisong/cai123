@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck, Wallet, PenSquare } from "lucide-react";
+import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck, Wallet, PenSquare, Heart } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
 import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
@@ -27,6 +27,7 @@ function MerchantHomeInner() {
   const [merchant, setMerchant] = useState<any>(null);
   const [merchantLoading, setMerchantLoading] = useState(true);
   const [stats, setStats] = useState({ products: 0, orders: 0, balance: 0, monthSales: 0 });
+  const [visit, setVisit] = useState({ online: 0, today: 0, followers: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -39,18 +40,21 @@ function MerchantHomeInner() {
       setMerchantLoading(false);
       if (!m) return;
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-      const [{ count: pc }, { count: oc }, { data: w }, { data: monthOrders }] = await Promise.all([
+      const [{ count: pc }, { count: oc }, { data: w }, { data: monthOrders }, { data: vs }] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }).eq("merchant_id", m.id),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("merchant_id", m.id).eq("status", "paid"),
         supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
         supabase.from("orders").select("amount").eq("merchant_id", m.id).eq("status", "paid").gte("paid_at", monthStart.toISOString()),
+        supabase.rpc("shop_visit_stats" as any, { _merchant_id: m.id }),
       ]);
       if (cancelled) return;
       const monthSales = (monthOrders ?? []).reduce((s, r: any) => s + Number(r.amount), 0);
       setStats({ products: pc ?? 0, orders: oc ?? 0, balance: Number(w?.balance ?? 0), monthSales });
+      if (vs) setVisit({ online: Number((vs as any).online ?? 0), today: Number((vs as any).today ?? 0), followers: Number((vs as any).followers ?? 0) });
     })();
     return () => { cancelled = true; };
   }, [user?.id]);
+
 
   if (merchantLoading) {
     return (
@@ -80,11 +84,29 @@ function MerchantHomeInner() {
         </div>
       </div>
 
+      <div className="mx-3 mb-3 grid grid-cols-3 gap-2">
+        <div className="bg-card rounded-xl p-3 text-center">
+          <div className="text-xs text-muted-foreground">当前在线</div>
+          <div className="text-lg font-bold text-success">{visit.online}</div>
+        </div>
+        <div className="bg-card rounded-xl p-3 text-center">
+          <div className="text-xs text-muted-foreground">今日访问</div>
+          <div className="text-lg font-bold text-info">{visit.today}</div>
+        </div>
+        <Link to="/merchant/followers" className="bg-card rounded-xl p-3 text-center">
+          <div className="text-xs text-muted-foreground">关注客户</div>
+          <div className="text-lg font-bold text-primary">{visit.followers}</div>
+        </Link>
+      </div>
+
       <div className="bg-card mx-3 rounded-2xl p-5 grid grid-cols-3 gap-y-5">
         <Cell icon={<Store className="w-6 h-6 text-success" />} label="店铺信息" to="/merchant/shop" />
+
         <Cell icon={<Plus className="w-6 h-6 text-success" />} label="发布商品" to="/merchant/products/new" />
         <Cell icon={<Package className="w-6 h-6 text-info" />} label="商品管理" to="/merchant/products" />
         <Cell icon={<PenSquare className="w-6 h-6 text-primary" />} label="作者管理" to="/merchant/authors" />
+        <Cell icon={<Heart className="w-6 h-6 text-destructive" />} label="关注客户" to="/merchant/followers" />
+
         
         <Cell icon={<QrCode className="w-6 h-6 text-primary" />} label="推广二维码" to="/merchant/qrcode" />
         <Cell icon={<UserPlus className="w-6 h-6 text-primary" />} label="代理招募码" to="/merchant/agent-recruit" />

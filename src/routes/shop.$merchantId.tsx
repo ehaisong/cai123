@@ -180,6 +180,18 @@ function ShopPage() {
     }
     supabase.from("merchants").select("id, shop_name, shop_avatar_url, shop_description").eq("id", merchantId).maybeSingle().then(({ data }) => setMerchant(data));
     supabase.from("lottery_categories").select("id, name, code").order("sort_order").then(({ data }) => setCategories(data ?? []));
+    // 记录访问心跳：用于统计当前在线/今日访问
+    try {
+      let sid = sessionStorage.getItem("visit_sid");
+      if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem("visit_sid", sid); }
+      supabase.rpc("record_visit" as any, { _merchant_id: merchantId, _path: `/shop/${merchantId}`, _session_id: sid });
+      const t = setInterval(() => {
+        supabase.rpc("record_visit" as any, { _merchant_id: merchantId, _path: `/shop/${merchantId}`, _session_id: sid });
+      }, 60_000);
+      // 清理由组件卸载处理：将 timer 挂在 window 上避免 useEffect 闭包冲突
+      (window as any).__visit_timer && clearInterval((window as any).__visit_timer);
+      (window as any).__visit_timer = t;
+    } catch {}
     (async () => {
       const { data: srcIds } = await supabase.rpc("shop_source_merchant_ids", { _merchant_id: merchantId });
       const ids = ((srcIds as unknown as string[]) ?? [merchantId]);
@@ -193,6 +205,7 @@ function ShopPage() {
       setProducts(((data ?? []) as any[]).map((p) => ({ ...p, is_affiliated: p.merchant_id !== merchantId })));
 
     })();
+
     if (user) {
       supabase.from("notifications")
         .select("id, title, content, created_at, category")
