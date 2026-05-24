@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/h5/page-header";
 import { fmtMoney } from "@/lib/format";
-import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck, Wallet, PenSquare } from "lucide-react";
+import { Plus, Package, QrCode, Users, Store, Percent, LogOut, Link2, Send, UserCircle2, UserPlus, ClipboardCheck, Wallet, PenSquare, Heart } from "lucide-react";
 import { RouteGuard } from "@/components/route-guard";
 import { useLogout } from "@/lib/use-logout";
 import { MerchantBottomNav } from "@/components/h5/merchant-bottom-nav";
