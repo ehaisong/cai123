@@ -48,6 +48,7 @@ import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as MerchantShopRouteImport } from './routes/merchant.shop'
 import { Route as MerchantQrcodeRouteImport } from './routes/merchant.qrcode'
 import { Route as MerchantMessagesRouteImport } from './routes/merchant.messages'
+import { Route as MerchantFollowersRouteImport } from './routes/merchant.followers'
 import { Route as MerchantFinanceRouteImport } from './routes/merchant.finance'
 import { Route as MerchantCommissionRouteImport } from './routes/merchant.commission'
 import { Route as MerchantAuthorsRouteImport } from './routes/merchant.authors'
@@ -294,6 +295,11 @@ const MerchantQrcodeRoute = MerchantQrcodeRouteImport.update({
 const MerchantMessagesRoute = MerchantMessagesRouteImport.update({
   id: '/merchant/messages',
   path: '/merchant/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantFollowersRoute = MerchantFollowersRouteImport.update({
+  id: '/merchant/followers',
+  path: '/merchant/followers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantFinanceRoute = MerchantFinanceRouteImport.update({
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/merchant/authors': typeof MerchantAuthorsRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/finance': typeof MerchantFinanceRoute
+  '/merchant/followers': typeof MerchantFollowersRoute
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
@@ -706,6 +713,7 @@ export interface FileRoutesByTo {
   '/merchant/authors': typeof MerchantAuthorsRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/finance': typeof MerchantFinanceRoute
+  '/merchant/followers': typeof MerchantFollowersRoute
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
@@ -800,6 +808,7 @@ export interface FileRoutesById {
   '/merchant/authors': typeof MerchantAuthorsRoute
   '/merchant/commission': typeof MerchantCommissionRoute
   '/merchant/finance': typeof MerchantFinanceRoute
+  '/merchant/followers': typeof MerchantFollowersRoute
   '/merchant/messages': typeof MerchantMessagesRoute
   '/merchant/qrcode': typeof MerchantQrcodeRoute
   '/merchant/shop': typeof MerchantShopRoute
@@ -895,6 +904,7 @@ export interface FileRouteTypes {
     | '/merchant/authors'
     | '/merchant/commission'
     | '/merchant/finance'
+    | '/merchant/followers'
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
@@ -987,6 +997,7 @@ export interface FileRouteTypes {
     | '/merchant/authors'
     | '/merchant/commission'
     | '/merchant/finance'
+    | '/merchant/followers'
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
@@ -1080,6 +1091,7 @@ export interface FileRouteTypes {
     | '/merchant/authors'
     | '/merchant/commission'
     | '/merchant/finance'
+    | '/merchant/followers'
     | '/merchant/messages'
     | '/merchant/qrcode'
     | '/merchant/shop'
@@ -1173,6 +1185,7 @@ export interface RootRouteChildren {
   MerchantAuthorsRoute: typeof MerchantAuthorsRoute
   MerchantCommissionRoute: typeof MerchantCommissionRoute
   MerchantFinanceRoute: typeof MerchantFinanceRoute
+  MerchantFollowersRoute: typeof MerchantFollowersRoute
   MerchantMessagesRoute: typeof MerchantMessagesRoute
   MerchantQrcodeRoute: typeof MerchantQrcodeRoute
   MerchantShopRoute: typeof MerchantShopRoute
@@ -1478,6 +1491,13 @@ declare module '@tanstack/react-router' {
       path: '/merchant/messages'
       fullPath: '/merchant/messages'
       preLoaderRoute: typeof MerchantMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant/followers': {
+      id: '/merchant/followers'
+      path: '/merchant/followers'
+      fullPath: '/merchant/followers'
+      preLoaderRoute: typeof MerchantFollowersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/merchant/finance': {
@@ -1950,6 +1970,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantAuthorsRoute: MerchantAuthorsRoute,
   MerchantCommissionRoute: MerchantCommissionRoute,
   MerchantFinanceRoute: MerchantFinanceRoute,
+  MerchantFollowersRoute: MerchantFollowersRoute,
   MerchantMessagesRoute: MerchantMessagesRoute,
   MerchantQrcodeRoute: MerchantQrcodeRoute,
   MerchantShopRoute: MerchantShopRoute,

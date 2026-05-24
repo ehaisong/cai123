@@ -12,7 +12,7 @@ export const Route = createFileRoute("/merchant/authors")({
   component: AuthorsPage,
 });
 
-type Author = { id: string; name: string; sort: number };
+type Author = { id: string; name: string; sort: number; today_views?: number; today_purchases?: number; total_views?: number; total_purchases?: number };
 
 function AuthorsPage() {
   return (
