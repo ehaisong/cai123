@@ -32,16 +32,12 @@ function Inner() {
 
   const load = async (mid: string) => {
     setLoading(true);
-    const { data, error } = await (supabase as any)
-      .from("authors")
-      .select("id, name, sort")
-      .eq("merchant_id", mid)
-      .order("sort", { ascending: false })
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("merchant_author_stats" as any, { _merchant_id: mid });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    setItems((data ?? []) as Author[]);
+    setItems(((data as any[]) ?? []) as Author[]);
   };
+
 
   useEffect(() => {
     if (!user) return;
