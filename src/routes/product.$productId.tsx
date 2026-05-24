@@ -45,9 +45,13 @@ function ProductDetailPage() {
 
   const load = async () => {
     const { data: p } = await (supabase as any).from("products")
-      .select("id, merchant_id, title, subtitle, is_recommended, price, disclaimer, is_public")
+      .select("id, merchant_id, title, subtitle, is_recommended, price, disclaimer, is_public, author_id, authors(name)")
       .eq("id", productId).maybeSingle();
     setProduct(p as Product | null);
+    if (p && (p as any).author_id) {
+      supabase.rpc("bump_author_view" as any, { _author_id: (p as any).author_id });
+    }
+
 
     let owner = false;
     if (user && p) {
