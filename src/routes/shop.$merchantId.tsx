@@ -252,7 +252,18 @@ function ShopPage() {
 
   const filtered = products
     .filter((p) => activeCat === "all" || p.category_id === activeCat)
-    .filter((p) => !keyword || p.title.includes(keyword));
+    .filter((p) => {
+      if (!keyword) return true;
+      const kw = keyword.trim().toLowerCase();
+      if (!kw) return true;
+      const hay = [
+        p.title,
+        p.issue_no ?? "",
+        p.authors?.name ?? "",
+        ...(p.tags ?? []),
+      ].join(" ").toLowerCase();
+      return hay.includes(kw);
+    });
 
   return (
     <div className="h5-shell flex min-h-screen flex-col">
